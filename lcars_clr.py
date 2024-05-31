@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 # This module controls the st7735 type screens
-print("Loading 160x128 LCARS Interface")
+print("Loading 240x320 LCARS Interface")
 from objects import *
 import math
 import time
@@ -1497,7 +1497,7 @@ class ColourScreen(object):
 		self.tr109_schematic = Image.open('assets/tr109.png')
 
 		# Load assets
-		self.logo = Image.open('assets/picorderOS_logo240x320.png')
+		self.logo = Image.open('assets/picorderOS_logo240x320beta.png')
 
 		self.status = "mode_a"
 
@@ -1526,7 +1526,7 @@ class ColourScreen(object):
 
 	def start_up(self):
 		self.newimage = self.burgerfull.copy()
-		self.newimage.paste(self.logo,(118,30))
+		self.newimage.paste(self.logo,(135,60))
 		self.draw = ImageDraw.Draw(self.newimage)
 		self.status = self.startup_frame.push(self.draw)
 		self.pixdrw()
