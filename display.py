@@ -135,7 +135,7 @@ def DisplayFunction(q):
 			go = False
 
 		# the following is only for screens that use Luma.LCD
-		if configure.display == 1:
+		if configure.display == 1 or configure.display == 3:
 			device.display(payload)
 
 		# the following is only for TFT24T screens
