@@ -678,7 +678,7 @@ class LoadingFrame(object):
 class StartUp(object):
 	def __init__(self):
 		self.titlex = 0
-		self.titley = 77
+		self.titley = 144
 		self.labely = 102
 		self.jump = 22
 
@@ -700,10 +700,10 @@ class StartUp(object):
 
 
 		#draw the frame heading
-		self.title.center(self.titley,0,160,draw)
+		self.title.center(self.titley,0,320,draw)
 
 		#draw the title and version
-		self.item.center(self.titley+self.jump,0, 160,draw)
+		self.item.center(self.titley+self.jump,0, 320,draw)
 
 
 		if self.interval.timelapsed() > configure.boot_delay and configure.sensor_ready[0]:
@@ -1492,12 +1492,12 @@ class ColourScreen(object):
 		self.image = Image.open('assets/lcarsframe.png')
 		self.blankimage = Image.open('assets/lcarsframeblank.png')
 		self.tbar = Image.open('assets/lcarssplitframe.png')
-		self.burger = Image.open('assets/lcarsburgerframe.png')
-		self.burgerfull = Image.open('assets/lcarsburgerframefull.png')
+		self.burger = Image.open('assets/lcarsburgerframe240x320.png')
+		self.burgerfull = Image.open('assets/lcarsburgerframe240x320.png')
 		self.tr109_schematic = Image.open('assets/tr109.png')
 
 		# Load assets
-		self.logo = Image.open('assets/picorderOS_logo.png')
+		self.logo = Image.open('assets/picorderOS_logo240x320.png')
 
 		self.status = "mode_a"
 
@@ -1526,7 +1526,7 @@ class ColourScreen(object):
 
 	def start_up(self):
 		self.newimage = self.burgerfull.copy()
-		self.newimage.paste(self.logo,(59,15))
+		self.newimage.paste(self.logo,(118,30))
 		self.draw = ImageDraw.Draw(self.newimage)
 		self.status = self.startup_frame.push(self.draw)
 		self.pixdrw()
