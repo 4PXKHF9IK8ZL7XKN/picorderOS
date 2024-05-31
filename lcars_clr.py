@@ -29,12 +29,12 @@ from plars import *
 
 
 # Load default font.
-microfont = ImageFont.truetype("assets/babs.otf",7)
-littlefont = ImageFont.truetype("assets/babs.otf",10)
-font = ImageFont.truetype("assets/babs.otf",13)
-titlefont = ImageFont.truetype("assets/babs.otf",16)
-bigfont = ImageFont.truetype("assets/babs.otf",20)
-giantfont = ImageFont.truetype("assets/babs.otf",30)
+microfont = ImageFont.truetype("assets/babs.otf",14)
+littlefont = ImageFont.truetype("assets/babs.otf",20)
+font = ImageFont.truetype("assets/babs.otf",26)
+titlefont = ImageFont.truetype("assets/babs.otf",32)
+bigfont = ImageFont.truetype("assets/babs.otf",40)
+giantfont = ImageFont.truetype("assets/babs.otf",60)
 
 # Standard LCARS colours
 lcars_orange = (255,153,0)
@@ -678,9 +678,9 @@ class LoadingFrame(object):
 class StartUp(object):
 	def __init__(self):
 		self.titlex = 0
-		self.titley = 144
+		self.titley = 120
 		self.labely = 102
-		self.jump = 22
+		self.jump = 45
 
 		self.graphcycle = 0
 		self.decimal = 1
@@ -1125,21 +1125,21 @@ class MultiFrame(object):
 	def __init__(self):
 
 		# Sets the topleft origin of the graph
-		self.graphx = 22
-		self.graphy = 25
+		self.graphx = 22*2
+		self.graphy = 25*2
 		self.samples = configure.samples
 
 		# Sets the x and y span of the graph
-		self.gspanx = 133
-		self.gspany = 68
+		self.gspanx = 133*2
+		self.gspany = 68*2
 
 		self.graphcycle = 0
 
-		self.marginleft = 23
-		self.marginright= 132
+		self.marginleft = 23*2
+		self.marginright= 132*2
 
 		# sets the background image for the display
-		self.back = Image.open('assets/lcarsframe.png')
+		#self.back = Image.open('assets/lcarsframe240x320.png')
 
 		# sets the currently selected sensor to focus on
 		self.selection = 0
@@ -1152,10 +1152,10 @@ class MultiFrame(object):
 		self.interval.logtime()
 
 		# Sets the coordinates of onscreen labels.
-		self.titlex = 23
-		self.titley = 6
-		self.labely = 95
-		self.labelx = 25
+		self.titlex = 180
+		self.titley = 12
+		self.labely = 94*2
+		self.labelx = 25*2
 
 
 
@@ -1210,9 +1210,9 @@ class MultiFrame(object):
 
 		# Draw the status indicators
 
-		# Graph time length
+		# Graph time length (The Liddle Number on the lcars frame)
 		self.indicatorA.string = self.arrangelabel(str(self.A_Graph.timelength/5))
-		self.indicatorA.r_align(19,33,self.draw)
+		self.indicatorA.r_align(40,60,self.draw)
 
 		# Auto Scale indicator
 		if configure.auto[0]:
@@ -1220,7 +1220,7 @@ class MultiFrame(object):
 		else:
 			self.indicatorB.string = "M"
 
-		self.indicatorB.r_align(19,82,self.draw)
+		self.indicatorB.r_align(40,155,self.draw)
 
 		# Auto Scale indicator
 		if configure.low_power_flag[0]:
@@ -1228,7 +1228,7 @@ class MultiFrame(object):
 		else:
 			self.indicatorC.string = "D"
 
-		self.indicatorC.r_align(19,95,self.draw)
+		self.indicatorC.r_align(40,175,self.draw)
 
 		# depending on which number the "selection" variable takes on. print the item and its unit symbol
 
@@ -1250,21 +1250,21 @@ class MultiFrame(object):
 
 			#set string to item description
 			self.A_Desc.string = str(configure.sensor_info[configure.sensor1[0]][0])[:6]
-			self.A_Desc.push(self.labelx,self.labely+13,self.draw)
+			self.A_Desc.push(self.labelx,self.labely+22,self.draw)
 
 			self.B_Label.string = b_string
-			self.B_Label.center(self.labely,self.labelx,135,self.draw)
+			self.B_Label.center(self.labely,self.labelx,250,self.draw)
 
 			#set string to item description
 			self.B_Desc.string = str(configure.sensor_info[configure.sensor2[0]][0])[:6]
-			self.B_Desc.center(self.labely+13,self.labelx,135,self.draw)
+			self.B_Desc.center(self.labely+22,self.labelx,250,self.draw)
 
 			self.C_Label.string = c_string
-			self.C_Label.r_align(156,self.labely,self.draw)
+			self.C_Label.r_align(314,self.labely,self.draw)
 
 			#set string to item description
 			self.C_Desc.string = str(configure.sensor_info[configure.sensor3[0]][0])[:6]
-			self.C_Desc.r_align(156,self.labely+13,self.draw)
+			self.C_Desc.r_align(314,self.labely+22,self.draw)
 
 		# displays more details for whatever sensor is in focus
 		if self.selection != 0:
@@ -1331,7 +1331,7 @@ class MultiFrame(object):
 			self.title.push(self.titlex,self.titley,draw)
 		else:
 			self.title.string = "Multi-Graph"
-			self.title.r_align(156,self.titley,draw)
+			self.title.r_align(180,self.titley,draw)
 
 
 
@@ -1489,7 +1489,7 @@ class ColourScreen(object):
 	def __init__(self):
 
 		# instantiates an image and uses it in a draw object.
-		self.image = Image.open('assets/lcarsframe.png')
+		self.image = Image.open('assets/lcarsframe240x320.png')
 		self.blankimage = Image.open('assets/lcarsframeblank.png')
 		self.tbar = Image.open('assets/lcarssplitframe.png')
 		self.burger = Image.open('assets/lcarsburgerframe240x320.png')
@@ -1497,7 +1497,7 @@ class ColourScreen(object):
 		self.tr109_schematic = Image.open('assets/tr109.png')
 
 		# Load assets
-		self.logo = Image.open('assets/picorderOS_logo240x320beta.png')
+		self.logo = Image.open('assets/Med_Picorder_Logo240x320.png')
 
 		self.status = "mode_a"
 
@@ -1526,7 +1526,7 @@ class ColourScreen(object):
 
 	def start_up(self):
 		self.newimage = self.burgerfull.copy()
-		self.newimage.paste(self.logo,(135,60))
+		self.newimage.paste(self.logo,(135,40))
 		self.draw = ImageDraw.Draw(self.newimage)
 		self.status = self.startup_frame.push(self.draw)
 		self.pixdrw()
