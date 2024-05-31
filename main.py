@@ -39,7 +39,7 @@ if configure.tr108:
 if configure.tr109:
 
 	# 1.8" TFT colour LCD
-	if configure.display == 1 or configure.display == 2:
+	if configure.display == 1 or configure.display == 2 or configure.display == 3:
 		from lcars_clr import *
 
 	# Nokia 5110 black and white dot matrix screen.
@@ -64,7 +64,7 @@ def Main():
 	if configure.tr109:
 		if configure.display == 0:
 			screen_object = NokiaScreen()
-		if configure.display == 1 or configure.display == 2:
+		if configure.display == 1 or configure.display == 2 or configure.display == 3:
 			screen_object = ColourScreen()
 			screen_object.start_up()
 
