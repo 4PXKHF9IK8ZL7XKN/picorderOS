@@ -60,11 +60,23 @@ def get_device(actual_args=None):
         parser.error(e)
         return None
 
+if configure.display == 3:
+        from luma.core.render import canvas
+        from luma.emulator.device import pygame
+
+        # Raspberry Pi hardware SPI config:
+        DC = 24
+        RST = 25
+        SPI_PORT = 0
+        SPI_DEVICE = 0
+
+        if not configure.pc:
+                device = get_device(['--interface', 'spi', '--display', 'st7789', '--spi-port', '0', '--spi-bus-speed', '48000000', '--width', '320', '--height', '240','--mode','RGB' ])
+        else:
+                device = pygame(width = 160, height = 128)
 
 if configure.display == 1:
-	from luma.core.interface.serial import spi
 	from luma.core.render import canvas
-	from luma.lcd.device import st7735
 	from luma.emulator.device import pygame
 
 	# Raspberry Pi hardware SPI config:
@@ -75,7 +87,8 @@ if configure.display == 1:
 
 	if not configure.pc:
 		serial = spi(port = SPI_PORT, device = SPI_DEVICE, gpio_DC = DC, gpio_RST = RST)
-		device = st7735(serial, width = 160, height = 128, mode = "RGB")
+		device = get_device(['--interface', 'spi', '--display', 'st7735', '--spi-port', '0', '--spi-bus-speed', '48000000', '--width', '160', '--height', '128','--mode','RGB'])
+
 	else:
 		# if the user has selected the emulated display we
 		# load the display as a pygame window.
