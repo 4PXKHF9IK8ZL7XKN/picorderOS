@@ -71,7 +71,8 @@ if configure.display == 3:
         SPI_DEVICE = 0
 
         if not configure.pc:
-                device = get_device(['--interface', 'spi', '--display', 'st7789', '--spi-port', '0', '--spi-bus-speed', '48000000', '--width', '320', '--height', '240','--mode','RGB' ])
+                device = get_device(['--interface', 'spi', '--display', 'st7789', '--spi-port', '0', '--spi-bus-speed', '52000000', '--width', '320', '--height', '240','--mode','RGB' ])
+                #device = get_device(['--interface', 'spi', '--display', 'st7789', '--spi-port', '0', '--spi-bus-speed', '52000000', '--width', '160', '--height', '128','--mode','RGB' ])
         else:
                 device = pygame(width = 160, height = 128)
 
@@ -87,7 +88,7 @@ if configure.display == 1:
 
 	if not configure.pc:
 		serial = spi(port = SPI_PORT, device = SPI_DEVICE, gpio_DC = DC, gpio_RST = RST)
-		device = get_device(['--interface', 'spi', '--display', 'st7735', '--spi-port', '0', '--spi-bus-speed', '48000000', '--width', '160', '--height', '128','--mode','RGB'])
+		device = get_device(['--interface', 'spi', '--display', 'st7735', '--spi-port', '0', '--spi-bus-speed', '52000000', '--width', '160', '--height', '128','--mode','RGB'])
 
 	else:
 		# if the user has selected the emulated display we
@@ -151,6 +152,8 @@ def DisplayFunction(q):
 # and libraries can be used in this way with small modifications to the base
 # class.
 class GenericDisplay(object):
+	width = device.width
+	height = device.height
 
 	def __init__(self):
 		self.q = Queue()
@@ -161,8 +164,7 @@ class GenericDisplay(object):
 	# Display takes a PILlow based drawobject and pushes it to screen.
 	def display(self,frame):
 		self.q.put(frame)
-
-
+		
 	def cleanup(self):
 		self.q.put("quit")
 
