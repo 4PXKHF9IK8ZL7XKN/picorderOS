@@ -52,6 +52,69 @@ theme1 =  [lcars_orange,lcars_blue,lcars_pinker]
 fore_col = 0
 back_col = 1
 
+# serves as a screen to show the current status of the picorder
+class MasterSystemsDisplay2Demo(object):
+
+	def __init__(self):
+	    
+		self.title = None
+		self.status_list = None
+		#self.draw = draw
+
+		# the set labels for the screen
+		self.title = LabelObj("HOLO Display Lab",titlefont,colour = lcars_orange)
+
+		# A list of all the cool data.
+		self.status_list = Label_List(frameconstruct.texty,frameconstruct.textx, colour = lcars_blue, ofont = littlefont)
+
+		# grabs the RPI model info
+		if not configure.pc:
+			text = os.popen("cat /proc/device-tree/model").readline()
+			self.model = str(text.rstrip("\x00")).replace("Raspberry Pi","Raspi")
+		else:
+			self.model = "Unknown"
+
+		self.events = Events([1,2,"last",0,0,0,0,0],"msd2")
+
+
+	def load_list(self):
+
+		# pulls data from the modulated_em.py
+		wifi = "SSID: " + os.popen("iwgetid").readline()
+
+		s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+
+		try:
+			s.connect(("8.8.8.8", 80))
+			IPAddr = s.getsockname()[0]
+		except:
+			IPAddr = "No IP Found"
+		
+		ip_str = "IP:  " + IPAddr
+		host_str = "Name:  " + socket.gethostname()
+		sense_ready = "Sensors Avl:  " + str(len(configure.sensor_info))
+		model_name = "CPU:  " + self.model
+		PLARS_size, PLARS_em_size = plars.get_plars_size()
+		db_size = "PLARS Size:  " + str(PLARS_size)
+		em_size = "PLARS EM Size:  " + str(PLARS_em_size)
+		
+		display_h = "DS H:  " + str(device.height)
+		display_w = "DS W:  " + str(device.width)
+
+		status_list = [model_name, ip_str, host_str, sense_ready, db_size, em_size, display_h, display_w]
+		return status_list
+
+
+	def push(self,draw):
+
+		status, payload = self.events.check()
+  
+ 
+		#draw the frame heading 
+		self.title.center(frameconstruct.titley,frameconstruct.titlex,0,draw)
+		self.status_list.update(self.load_list(),draw)
+
+		return status
 
 
 class DrawGrid(object):
@@ -707,7 +770,7 @@ class StartUp(object):
 
 
 		if self.interval.timelapsed() > configure.boot_delay and configure.sensor_ready[0]:
-			status = "multi"
+			status = "msd2"
 		else:
 			status = "startup"
 
@@ -1484,10 +1547,19 @@ class ThermalFrame(object):
 
 		return status
 
+class frameconstruct:
+	titlex = device.width * 0.7
+	titley = -2
+	labelx = device.width * 0.1
+	labely = device.height * 0.1
+	textx = device.width * 0.1
+	texty = device.height * 0.1
+
 class ColourScreen(object):
 
-	def __init__(self):
 
+	def __init__(self):
+	
 		# instantiates an image and uses it in a draw object.
 		self.image = Image.open('assets/lcarsframe240x320.png')
 		self.blankimage = Image.open('assets/lcarsframeblank.png')
@@ -1509,6 +1581,7 @@ class ColourScreen(object):
 		self.startup_frame = StartUp()
 		self.loading_frame = LoadingFrame()
 		self.msd_frame = MasterSystemsDisplay()
+		self.msd2_frame = MasterSystemsDisplay2Demo()
 
 		# carousel dict to hold the keys and defs for each state
 		self.carousel = {"startup":self.start_up,
@@ -1518,6 +1591,7 @@ class ColourScreen(object):
 				   "modem":self.em_screen,
 				   "settings":self.settings,
 				   "msd":self.msd,
+				   "msd2":self.msd2,
 				   "poweroff":self.powerdown,
 				   "shutdown":self.powerdown}
 
@@ -1609,9 +1683,23 @@ class ColourScreen(object):
 		else:
 			self.loading()
 		return self.status
+	
+	def msd2(self):
+		#self.newimage = self.blankimage.copy()
+		#self.newimage.paste(self.tr109_schematic,(113,38))
+		self.draw = ImageDraw.Draw(self.newimage)
+		last_status = self.status
+		self.status = self.msd2_frame.push(self.draw)
+
+		if self.status == last_status:
+			self.pixdrw()
+		else:
+			self.loading()
+		return self.status	
+		
 
 	def powerdown(self):
-		self.newimage = self.blankimage.copy()
+		#self.newimage = self.blankimage.copy()
 		self.draw = ImageDraw.Draw(self.newimage)
 		self.status = self.powerdown_frame.push(self.draw)
 		self.pixdrw()
