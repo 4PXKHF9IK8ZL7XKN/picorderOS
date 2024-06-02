@@ -703,7 +703,7 @@ class StartUp(object):
 
 
 		if self.interval.timelapsed() > configure.boot_delay and configure.sensor_ready[0]:
-			status = "msd"
+			status = "multi"
 		else:
 			status = "startup"
 
@@ -808,7 +808,7 @@ class EMFrame(object):
 
 		self.overlap_list = Label_List(20,93, colour = lcars_blue, ofont = littlefont)
 
-		self.burgerfull = Image.open('assets/lcarsburgerframefull.png')
+		self.burgerfull = Image.open('/tmp/lcarsburgerframe.png')
 
 		# assign x coordinates for frequency map
 		self.vizX1 = 20
@@ -1134,9 +1134,6 @@ class MultiFrame(object):
 		self.marginleft = 23*2
 		self.marginright= 132*2
 
-		# sets the background image for the display
-		#self.back = Image.open('assets/lcarsframe240x320.png')
-
 		# sets the currently selected sensor to focus on
 		self.selection = 0
 
@@ -1148,8 +1145,6 @@ class MultiFrame(object):
 		self.interval.logtime()
 
 		# Sets the coordinates of onscreen labels.
-		self.titlex = 180
-		self.titley = 12
 		self.labely = 94*2
 		self.labelx = 25*2
 
@@ -1324,10 +1319,10 @@ class MultiFrame(object):
 		if self.selection != 0:
 			this = self.selection - 1
 			self.title.string = senseslice[this][1]
-			self.title.push(self.titlex,self.titley,draw)
+			self.title.center(frameconstruct.titley,frameconstruct.titlex,int(device.width*0.25)*-1,draw)
 		else:
 			self.title.string = "Multi-Graph"
-			self.title.r_align(180,self.titley,draw)
+			self.title.center(frameconstruct.titley,frameconstruct.titlex,int(device.width*0.25)*-1,draw)
 
 
 
@@ -1483,7 +1478,7 @@ class ThermalFrame(object):
 class frameconstruct:
 	titlex = device.width * 0.7 # tested
 	titley = -2				# tested
-	labelx = device.width * 0.1 # tested
+	labelx = device.width * 0.15 # tested
 	labely = device.height * 0.15 # tested
 	textx = device.width * 0.1
 	texty = device.height * 0.1
@@ -1498,12 +1493,11 @@ class ColourScreen(object):
 		self.svgtopngconvert()
 		# instantiates an image and uses it in a draw object.
 		self.image = None
-		#self.image = Image.open('assets/lcarsframe240x320.png')
+		self.lcarsframe = Image.open('/tmp/lcarsframe.png')
 		self.blankimage = Image.open('/tmp/backscreen.png')
 		self.lcarsblankimage = Image.open('/tmp/lcarsframeblank.png')
 		#self.tbar = Image.open('assets/lcarssplitframe.png')
-		#self.burger = Image.open('assets/lcarsburgerframe240x320.png')
-		#self.burgerfull = Image.open('assets/lcarsburgerframe240x320.png')
+		self.burger = Image.open('/tmp/lcarsburgerframe.png')
 		self.tr109_schematic = Image.open('/tmp/tr109.png')
 
 		# Load assets
@@ -1543,11 +1537,12 @@ class ColourScreen(object):
 	def svgtopngconvert(self):
 		svg2png(url="assets/tr109.svg", write_to="/tmp/tr109.png", scale=device.height/128)
 		svg2png(url="assets/lcarsframeblank.svg", write_to="/tmp/lcarsframeblank.png", output_width=device.width, output_height=device.height)
+		svg2png(url="assets/lcarsburgerframe.svg", write_to="/tmp/lcarsburgerframe.png", output_width=device.width, output_height=device.height)
+		svg2png(url="assets/lcarsframe.svg", write_to="/tmp/lcarsframe.png", output_width=device.width, output_height=device.height)
 
 	def start_up(self):
 		self.newimage = self.blankimage.copy()
-		#self.newimage = self.burgerfull.copy()
-		#self.newimage.paste(self.logo,(135,40))
+		self.newimage.paste(self.burger,(0,0))
 		self.draw = ImageDraw.Draw(self.newimage)
 		self.status = self.startup_frame.push(self.draw)
 		self.pixdrw()
@@ -1556,7 +1551,8 @@ class ColourScreen(object):
 
 	# simple frame to let user know new info is loading while waiting.
 	def loading(self):
-		self.newimage = self.burgerfull.copy()
+		self.newimage = self.blankimage.copy()
+		self.newimage.paste(self.burger,(0,0))
 		self.draw = ImageDraw.Draw(self.newimage)
 		self.status = self.loading_frame.push(self.draw,self.status)
 
@@ -1564,7 +1560,8 @@ class ColourScreen(object):
 		return self.status
 
 	def graph_screen(self):
-		self.newimage = self.image.copy()
+		self.newimage = self.blankimage.copy()
+		self.newimage.paste(self.lcarsframe,(0,0))
 		self.draw = ImageDraw.Draw(self.newimage)
 
 		last_status = self.status
