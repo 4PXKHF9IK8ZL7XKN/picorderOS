@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 # This module controls the st7735 type screens
-print("Loading 240x320 LCARS Interface")
+print("Loading LCARS Interface")
 from objects import *
 import math
 import time
@@ -9,6 +9,10 @@ import socket
 from operator import itemgetter
 
 from display import GenericDisplay
+
+# This the SVG Converter that allows us to save Vectors and later use them as PNG
+from cairosvg import svg2png
+
 
 device = GenericDisplay()
 
@@ -26,15 +30,14 @@ from amg8833_pil import *
 from plars import *
 
 
-
-
 # Load default font.
-microfont = ImageFont.truetype("assets/babs.otf",14)
-littlefont = ImageFont.truetype("assets/babs.otf",20)
-font = ImageFont.truetype("assets/babs.otf",26)
-titlefont = ImageFont.truetype("assets/babs.otf",32)
-bigfont = ImageFont.truetype("assets/babs.otf",40)
-giantfont = ImageFont.truetype("assets/babs.otf",60)
+microfont = ImageFont.truetype("assets/babs.otf",int(device.height * 0.055)) 
+littlefont = ImageFont.truetype("assets/babs.otf",int(device.height * 0.079)) 
+font = ImageFont.truetype("assets/babs.otf",int(device.height * 0.102)) 
+titlefont = ImageFont.truetype("assets/babs.otf",int(device.height * 0.13)) 
+bigfont = ImageFont.truetype("assets/babs.otf",int(device.height * 0.16)) 
+giantfont = ImageFont.truetype("assets/babs.otf",int(device.height * 0.235))
+
 
 # Standard LCARS colours
 lcars_orange = (255,153,0)
@@ -51,71 +54,6 @@ theme1 =  [lcars_orange,lcars_blue,lcars_pinker]
 
 fore_col = 0
 back_col = 1
-
-# serves as a screen to show the current status of the picorder
-class MasterSystemsDisplay2Demo(object):
-
-	def __init__(self):
-	    
-		self.title = None
-		self.status_list = None
-		#self.draw = draw
-
-		# the set labels for the screen
-		self.title = LabelObj("HOLO Display Lab",titlefont,colour = lcars_orange)
-
-		# A list of all the cool data.
-		self.status_list = Label_List(frameconstruct.texty,frameconstruct.textx, colour = lcars_blue, ofont = littlefont)
-
-		# grabs the RPI model info
-		if not configure.pc:
-			text = os.popen("cat /proc/device-tree/model").readline()
-			self.model = str(text.rstrip("\x00")).replace("Raspberry Pi","Raspi")
-		else:
-			self.model = "Unknown"
-
-		self.events = Events([1,2,"last",0,0,0,0,0],"msd2")
-
-
-	def load_list(self):
-
-		# pulls data from the modulated_em.py
-		wifi = "SSID: " + os.popen("iwgetid").readline()
-
-		s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-
-		try:
-			s.connect(("8.8.8.8", 80))
-			IPAddr = s.getsockname()[0]
-		except:
-			IPAddr = "No IP Found"
-		
-		ip_str = "IP:  " + IPAddr
-		host_str = "Name:  " + socket.gethostname()
-		sense_ready = "Sensors Avl:  " + str(len(configure.sensor_info))
-		model_name = "CPU:  " + self.model
-		PLARS_size, PLARS_em_size = plars.get_plars_size()
-		db_size = "PLARS Size:  " + str(PLARS_size)
-		em_size = "PLARS EM Size:  " + str(PLARS_em_size)
-		
-		display_h = "DS H:  " + str(device.height)
-		display_w = "DS W:  " + str(device.width)
-
-		status_list = [model_name, ip_str, host_str, sense_ready, db_size, em_size, display_h, display_w]
-		return status_list
-
-
-	def push(self,draw):
-
-		status, payload = self.events.check()
-  
- 
-		#draw the frame heading 
-		self.title.center(frameconstruct.titley,frameconstruct.titlex,0,draw)
-		self.status_list.update(self.load_list(),draw)
-
-		return status
-
 
 class DrawGrid(object):
 	def __init__(self,x,y,w,h,colour,segx = 4, segy = 4):
@@ -418,10 +356,6 @@ class MasterSystemsDisplay(object):
 		self.title = None
 		self.status_list = None
 		#self.draw = draw
-		self.titlex = 2
-		self.titley = 7
-		self.labely = 24
-
 
 		# the set labels for the screen
 		self.title = LabelObj("Master Systems Display",titlefont,colour = lcars_orange)
@@ -430,7 +364,7 @@ class MasterSystemsDisplay(object):
 		self.C_Label = LabelObj("Exit",font, colour = lcars_orpeach)
 
 		# A list of all the cool data.
-		self.status_list = Label_List(25,23, colour = lcars_blue, ofont = littlefont)
+		self.status_list = Label_List(frameconstruct.labelx,frameconstruct.labely, colour = lcars_blue, ofont = littlefont)
 
 		# grabs the RPI model info
 		if not configure.pc:
@@ -472,8 +406,7 @@ class MasterSystemsDisplay(object):
 		status, payload = self.events.check()
 
 		#draw the frame heading
-		self.title.center(self.titley,21,139,draw)
-		#self.C_Label.r_align(26,self.labely,draw)
+		self.title.center(frameconstruct.titley,frameconstruct.titlex,int(device.width*0.25)*-1,draw)	
 		self.status_list.update(self.load_list(),draw)
 
 		return status
@@ -770,7 +703,7 @@ class StartUp(object):
 
 
 		if self.interval.timelapsed() > configure.boot_delay and configure.sensor_ready[0]:
-			status = "msd2"
+			status = "msd"
 		else:
 			status = "startup"
 
@@ -1548,28 +1481,33 @@ class ThermalFrame(object):
 		return status
 
 class frameconstruct:
-	titlex = device.width * 0.7
-	titley = -2
-	labelx = device.width * 0.1
-	labely = device.height * 0.1
+	titlex = device.width * 0.7 # tested
+	titley = -2				# tested
+	labelx = device.width * 0.1 # tested
+	labely = device.height * 0.15 # tested
 	textx = device.width * 0.1
 	texty = device.height * 0.1
+	triimagex = device.width * 0.7 # tested
+	triimagey = device.height * 0.18 # tested
 
 class ColourScreen(object):
 
 
 	def __init__(self):
-	
+		self.backscreen()
+		self.svgtopngconvert()
 		# instantiates an image and uses it in a draw object.
-		self.image = Image.open('assets/lcarsframe240x320.png')
-		self.blankimage = Image.open('assets/lcarsframeblank.png')
-		self.tbar = Image.open('assets/lcarssplitframe.png')
-		self.burger = Image.open('assets/lcarsburgerframe240x320.png')
-		self.burgerfull = Image.open('assets/lcarsburgerframe240x320.png')
-		self.tr109_schematic = Image.open('assets/tr109.png')
+		self.image = None
+		#self.image = Image.open('assets/lcarsframe240x320.png')
+		self.blankimage = Image.open('/tmp/backscreen.png')
+		self.lcarsblankimage = Image.open('/tmp/lcarsframeblank.png')
+		#self.tbar = Image.open('assets/lcarssplitframe.png')
+		#self.burger = Image.open('assets/lcarsburgerframe240x320.png')
+		#self.burgerfull = Image.open('assets/lcarsburgerframe240x320.png')
+		self.tr109_schematic = Image.open('/tmp/tr109.png')
 
 		# Load assets
-		self.logo = Image.open('assets/Med_Picorder_Logo240x320.png')
+		#self.logo = Image.open('assets/Med_Picorder_Logo240x320.png')
 
 		self.status = "mode_a"
 
@@ -1581,7 +1519,6 @@ class ColourScreen(object):
 		self.startup_frame = StartUp()
 		self.loading_frame = LoadingFrame()
 		self.msd_frame = MasterSystemsDisplay()
-		self.msd2_frame = MasterSystemsDisplay2Demo()
 
 		# carousel dict to hold the keys and defs for each state
 		self.carousel = {"startup":self.start_up,
@@ -1591,16 +1528,26 @@ class ColourScreen(object):
 				   "modem":self.em_screen,
 				   "settings":self.settings,
 				   "msd":self.msd,
-				   "msd2":self.msd2,
 				   "poweroff":self.powerdown,
 				   "shutdown":self.powerdown}
 
 	def get_size(self):
 		return self.multi_frame.samples
+		
+	# Creates an image of the screensize in black as background, so that ImageDraw.Draw has allways the full screen to draw on.
+	def backscreen(self):
+		self.img = Image.new("RGB", (device.width, device.height),(0, 0, 0)) 
+		self.draw = ImageDraw.Draw(self.img) 
+		self.img.save('/tmp/backscreen.png')
+		
+	def svgtopngconvert(self):
+		svg2png(url="assets/tr109.svg", write_to="/tmp/tr109.png", scale=device.height/128)
+		svg2png(url="assets/lcarsframeblank.svg", write_to="/tmp/lcarsframeblank.png", output_width=device.width, output_height=device.height)
 
 	def start_up(self):
-		self.newimage = self.burgerfull.copy()
-		self.newimage.paste(self.logo,(135,40))
+		self.newimage = self.blankimage.copy()
+		#self.newimage = self.burgerfull.copy()
+		#self.newimage.paste(self.logo,(135,40))
 		self.draw = ImageDraw.Draw(self.newimage)
 		self.status = self.startup_frame.push(self.draw)
 		self.pixdrw()
@@ -1673,7 +1620,8 @@ class ColourScreen(object):
 	def msd(self):
 		
 		self.newimage = self.blankimage.copy()
-		self.newimage.paste(self.tr109_schematic,(113,38))
+		self.newimage.paste(self.lcarsblankimage,(0,0))
+		self.newimage.paste(self.tr109_schematic,(int(frameconstruct.triimagex),int(frameconstruct.triimagey)))
 		self.draw = ImageDraw.Draw(self.newimage)
 		last_status = self.status
 		self.status = self.msd_frame.push(self.draw)
@@ -1683,23 +1631,9 @@ class ColourScreen(object):
 		else:
 			self.loading()
 		return self.status
-	
-	def msd2(self):
-		#self.newimage = self.blankimage.copy()
-		#self.newimage.paste(self.tr109_schematic,(113,38))
-		self.draw = ImageDraw.Draw(self.newimage)
-		last_status = self.status
-		self.status = self.msd2_frame.push(self.draw)
-
-		if self.status == last_status:
-			self.pixdrw()
-		else:
-			self.loading()
-		return self.status	
 		
-
 	def powerdown(self):
-		#self.newimage = self.blankimage.copy()
+		self.newimage = self.blankimage.copy()
 		self.draw = ImageDraw.Draw(self.newimage)
 		self.status = self.powerdown_frame.push(self.draw)
 		self.pixdrw()
