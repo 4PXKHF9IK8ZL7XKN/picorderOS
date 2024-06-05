@@ -1484,6 +1484,8 @@ class frameconstruct:
 	texty = device.height * 0.1
 	triimagex = device.width * 0.7 # tested
 	triimagey = device.height * 0.18 # tested
+	oslogox = device.width * 0.38 # tested
+	oslogoy = device.height * 0.18 # tested
 
 class ColourScreen(object):
 
@@ -1501,7 +1503,7 @@ class ColourScreen(object):
 		self.tr109_schematic = Image.open('/tmp/tr109.png')
 
 		# Load assets
-		#self.logo = Image.open('assets/Med_Picorder_Logo240x320.png')
+		self.logo = Image.open('/tmp/picorderOS_logo_splash.png')
 
 		self.status = "mode_a"
 
@@ -1539,10 +1541,12 @@ class ColourScreen(object):
 		svg2png(url="assets/lcarsframeblank.svg", write_to="/tmp/lcarsframeblank.png", output_width=device.width, output_height=device.height)
 		svg2png(url="assets/lcarsburgerframe.svg", write_to="/tmp/lcarsburgerframe.png", output_width=device.width, output_height=device.height)
 		svg2png(url="assets/lcarsframe.svg", write_to="/tmp/lcarsframe.png", output_width=device.width, output_height=device.height)
+		svg2png(url="assets/picorderOS_logo_splash.svg", write_to="/tmp/picorderOS_logo_splash.png", output_width=device.width/4, output_height=device.height/4)
 
 	def start_up(self):
 		self.newimage = self.blankimage.copy()
 		self.newimage.paste(self.burger,(0,0))
+		self.newimage.paste(self.logo,(int(frameconstruct.oslogox),int(frameconstruct.oslogoy)))
 		self.draw = ImageDraw.Draw(self.newimage)
 		self.status = self.startup_frame.push(self.draw)
 		self.pixdrw()
