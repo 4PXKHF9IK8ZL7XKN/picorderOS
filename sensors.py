@@ -3,9 +3,10 @@ import time
 from plars import *
 import math
 import numpy
+import threading
 from multiprocessing import Process,Queue,Pipe
 # the following is a sensor module for use with the PicorderOS
-print("Loading Unified Sensor Module")
+print("Loading Unified Sensor Module ... PID:", threading.get_native_id())
 
 
 if not configure.pc:

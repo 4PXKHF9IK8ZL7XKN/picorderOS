@@ -3,12 +3,13 @@
 # This display module uses Pygame to draw picorder routines to the screen.
 # It is built upon the original Picorder UI and is intended to be used for TOS
 # styled tricorders.
-print("Loading 320x240 Duotronic Interface")
+
 # The following are some necessary modules for the Picorder.
 from asyncio import sleep
 from pickle import FALSE
 import pygame, time, os
 import socket
+import threading
 
 from pathlib import Path
 from plars import *
@@ -17,6 +18,7 @@ from input import *
 from amg8833_pygame import *
 from operator import itemgetter
 
+print("Loading 320x240 Duotronic Interface ... PID: ", threading.get_native_id())
 
 if configure.video:
 	from pyvidplayer import Video

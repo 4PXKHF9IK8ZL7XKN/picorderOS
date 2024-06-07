@@ -1,5 +1,4 @@
 # PicorderOS Wifi Module Proto
-print("Loading Modulated EM Signal Analysis")
 
 from threading import Thread
 
@@ -9,6 +8,9 @@ from plars import *
 from objects import *
 import socket
 from bluetooth import *
+import threading
+
+print("Loading Modulated EM Signal Analysis ... PID: ",threading.get_native_id())
 
 def get_hostname():
 	hostname = socket.gethostname()

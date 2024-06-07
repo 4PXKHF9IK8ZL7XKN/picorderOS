@@ -1,6 +1,6 @@
-print("Loading Picorder Library Access and Retrieval System Module")
 from objects import *
 from multiprocessing import Process,Queue,Pipe
+
 
 
 import json
@@ -17,6 +17,8 @@ import pandas as pd
 import json
 
 import threading
+
+print("Loading Picorder Library Access and Retrieval System Module ... PID: ", threading.get_native_id())
 
 # Broken out functions for use with processing:
 

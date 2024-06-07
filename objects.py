@@ -3,9 +3,10 @@
 # Special thanks to SCIFI.radio for their work on the INI loader!
 
 import time, configparser
+import threading
 from os.path import exists
 
-
+print("Import Objects ... PID: ", threading.get_native_id())
 
 class preferences(object):
 	def str2bool(self,v):

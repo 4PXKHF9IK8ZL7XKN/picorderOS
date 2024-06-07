@@ -1,12 +1,14 @@
-print("Loading AMG8833 Thermal Camera Module")
+
 #import pygame
 import random
 import math
 import numpy
+import threading
 
 # Load up the image library stuff to help draw bitmaps to push to the screen
 import PIL.ImageOps
 
+print("Loading AMG8833 Thermal Camera Module ... PID: ", threading.get_native_id())
 
 # from https://learn.adafruit.com/adafruit-amg8833-8x8-thermal-camera-sensor/raspberry-pi-thermal-camera
 # interpolates the data into a smoothed screen res

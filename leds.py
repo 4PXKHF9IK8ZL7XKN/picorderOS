@@ -1,11 +1,13 @@
 #!/usr/bin/python
-print("Loading Unified Indicator Module")
 # Provides a surface for control over the LEDs connected via GPIO. For the tr-tr108
 # LEDs are controlled directly from GPIO, for the tr109 a shift register is used
 
 from objects import *
 import time
 import math
+import threading
+
+print("Loading Unified Indicator Module ... PID: ", threading.get_native_id())
 
 #loads parameters for configurations
 interval = configure.LED_TIMER

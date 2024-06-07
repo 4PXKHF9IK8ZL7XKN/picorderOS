@@ -4,12 +4,16 @@
 # Created by Chris Barrett ------------------------- directive0
 # For my sister, a real life Beverly Crusher.
 
-print("PicorderOS")
-print("Loading Components")
+
 
 import os
 import sys
+import threading
 from threading import Thread
+
+print("PicorderOS")
+print("Loading Components ... PID: ", threading.get_native_id())
+
 
 
 os.environ['SDL_AUDIODRIVER'] = 'alsa'
@@ -120,7 +124,7 @@ def Main():
 					cleangpio()
 
 				os.system("sudo shutdown -h now")
-				
+			time.sleep(0.1)
 
 		# If CTRL-C is received the program gracefully turns off the LEDs and resets the GPIO.
 		except KeyboardInterrupt:

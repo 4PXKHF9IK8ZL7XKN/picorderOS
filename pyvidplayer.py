@@ -1,10 +1,12 @@
 import pygame 
+import threading
 from pymediainfo import MediaInfo
 from ffpyplayer.player import MediaPlayer
 from os.path import exists, basename, splitext
 from os import strerror
 from errno import ENOENT
 
+print("Running Video Playback PID: ", threading.get_native_id())
 
 class Video:
     def __init__(self, path):

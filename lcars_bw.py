@@ -1,10 +1,11 @@
 #!/usr/bin/env python
 
-print("Loading Luma.LCD Nokia 5110 Screen")
 import math
 import time
+import threading
 from input import *
 
+print("Loading Luma.LCD Nokia 5110 Screen ... PID: ", threading.get_native_id())
 
 from luma.core.interface.serial import spi
 from luma.core.render import canvas

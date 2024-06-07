@@ -1,6 +1,3 @@
-print("Loading Python IL Module")
-
-
 # PILgraph provides an object (graphlist) that will draw a new graph each frame.
 # It was written to contain all the previous sensor readings, but this
 # feature is no longer necessary as PLARS now handles all data history.
@@ -10,18 +7,18 @@ print("Loading Python IL Module")
 
 
 
-
-
-
 from objects import *
 from PIL import Image
 from PIL import ImageFont
 from PIL import ImageDraw
 
 import numpy
+import threading
 from array import *
 from plars import *
 from multiprocessing import Process,Queue,Pipe
+
+print("Loading Python IL Module ... PID: ", threading.get_native_id())
 
 # function to calculate onscreen coordinates of graph pixels as a process.
 def graph_prep_process(conn,samples,datalist,auto,newrange,targetrange,sourcerange,linepoint,jump,sourcelow):

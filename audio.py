@@ -1,6 +1,7 @@
 from objects import *
 import simpleaudio as sa
-print("Loading Audio Thread")
+import threading
+print("Loading Audio Thread ... PID: ", threading.get_native_id())
 
 #109 Sounds
 scansound = sa.WaveObject.from_wave_file("assets/scanning.wav")

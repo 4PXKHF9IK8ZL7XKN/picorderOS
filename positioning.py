@@ -1,6 +1,9 @@
 import serial,time
+import threading
 from pynmeagps import NMEAReader
 from multiprocessing import Process,Queue,Pipe
+
+print("INIT GPS ... PID: ", threading.get_native_id())
 
 # Serial UART address
 port = '/dev/ttyUSB0'

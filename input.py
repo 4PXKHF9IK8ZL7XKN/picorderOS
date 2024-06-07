@@ -1,4 +1,3 @@
-print("Loading Unified Input Module")
 # This script retrieves and packages all input events that might be useful to the program
 # The input object checks the configuration object and returns an array of button inputs.
 
@@ -22,8 +21,10 @@ print("Loading Unified Input Module")
 # next, enter, cancel/switch
 
 import time
+import threading
 from objects import *
 
+print("Loading Unified Input Module ... PID: ", threading.get_native_id())
 
 # stores the number of buttons to be queried
 buttons = 16

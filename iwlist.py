@@ -3,6 +3,9 @@
 
 import re
 import subprocess
+import threading
+
+print("call iwlist ... PID: ", threading.get_native_id())
 
 cellNumberRe = re.compile(r"^Cell\s+(?P<cellnumber>.+)\s+-\s+Address:\s(?P<mac>.+)$")
 regexps = [

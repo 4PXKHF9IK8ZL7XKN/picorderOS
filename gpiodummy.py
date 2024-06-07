@@ -1,5 +1,4 @@
 #!/usr/bin/python
-print("Loading GPIO Dummy")
 
 # This entire module just returns dummy results so as to avoid errors in the program. It has no useful purpose beyond that.
 
@@ -8,6 +7,9 @@ print("Loading GPIO Dummy")
 import pygame
 import sys
 import time
+import threading
+
+print("Loading GPIO Dummy ... PID: ",  threading.get_native_id())
 
 # Pin Definitons:
 led1 = 4 # Broadcom pin 4 (Pi0 pin 7)

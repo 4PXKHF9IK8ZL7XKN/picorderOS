@@ -21,12 +21,15 @@ margin = 13
 
 import numbers
 import time
+import threading
 
 from PIL import Image
 from PIL import ImageDraw
 import textwrap
 
 from types import MethodType
+
+print("lib_tft24T Call ... PID: ", threading.get_native_id())
 
 # Constants for interacting with display registers.
 ILI9341_TFTWIDTH    = 240

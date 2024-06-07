@@ -1,5 +1,3 @@
-print("Unified Display Module loading")
-
 # Serves as a transmission between the various display types and
 # the different picorder front ends. Runs the display drawing as a process so
 # it can be run concurrently with whatever screen based system the picorder is running.
@@ -9,10 +7,14 @@ print("Unified Display Module loading")
 
 import sys
 import logging
+import threading
+
 from objects import *
 from multiprocessing import Process,Queue,Pipe
 import signal
 from luma.core import cmdline, error
+
+print("Unified Display Module loading ... PID: ", threading.get_native_id())
 
 def display_settings(device, args):
     """
@@ -34,7 +36,7 @@ def display_settings(device, args):
     import luma.core
     version = f'luma.{lib_name} {lib_version} (luma.core {luma.core.__version__})'
 
-    return f'Version: {version}\nDisplay: {args.display}\n{iface}Dimensions: {device.width} x {device.height}\n{"-" * 60}'
+    return f'Version: {version}\nDisplay: {args.display}\n{iface}Dimensions: {device.width} x {device.height} PID: {threading.get_native_id()}\n{"-" * 60}'
 
 def get_device(actual_args=None):
     """

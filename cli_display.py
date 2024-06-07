@@ -4,7 +4,7 @@ import os
 import psutil
 import numpy
 import socket
-
+import threading
 
 
 from operator import itemgetter
@@ -15,6 +15,8 @@ from objects import *
 
 error = ""
 frame = 0
+
+print("PicorderOS ... PID: ", threading.get_native_id())
 
 title = "[PicorderOS]--------------------------------------"
 
