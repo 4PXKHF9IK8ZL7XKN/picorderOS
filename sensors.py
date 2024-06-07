@@ -354,6 +354,8 @@ class Sensor(object):
 
 			# load the fragments into the sensorlist
 			sensorlist.extend((self.cputemp, self.cpuperc, self.virtmem, self.bytsent, self.bytrece))
+			# slow down sensor pulling to see if load gets less
+			time.sleep(45)
 
 			if self.generators:
 				 sensorlist.extend((self.sinewav, self.tanwave, self.coswave, self.sinwav2)) 

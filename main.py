@@ -112,7 +112,7 @@ def Main():
 		try:
 
 			screen_object.run()
-
+			time.sleep(0.5)
 			if configure.status[0] == "shutdown":
 				print("Shut Down!")
 				configure.status[0] = "quit"
@@ -124,7 +124,7 @@ def Main():
 					cleangpio()
 
 				os.system("sudo shutdown -h now")
-			time.sleep(0.1)
+			
 
 		# If CTRL-C is received the program gracefully turns off the LEDs and resets the GPIO.
 		except KeyboardInterrupt:
