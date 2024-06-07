@@ -1,18 +1,22 @@
 #!/usr/bin/env python
 # This module controls the st7735 type screens
-print("Loading LCARS Interface")
 from objects import *
 import math
 import time
 import socket
+import threading
 
 from operator import itemgetter
 
 from display import GenericDisplay
 
 # This the SVG Converter that allows us to save Vectors and later use them as PNG
+
+from lxml import etree
+
 from cairosvg import svg2png
 
+print("Loading LCARS Interface ... PID:", threading.get_native_id())
 
 device = GenericDisplay()
 
@@ -703,7 +707,7 @@ class StartUp(object):
 
 
 		if self.interval.timelapsed() > configure.boot_delay and configure.sensor_ready[0]:
-			status = "multi"
+			status = "msd"
 		else:
 			status = "startup"
 
@@ -1493,6 +1497,7 @@ class ColourScreen(object):
 	def __init__(self):
 		self.backscreen()
 		self.svgtopngconvert()
+		#self.simplelogoparser()
 		# instantiates an image and uses it in a draw object.
 		self.image = None
 		self.lcarsframe = Image.open('/tmp/lcarsframe.png')
@@ -1503,7 +1508,7 @@ class ColourScreen(object):
 		self.tr109_schematic = Image.open('/tmp/tr109.png')
 
 		# Load assets
-		self.logo = Image.open('/tmp/picorderOS_logo_splash.png')
+		self.logo = Image.open('/tmp/picorderOS_logo.png')
 
 		self.status = "mode_a"
 
@@ -1541,7 +1546,16 @@ class ColourScreen(object):
 		svg2png(url="assets/lcarsframeblank.svg", write_to="/tmp/lcarsframeblank.png", output_width=device.width, output_height=device.height)
 		svg2png(url="assets/lcarsburgerframe.svg", write_to="/tmp/lcarsburgerframe.png", output_width=device.width, output_height=device.height)
 		svg2png(url="assets/lcarsframe.svg", write_to="/tmp/lcarsframe.png", output_width=device.width, output_height=device.height)
-		svg2png(url="assets/picorderOS_logo_splash.svg", write_to="/tmp/picorderOS_logo_splash.png", output_width=device.width/4, output_height=device.height/4)
+		svg2png(url="assets/picorderOS_logo.svg", write_to="/tmp/picorderOS_logo.png", output_width=device.width/4, output_height=device.height/4)
+		
+	def simplelogoparser(self):
+		#simple open file to read
+		with open('assets/picorderOS_logo.svg','r') as file:
+			svgtxt = file.read()
+			file.close()
+	
+				
+	
 
 	def start_up(self):
 		self.newimage = self.blankimage.copy()
