@@ -825,7 +825,6 @@ class ColourScreen(object):
 				   "msd":self.msd,
 				   "poweroff":self.powerdown,
 				   "shutdown":self.powerdown}
-		print("INIT PASS", self.status)
 
 		
 	# Creates an image of the screensize in black as background, so that ImageDraw.Draw has allways the full screen to draw on.
@@ -854,6 +853,7 @@ class ColourScreen(object):
 		self.draw = ImageDraw.Draw(self.newimage)
 		self.status = self.startup_frame.push(self.draw)
 		self.pixdrw()
+		time.sleep(3)
 		return self.status
 
 	# simple frame to let user know new info is loading while waiting.
