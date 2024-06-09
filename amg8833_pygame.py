@@ -1,10 +1,8 @@
-#import pygame
 import random
 import math
 import numpy
-import threading
 
-print("Loading pygame based AMG8833 Thermal Camera Module ... PID: ", threading.get_native_id())
+print("Loading pygame based AMG8833 Thermal Camera Module")
 
 # from https://learn.adafruit.com/adafruit-amg8833-8x8-thermal-camera-sensor/raspberry-pi-thermal-camera
 # interpolates the data into a smoothed screen res
