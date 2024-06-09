@@ -4,7 +4,7 @@ from objects import *
 import math
 import time
 import socket
-import threading
+import pika
 
 from operator import itemgetter
 
@@ -16,7 +16,7 @@ from lxml import etree
 
 from cairosvg import svg2png
 
-print("Loading LCARS Interface ... PID:", threading.get_native_id())
+print("Loading LCARS Interface")
 
 device = GenericDisplay()
 
@@ -58,6 +58,36 @@ theme1 =  [lcars_orange,lcars_blue,lcars_pinker]
 
 fore_col = 0
 back_col = 1
+
+# RabbitMQ Connection Functions
+connection = pika.BlockingConnection(pika.ConnectionParameters('localhost'))
+channel = connection.channel()
+    
+def delcare_channel():
+	print("Setup Channels for Sensors")
+	channel.queue_declare(queue='sensor_demo')
+	channel.queue_declare(queue='sensor_sensehat')
+	channel.queue_declare(queue='sensor_adafruit_bme680')
+	channel.queue_declare(queue='sensor_mlx90614')
+	channel.queue_declare(queue='sensor_system_vitals')
+	channel.queue_declare(queue='sensor_RadiationWatch')
+	channel.queue_declare(queue='sensor_AMG88XX')
+	channel.queue_declare(queue='sensor_WIFI2450')
+	channel.queue_declare(queue='sensor_NEMA_Serial')
+    
+def publish():
+	channel.basic_publish(exchange='',
+						routing_key='sensor_demo',
+						body='Hello World!')
+	print(" [x] Sent 'Hello World!'")
+    
+def rmqcallback(ch, method, properties, body):
+	print(f" [x] Received {body}")   
+    
+def disconnect():
+	connection.close()
+
+
 
 class DrawGrid(object):
 	def __init__(self,x,y,w,h,colour,segx = 4, segy = 4):
@@ -706,7 +736,7 @@ class StartUp(object):
 
 
 		if self.interval.timelapsed() > configure.boot_delay and configure.sensor_ready[0]:
-			status = "msd"
+			status = "multi"
 		else:
 			status = "startup"
 
@@ -1122,6 +1152,9 @@ class EMFrame(object):
 class MultiFrame(object):
 
 	def __init__(self):
+	
+		# subscribing to rabbitmq messeges	
+		channel.basic_consume(queue='sensor_demo', on_message_callback=rmqcallback, auto_ack=True)
 
 		# Sets the topleft origin of the graph
 		self.graphx = 22*2
@@ -1289,6 +1322,7 @@ class MultiFrame(object):
 	# push the image frame and contents to the draw object.
 	def push(self,draw):
 
+		channel.basic_get()
 		# returns mode_a to the main loop unless something causes state change
 		status,payload  = self.events.check()
 
