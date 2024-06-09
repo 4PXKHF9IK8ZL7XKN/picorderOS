@@ -412,7 +412,6 @@ class MasterSystemsDisplay(object):
 		#draw the frame heading
 		self.title.center(frameconstruct.titley,frameconstruct.titlex,int(device.width*0.25)*-1,draw)	
 		self.status_list.update(self.load_list(),draw)
-		time.sleep(10)
 		return status
 
 class PowerMenu(object):
@@ -1657,7 +1656,6 @@ class ColourScreen(object):
 	def pixdrw(self):
 		thisimage = self.newimage.convert(mode = "RGB")
 		device.display(thisimage)
-		time.sleep(15)
 
 	def run(self):	
 		configure.status[0] = self.carousel[configure.status[0]]()
