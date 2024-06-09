@@ -1,12 +1,41 @@
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
 from objects import *
 import time
-from plars import *
 import math
 import numpy
 import threading
+import pika
 from multiprocessing import Process,Queue,Pipe
 # the following is a sensor module for use with the PicorderOS
-print("Loading Unified Sensor Module ... PID:", threading.get_native_id())
+print("Loading Unified Sensor Module")
+
+connection = pika.BlockingConnection(pika.ConnectionParameters('localhost'))
+channel = connection.channel()
+    
+def delcare_channel():
+    print("Setup Channels for Sensors")
+    channel.exchange_declare(exchange='sensor_demo', exchange_type='topic')
+    channel.exchange_declare(exchange='sensor_sensehat', exchange_type='topic')
+    channel.exchange_declare(exchange='sensor_adafruit_bme680', exchange_type='topic')
+    channel.exchange_declare(exchange='sensor_mlx90614', exchange_type='topic')
+    channel.exchange_declare(exchange='sensor_system_vitals', exchange_type='topic')
+    channel.exchange_declare(exchange='sensor_RadiationWatch', exchange_type='topic')
+    channel.exchange_declare(exchange='sensor_AMG88XX', exchange_type='topic')
+    channel.exchange_declare(exchange='sensor_WIFI2450', exchange_type='topic')
+    channel.exchange_declare(exchange='sensor_NEMA_Serial', exchange_type='topic')
+    
+def publish(data):
+    
+    routing_key = '#'
+    message = str(data)
+    channel.basic_publish(
+        exchange='sensor_demo', routing_key=routing_key, body=message)
+    print(f" [x] Sent {routing_key}:{message}")
+    
+def disconnect():
+    connection.close()
+        
 
 
 if not configure.pc:
@@ -429,7 +458,8 @@ class MLX90614():
 		return self.data_to_temp(data)
 
 # function to use the sensor class as a process.
-def sensor_process(conn):
+#def sensor_process(conn):
+def sensor_process():
 	#init sensors
 	sensors = Sensor()
 	timed = timer()
@@ -441,8 +471,12 @@ def sensor_process(conn):
 				thermal_frame = sensors.get_thermal_frame()
 			else:
 				thermal_frame = []
+			#intercepting the sensor datastruct and redirecting it to the rabbitmq string
 			#constantly grab sensors
-			conn.send([sensor_data, thermal_frame])
+			#conn.send([sensor_data, thermal_frame])
+			publish(str(sensor_data))
+			
+			#publish("Hello World!")
 			timed.logtime()
 
 wifitimer = timer()
@@ -465,25 +499,18 @@ def threaded_sensor():
 	sensors.end()
 	parent_conn,child_conn = Pipe()
 	sense_process = Process(target=sensor_process, args=(child_conn,))
-	sense_process.start()
+	sense_process.start()   
+        
+        
+def main():
+    delcare_channel()
+    sensor_process()
 
-	while not configure.status == "quit":
-
-		while True:
-			
-	
-
-			#self.bt.update_plars()
-			item = parent_conn.recv()
-			if item is not None:
-				data, thermal = item
-				plars.update(data)
-				plars.update_thermal(thermal)
-				configure.position = [data[0].get()[7],data[0].get()[8]]
-			else:
-				break
-
-		#grab wifi and BT data
-
-
-	sense_process.terminate()
+            
+if __name__ == "__main__":
+    try:
+        main()
+        disconnect()
+        sense_process.terminate() 
+    except KeyboardInterrupt:
+        pass
