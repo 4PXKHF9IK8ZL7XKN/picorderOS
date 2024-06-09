@@ -10,9 +10,10 @@ import os
 import sys
 import threading
 from threading import Thread
+from luma.core.sprite_system import framerate_regulator
 
 print("PicorderOS")
-print("Loading Components ... PID: ", threading.get_native_id())
+print("Loading Components")
 
 
 
@@ -103,16 +104,19 @@ def Main():
 		audio_thread = Thread(target = threaded_audio, args = ())
 		audio_thread.start()
 
+	regulator = framerate_regulator(fps=30)
+
 	print("Main Loop Starting")
 
 	# Main loop. Break when status is "quit".
 	while configure.status[0] != "quit":
+	
 
 		# try allows us to capture a keyboard interrupt and assign behaviours.
 		try:
+			with regulator:
+				screen_object.run()
 
-			screen_object.run()
-			time.sleep(0.5)
 			if configure.status[0] == "shutdown":
 				print("Shut Down!")
 				configure.status[0] = "quit"
