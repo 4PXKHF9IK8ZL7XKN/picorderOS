@@ -8,7 +8,6 @@
 
 import os
 import sys
-import threading
 from threading import Thread
 from luma.core.sprite_system import framerate_regulator
 
@@ -114,8 +113,7 @@ def Main():
 
 		# try allows us to capture a keyboard interrupt and assign behaviours.
 		try:
-			with regulator:
-				screen_object.run()
+			screen_object.run()
 
 			if configure.status[0] == "shutdown":
 				print("Shut Down!")
