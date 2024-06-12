@@ -6,13 +6,13 @@ connection = pika.BlockingConnection(
     pika.ConnectionParameters(host='localhost'))
 channel = connection.channel()
 
-channel.exchange_declare(exchange='sensor_demo', exchange_type='topic')
+channel.exchange_declare(exchange='sensor_data', exchange_type='topic')
 
 result = channel.queue_declare('', exclusive=True)
 queue_name = result.method.queue
 
 channel.queue_bind(
-    exchange='sensor_demo', queue='', routing_key='#')
+    exchange='sensor_data', queue='', routing_key='bme680')
 
 print(' [*] Waiting for logs. To exit press CTRL+C')
 
