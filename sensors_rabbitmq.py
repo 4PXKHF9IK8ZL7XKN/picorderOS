@@ -302,15 +302,15 @@ class sensor(object):
 		# update each fragment with new data and mark the time.
 		
 		time_now = time.time()
-		uptime_step = psutil.boot_time()
-		uptime = time_now - uptime_step
+		start_time = psutil.boot_time()
+		time_delta = time_now - start_time
 		
 		self.cpuload = psutil.getloadavg()
 		self.cpuperc = (float(psutil.cpu_percent()))
 		self.cputemp = psutil.sensors_temperatures()
 		self.virtmem = (float(psutil.virtual_memory().available * 0.0000001))
 		self.diskuse = psutil.disk_usage("/")
-		self.uptime  = time.ctime(uptime)
+		self.uptime  = time.strftime('%H:%M:%S', time.gmtime(time_delta))
 		self.bytsent = (float(psutil.net_io_counters().bytes_sent * 0.00001))
 		self.bytrece = (float(psutil.net_io_counters().bytes_recv * 0.00001))
 		
