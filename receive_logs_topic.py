@@ -12,7 +12,7 @@ result = channel.queue_declare('', exclusive=True)
 queue_name = result.method.queue
 
 channel.queue_bind(
-    exchange='sensor_data', queue='', routing_key='bme680')
+    exchange='sensor_data', queue='', routing_key='generators')
 
 print(' [*] Waiting for logs. To exit press CTRL+C')
 
