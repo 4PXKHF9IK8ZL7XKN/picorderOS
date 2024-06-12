@@ -1,5 +1,6 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
+from objects import *
 import time
 import math
 import numpy
@@ -9,44 +10,15 @@ from multiprocessing import Process,Queue,Pipe
 # the following is a sensor module for use with the PicorderOS
 print("Loading Unified Sensor Module")
 
-connection = pika.BlockingConnection(pika.ConnectionParameters('localhost'))
-
-def connection():
-    print("Connecting to local RabbitMQ")
-    channel = connection.channel()
-    
-def delcare_channel():
-    print("Setup Channels for Sensors")
-    channel.queue_declare(queue='sensor_demo')
-    channel.queue_declare(queue='sensor_sensehat')
-    channel.queue_declare(queue='sensor_adafruit_bme680')
-    channel.queue_declare(queue='sensor_mlx90614')
-    channel.queue_declare(queue='sensor_system_vitals')
-    channel.queue_declare(queue='sensor_RadiationWatch')
-    channel.queue_declare(queue='sensor_AMG88XX')
-    channel.queue_declare(queue='sensor_WIFI2450')
-    channel.queue_declare(queue='sensor_NEMA_Serial')
-    
-def publish():
-    channel.basic_publish(exchange='',
-                      routing_key='sensor_demo',
-                      body='Hello World!')
-    print(" [x] Sent 'Hello World!'")
-    
-def disconnect():
-    connection.close()
-        
-
+generators = True
 
 if not configure.pc:
 	import os
-
+	
 if configure.bme:
 	import adafruit_bme680
 	import busio as io
-
-
-
+	
 if configure.sensehat:
 	# instantiates and defines paramaters for the sensehat
 
@@ -95,6 +67,26 @@ if configure.gps:
 
 
 
+connection = pika.BlockingConnection(pika.ConnectionParameters('localhost'))
+channel = connection.channel()
+
+    
+def delcare_channel():
+    print("Setup Channels for Sensors")
+    channel.exchange_declare(exchange='sensor_data', exchange_type='topic')
+    
+def publish(IN_routing_key,data):
+    
+    routing_key = str(IN_routing_key)
+    message = str(data)
+    time_unix = time.time()
+    channel.basic_publish(
+        exchange='sensor_data', routing_key=routing_key, body=message)
+    print(f" {time_unix} [x] Sent {routing_key}:{message}")
+    
+def disconnect():
+    connection.close()
+        
 
 # An object to store each sensor value and context.
 class Fragment(object):
@@ -128,7 +120,7 @@ class Fragment(object):
 	def get_info(self):
 		return [self.mini, self.maxi, self.dsc, self.sym, self.dev]
 
-class Sensor(object):
+class sensor(object):
 
 	# sensors should check the configuration flags to see which sensors are
 	# selected and then if active should poll the sensor and append it to the
@@ -141,13 +133,12 @@ class Sensor(object):
 		# create a simple reference for the degree symbol since we use it a lot
 		self.deg_sym = '\xB0'
 
-		self.generators = False
 
 		# add individual sensor module parameters below.
 		#0				1			2		3		4
 		#info = (lower range, upper range, unit, symbol)
 		#'value','min','max','dsc','sym','dev','timestamp'
-
+		
 
 		# data fragments (objects that contain the most recent sensor value,
 		# plus metadata for context) are called Fragment().
@@ -168,7 +159,7 @@ class Sensor(object):
 			self.bytsent = Fragment(0,100000,"BytesSent","b","RaspberryPi")
 			self.bytrece = Fragment(0, 100000,"BytesReceived","b","RaspberryPi")
 
-			if self.generators:
+			if generators:
 				self.sinewav = Fragment(-100,100,"SineWave", "","RaspberryPi")
 				self.tanwave = Fragment(-500,500,"TangentWave", "","RaspberryPi")
 				self.coswave = Fragment(-100,100,"CosWave", "","RaspberryPi")
@@ -201,9 +192,6 @@ class Sensor(object):
 			i2c = io.I2C(configure.PIN_SCL, configure.PIN_SDA, frequency=100000)
 			self.mlx = adafruit_mlx90614.MLX90614(i2c)
 
-			self.irt_ambi = Fragment(0,80,"IR ambient [mlx]",self.deg_sym + "c")
-			self.irt_obje = Fragment(0,80,"IR object [mlx]",self.deg_sym + "c")
-
 		if configure.envirophat: 
 
 			self.ep_temp = Fragment(0,65,"Thermometer",self.deg_sym + "c","Envirophat")
@@ -217,37 +205,19 @@ class Sensor(object):
 			self.ep_accz = Fragment(-500,500,"Accelerometer Z (EP)","g","Envirophat")
 
 		if configure.bme:
+			print("state:", configure.bme )
 			# Create library object using our Bus I2C port
 			i2c = io.I2C(configure.PIN_SCL, configure.PIN_SDA)
-			self.bme = adafruit_bme680.Adafruit_BME680_I2C(i2c, address=0x76, debug=False)
-
-			self.bme_temp = Fragment(-40,85,"Thermometer",self.deg_sym + "c", "BME680")
-			self.bme_humi = Fragment(0,100,"Hygrometer", "%", "BME680")
-			self.bme_press = Fragment(300,1100,"Barometer","hPa", "BME680")
-			self.bme_voc = Fragment(300000,1100000,"VOC","KOhm", "BME680")
+			self.bme680 = adafruit_bme680.Adafruit_BME680_I2C(i2c, address=0x76, debug=False)
+			self.bme680.sea_level_pressure = 1013.25
 
 		if configure.pocket_geiger:
-			self.radiat = Fragment(0.0, 10000.0, "Radiation", "ur/h", "pocketgeiger")
 			self.radiation = RadiationWatch(configure.PG_SIG,configure.PG_NS)
 			self.radiation.setup()
 
 		if configure.amg8833:
 			self.thermal_frame = []
-			self.amg_high = Fragment(0.0, 80.0, "IRHigh", self.deg_sym + "c", "amg8833")
-			self.amg_low = Fragment(0.0, 80.0, "IRLow", self.deg_sym + "c", "amg8833")
 
-
-		configure.sensor_info = self.get_all_info()
-
-
-	def get_all_info(self):
-		info = self.get()
-
-		allinfo = []
-		for fragment in info:
-			thisfrag = [fragment.dsc,fragment.dev,fragment.sym, fragment.mini, fragment.maxi]
-			allinfo.append(thisfrag)
-		return allinfo
 
 	def sin_gen(self):
 		wavestep = math.sin(self.step)
@@ -270,7 +240,92 @@ class Sensor(object):
 		return wavestep
 
 	def get_thermal_frame(self):
+		self.thermal_frame = amg.pixels
+		data = numpy.array(self.thermal_frame)
+		high = numpy.max(data)
+		low = numpy.min(data)
 		return self.thermal_frame
+
+	def get_gps(self):
+		if configure.gps:
+			gps_data = GPS_function()
+			position = [gps_data["lat"],gps_data["lon"]]
+			self.gps_speed.set(gps_data["speed"],timestamp, position)
+			sensorlist.append((self.gps_speed))
+		else:
+			position = [37.7820885,-122.3045112]
+			# USS Hornet - Sea, Air and Space Museum (Alameda) , Pavel Knows ;)
+		return position
+
+	def get_bme680(self):
+		self.bme680_temp = self.bme680.temperature
+		self.bme680_humi = self.bme680.humidity
+		self.bme680_press = self.bme680.pressure
+		self.bme680_voc = self.bme680.gas / 1000
+		self.bme680_alt = self.bme680.altitude 
+		return self.bme680_temp,self.bme680_humi,self.bme680_press, self.bme680_voc, self.bme680_alt
+
+	def get_sensehat(self):
+		magdata = sense.get_compass_raw()
+		acceldata = sense.get_accelerometer_raw()
+
+		self.sh_temp.set(sense.get_temperature(),timestamp, position)
+		self.sh_humi.set(sense.get_humidity(),timestamp, position)
+		self.sh_baro.set(sense.get_pressure(),timestamp, position)
+		self.sh_magx.set(magdata["x"],timestamp, position)
+		self.sh_magy.set(magdata["y"],timestamp, position)
+		self.sh_magz.set(magdata["z"],timestamp, position)
+		self.sh_accx.set(acceldata['x'],timestamp, position)
+		self.sh_accy.set(acceldata['y'],timestamp, position)
+		self.sh_accz.set(acceldata['z'],timestamp, position)
+			
+		return self.sh_temp, self.sh_baro, self.sh_humi, self.sh_magx, self.sh_magy, self.sh_magz, self.sh_accx, self.sh_accy, self.sh_accz
+		
+	def get_pocket_geiger(self):
+		data = self.radiation.status()
+		rad_data = float(data["uSvh"])
+
+		# times 100 to convert to urem/h
+		self.radiat.set(rad_data*100, timestamp, position)
+		
+		return self.radiat
+		
+	# provides the basic definitions for the system vitals sensor readouts
+	def get_system_vitals(self):
+		timestamp = time.time()
+		if not configure.pc:
+			f = os.popen("cat /sys/class/thermal/thermal_zone0/temp").readline()
+			t = float(f[0:2] + "." + f[2:])
+		else:
+			t = float(47)
+
+		# update each fragment with new data and mark the time.
+		
+		time_now = time.time()
+		uptime_step = psutil.boot_time()
+		uptime = time_now - uptime_step
+		
+		self.cpuload = psutil.getloadavg()
+		self.cpuperc = (float(psutil.cpu_percent()))
+		self.cputemp = psutil.sensors_temperatures()
+		self.virtmem = (float(psutil.virtual_memory().available * 0.0000001))
+		self.diskuse = psutil.disk_usage("/")
+		self.uptime  = time.ctime(uptime)
+		self.bytsent = (float(psutil.net_io_counters().bytes_sent * 0.00001))
+		self.bytrece = (float(psutil.net_io_counters().bytes_recv * 0.00001))
+		
+		return self.uptime, self.cpuload ,self.cputemp, self.cpuperc, self.virtmem, self.diskuse, self.bytsent, self.bytrece
+		
+	def get_generators(self):
+		timestamp = time.time()
+		self.sinewav = (float(self.sin_gen()*100),timestamp)
+		self.tanwave = (float(self.tan_gen()*100),timestamp)
+		self.coswave = (float(self.cos_gen()*100),timestamp)
+		self.sinwav2 = (float(self.sin2_gen()*100),timestamp)		
+		return self.sinewav, self.tanwave, self.coswave, self.sinwav2
+
+
+
 
 
 # the main function that collects all sensor data
@@ -281,65 +336,19 @@ class Sensor(object):
 
 		#timestamp for this sensor get.
 		timestamp = time.time()
-
-		if configure.gps:
-			gps_data = GPS_function()
-			position = [gps_data["lat"],gps_data["lon"]]
-			self.gps_speed.set(gps_data["speed"],timestamp, position)
-			sensorlist.append((self.gps_speed))
-		else:
-			position = [47.98,47.98]
-
+		position = self.get_gps
 
 		if configure.bme:
-
-			self.bme_temp.set(self.bme.temperature,timestamp, position)
-			self.bme_humi.set(self.bme.humidity,timestamp, position)
-			self.bme_press.set(self.bme.pressure,timestamp, position)
-			self.bme_voc.set(self.bme.gas / 1000,timestamp, position)
-
-			sensorlist.extend((self.bme_temp,self.bme_humi,self.bme_press, self.bme_voc))
+			sensorlist.extend(self.get_bme680())
 
 		if configure.sensehat:
-
-			magdata = sense.get_compass_raw()
-			acceldata = sense.get_accelerometer_raw()
-
-			self.sh_temp.set(sense.get_temperature(),timestamp, position)
-			self.sh_humi.set(sense.get_humidity(),timestamp, position)
-			self.sh_baro.set(sense.get_pressure(),timestamp, position)
-			self.sh_magx.set(magdata["x"],timestamp, position)
-			self.sh_magy.set(magdata["y"],timestamp, position)
-			self.sh_magz.set(magdata["z"],timestamp, position)
-			self.sh_accx.set(acceldata['x'],timestamp, position)
-			self.sh_accy.set(acceldata['y'],timestamp, position)
-			self.sh_accz.set(acceldata['z'],timestamp, position)
-
-			sensorlist.extend((self.sh_temp, self.sh_baro, self.sh_humi, self.sh_magx, self.sh_magy, self.sh_magz, self.sh_accx, self.sh_accy, self.sh_accz))
+			sensorlist.extend(self.get_sensehat())
 
 		if configure.pocket_geiger:
-
-			data = self.radiation.status()
-			rad_data = float(data["uSvh"])
-
-			# times 100 to convert to urem/h
-			self.radiat.set(rad_data*100, timestamp, position)
-
-			sensorlist.append(self.radiat)
+			sensorlist.append(self.get_pocket_geiger())
 
 		if configure.amg8833:
-			self.thermal_frame = amg.pixels
-
-
-			data = numpy.array(self.thermal_frame)
-
-			high = numpy.max(data)
-			low = numpy.min(data)
-
-			self.amg_high.set(high,timestamp, position)
-			self.amg_low.set(low,timestamp, position)
-
-			sensorlist.extend((self.amg_high, self.amg_low))
+			sensorlist.extend(self.get_thermal_frame())
 
 		if configure.envirophat:
 			self.rgb = light.rgb()
@@ -359,37 +368,16 @@ class Sensor(object):
 
 			sensorlist.extend((self.ep_temp, self.ep_baro, self.ep_colo, self.ep_magx, self.ep_magy, self.ep_magz, self.ep_accx, self.ep_accy, self.ep_accz))
 
-		# provides the basic definitions for the system vitals sensor readouts
+		
+		# load the fragments into the sensorlist
 		if configure.system_vitals:
-
-			if not configure.pc:
-				f = os.popen("cat /sys/class/thermal/thermal_zone0/temp").readline()
-				t = float(f[0:2] + "." + f[2:])
-			else:
-				t = float(47)
-
-			# update each fragment with new data and mark the time.
-			self.cputemp.set(t,timestamp, position)
-			self.cpuperc.set(float(psutil.cpu_percent()),timestamp, position)
-			self.virtmem.set(float(psutil.virtual_memory().available * 0.0000001),timestamp, position)
-			self.bytsent.set(float(psutil.net_io_counters().bytes_recv * 0.00001),timestamp, position)
-			self.bytrece.set(float(psutil.net_io_counters().bytes_recv * 0.00001),timestamp, position)
-
-			if self.generators:
-				self.sinewav.set(float(self.sin_gen()*100),timestamp, position)
-				self.tanwave.set(float(self.tan_gen()*100),timestamp, position)
-				self.coswave.set(float(self.cos_gen()*100),timestamp, position)
-				self.sinwav2.set(float(self.sin2_gen()*100),timestamp, position)
-
-			# load the fragments into the sensorlist
-			sensorlist.extend((self.cputemp, self.cpuperc, self.virtmem, self.bytsent, self.bytrece))
-			# slow down sensor pulling to see if load gets less
-			time.sleep(45)
-
-			if self.generators:
-				 sensorlist.extend((self.sinewav, self.tanwave, self.coswave, self.sinwav2)) 
+			sensorlist.extend(get_system_vitals())
 			
-			configure.max_sensors[0] = len(sensorlist)
+		if self.generators:
+			sensorlist.extend((self.sinewav, self.tanwave, self.coswave, self.sinwav2)) 	
+					
+
+		configure.max_sensors[0] = len(sensorlist)
 			
 		if len(sensorlist) < 1:
 			print("NO SENSORS LOADED")
@@ -458,59 +446,42 @@ class MLX90614():
 		return self.data_to_temp(data)
 
 # function to use the sensor class as a process.
-def sensor_process(conn):
-	#init sensors
-	sensors = Sensor()
+def sensor_process():
+	sensors = sensor()
 	timed = timer()
+	wifitimer = timer()
 
 	while True:
-		if timed.timelapsed() > configure.samplerate[0]:
-			sensor_data = sensors.get()
-			if configure.amg8833:
-				thermal_frame = sensors.get_thermal_frame()
-			else:
-				thermal_frame = []
-			#intercepting the sensor datastruct and redirecting it to the rabbitmq string
-			#constantly grab sensors
-			#conn.send([sensor_data, thermal_frame])
-			publish([sensor_data, thermal_frame])
-			timed.logtime()
-
-wifitimer = timer()
-
-def threaded_sensor():
-
-	sensors = Sensor()
-
-	sensors.get()
-
-	# checks if custom buffer size has not been set.
-	if configure.buffer_size[0] == 0:
-		# uses graph length and sensor array number to determine optimal buffer size.
-		# stores enough data for the highest graph length. 
-		configure.buffer_size[0] = configure.graph_size[0]*len(configure.sensor_info)
-
-	configure.sensor_ready[0] = True
+		#if timed.timelapsed() > configure.samplerate[0]:
+		#sensor_data = sensors.get()
+		if configure.bme:
+			bme680 = sensors.get_bme680()
+			publish("bme680",bme680)
+		
+		if configure.amg8833:
+			thermal_frame = sensors.get_thermal_frame()
+			publish("termal_frame",thermal_frame)
+			
+		if configure.system_vitals:
+			system_vitals = sensors.get_system_vitals()
+			publish("system_vitals",system_vitals)
+			
+		if generators:
+			generatorsCurve = sensors.get_generators()
+			publish("generators",generatorsCurve)
 
 
-	sensors.end()
-	parent_conn,child_conn = Pipe()
-	sense_process = Process(target=sensor_process, args=(child_conn,))
-	sense_process.start()   
+		timed.logtime()
+
+
         
         
 def main():
-	connection()
 	delcare_channel()
  
 	while not configure.status == "quit":
-
 		while True:
-			item = parent_conn.recv()
-			if item is not None:
-				configure.position = [data[0].get()[7],data[0].get()[8]]
-			else:
-				break
+		    sensor_process()
 
 if __name__ == "__main__":
     try:
