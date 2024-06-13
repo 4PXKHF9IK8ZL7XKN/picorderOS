@@ -10,7 +10,7 @@ from multiprocessing import Process,Queue,Pipe
 # the following is a sensor module for use with the PicorderOS
 print("Loading Unified Sensor Module")
 
-generators = False
+generators = True
 
 if not configure.pc:
 	import os
@@ -88,38 +88,6 @@ def disconnect():
     connection.close()
         
 
-# An object to store each sensor value and context.
-class Fragment(object):
-
-	__slots__ = ('value','mini','maxi','dsc','sym','dev','timestamp','position')
-
-	def __init__(self,mini,maxi,dsc,sym,dev):
-		self.mini = mini
-		self.maxi = maxi
-		self.dsc = dsc
-		self.dev = dev
-		self.sym = sym
-		self.value = 47
-		self.timestamp = self.value
-		self.position = [self.value,self.value]
-
-	# Sets the value and timestamp for the fragment.
-	def set(self,value, timestamp, position):
-
-		self.value = value
-
-		self.timestamp = timestamp
-
-		self.position = position
-
-	# Returns all the data for the fragment.
-	def get(self):
-		return [self.value, self.mini, self.maxi, self.dsc, self.sym, self.dev, self.timestamp, self.position[0], self.position[1]]
-
-	# Returns only the info constants for this fragment
-	def get_info(self):
-		return [self.mini, self.maxi, self.dsc, self.sym, self.dev]
-
 class sensor(object):
 
 	# sensors should check the configuration flags to see which sensors are
@@ -143,27 +111,13 @@ class sensor(object):
 		# data fragments (objects that contain the most recent sensor value,
 		# plus metadata for context) are called Fragment().
 
-		if configure.gps:
-			self.gps_speed = Fragment(0.0,0.0,"GPS Speed","kn", "gps")
-
-		if configure.system_vitals:
-
+		if generators:
 			self.step = 0.0
 			self.step2 = 0.0
 			self.steptan = 0.0
+
+		if configure.system_vitals:
 			totalmem = float(psutil.virtual_memory().total) / 1024
-
-			self.cputemp = Fragment(0, 100, "CpuTemp", self.deg_sym + "c", "RaspberryPi")
-			self.cpuperc = Fragment(0,100,"CpuPercent","%","Raspberry Pi")
-			self.virtmem = Fragment(0,totalmem,"VirtualMemory","b","RaspberryPi")
-			self.bytsent = Fragment(0,100000,"BytesSent","b","RaspberryPi")
-			self.bytrece = Fragment(0, 100000,"BytesReceived","b","RaspberryPi")
-
-		if generators:
-			self.sinewav = Fragment(-100,100,"SineWave", "","RaspberryPi")
-			self.tanwave = Fragment(-500,500,"TangentWave", "","RaspberryPi")
-			self.coswave = Fragment(-100,100,"CosWave", "","RaspberryPi")
-			self.sinwav2 = Fragment(-100,100,"SineWave2", "","RaspberryPi")
 
 		if configure.sensehat:
 			self.ticks = 0
@@ -195,7 +149,6 @@ class sensor(object):
 			self.ep_accz = 0
 
 		if configure.bme:
-			print("state:", configure.bme )
 			# Create library object using our Bus I2C port
 			i2c = io.I2C(configure.PIN_SCL, configure.PIN_SDA)
 			self.bme680 = adafruit_bme680.Adafruit_BME680_I2C(i2c, address=0x76, debug=False)
@@ -287,8 +240,6 @@ class sensor(object):
 			t = float(f[0:2] + "." + f[2:])
 		else:
 			t = float(47)
-
-		# update each fragment with new data and mark the time.
 		
 		time_now = time.time()
 		start_time = psutil.boot_time()
@@ -307,10 +258,10 @@ class sensor(object):
 		
 	def get_generators(self):
 		timestamp = time.time()
-		self.sinewav = (float(self.sin_gen()*100),timestamp)
-		self.tanwave = (float(self.tan_gen()*100),timestamp)
-		self.coswave = (float(self.cos_gen()*100),timestamp)
-		self.sinwav2 = (float(self.sin2_gen()*100),timestamp)		
+		self.sinewav = float(self.sin_gen()*100)
+		self.tanwave = float(self.tan_gen()*100)
+		self.coswave = float(self.cos_gen()*100)
+		self.sinwav2 = float(self.sin2_gen()*100)		
 		return self.sinewav, self.tanwave, self.coswave, self.sinwav2
 
 	def get_envirophat(self):
@@ -329,6 +280,11 @@ class sensor(object):
 		self.ep_accy = self.acc_values[1]
 		self.ep_accz = self.acc_values[2]	
 		return self.ep_temp, self.ep_baro, self.ep_colo, self.ep_magx, self.ep_magy, self.ep_magz, self.ep_accx, self.ep_accy, self.ep_accz
+		
+	def get_MLX90614(self):
+		amb_temp = MLX90614.data_to_temp(MLX90614.get_amb_temp)
+		obj_temp = MLX90614.data_to_temp(MLX90614.get_obj_temp)
+		return amb_temp, obj_temp
 
 
 
@@ -357,14 +313,12 @@ class sensor(object):
 
 		if configure.envirophat:
 			sensorlist.extend(self.get_envirophat())
-
 		
-		# load the fragments into the sensorlist
 		if configure.system_vitals:
 			sensorlist.extend(get_system_vitals())
 			
-		if self.generators:
-			sensorlist.extend((self.sinewav, self.tanwave, self.coswave, self.sinwav2)) 	
+		if generators:
+			sensorlist.extend(get_generators()) 	
 					
 
 		configure.max_sensors[0] = len(sensorlist)
@@ -480,6 +434,9 @@ def sensor_process():
 			pocket_geigert_data = sensors.get_pocket_geiger()
 			publish("pocket_geiger",pocket_geiger_data)
 
+		if configure.ir_thermo
+			ir_thermo_data = sensors.get_ir_thermo()
+			publish("ir_thermo",ir_thermo_data)
 
 
 
