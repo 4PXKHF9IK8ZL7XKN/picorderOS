@@ -1,13 +1,13 @@
 import serial,time
-import threading
 from pynmeagps import NMEAReader
 from multiprocessing import Process,Queue,Pipe
 
-print("INIT GPS ... PID: ", threading.get_native_id())
+print("INIT GPS")
 
 # Serial UART address
 port = '/dev/ttyUSB0'
-baud = 9600
+#baud = 9600
+baud = 115200
 
 serialPort = serial.Serial(port, baudrate = baud, timeout = 0.5)
 
@@ -15,11 +15,10 @@ def GPS_function():
 
 		gps_update = {"lat" : 47.00, "lon" : 47.00, "speed" : 0.00,"altitude":0.00, "track" : 0.00, "sats":0}
 
-		stream = serial.Serial(port, 9600, timeout=3)
+		stream = serial.Serial(port, baud, timeout=3)
 		nmr = NMEAReader(stream)
 		(raw_data, parsed_data) = nmr.read()
 
-		
 		if hasattr(parsed_data, "lat"):
 
 			if parsed_data.lat != '':
@@ -41,3 +40,4 @@ def GPS_function():
 				gps_update["speed"] = float(parsed_data.speed)
 
 		return gps_update
+
