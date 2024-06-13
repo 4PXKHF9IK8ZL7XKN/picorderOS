@@ -10,7 +10,7 @@ from multiprocessing import Process,Queue,Pipe
 # the following is a sensor module for use with the PicorderOS
 print("Loading Unified Sensor Module")
 
-generators = True
+generators = False
 
 if not configure.pc:
 	import os
@@ -159,11 +159,11 @@ class sensor(object):
 			self.bytsent = Fragment(0,100000,"BytesSent","b","RaspberryPi")
 			self.bytrece = Fragment(0, 100000,"BytesReceived","b","RaspberryPi")
 
-			if generators:
-				self.sinewav = Fragment(-100,100,"SineWave", "","RaspberryPi")
-				self.tanwave = Fragment(-500,500,"TangentWave", "","RaspberryPi")
-				self.coswave = Fragment(-100,100,"CosWave", "","RaspberryPi")
-				self.sinwav2 = Fragment(-100,100,"SineWave2", "","RaspberryPi")
+		if generators:
+			self.sinewav = Fragment(-100,100,"SineWave", "","RaspberryPi")
+			self.tanwave = Fragment(-500,500,"TangentWave", "","RaspberryPi")
+			self.coswave = Fragment(-100,100,"CosWave", "","RaspberryPi")
+			self.sinwav2 = Fragment(-100,100,"SineWave2", "","RaspberryPi")
 
 		if configure.sensehat:
 			self.ticks = 0
@@ -178,31 +178,21 @@ class sensor(object):
 			# activates low light conditions to not blind the user.
 			self.sense.low_light = True
 
-			self.sh_temp = Fragment(-40,120,"Thermometer",self.deg_sym + "c", "sensehat")
-			self.sh_humi = Fragment(0,100,"Hygrometer", "%", "sensehat")
-			self.sh_baro = Fragment(260,1260,"Barometer","hPa", "sensehat")
-			self.sh_magx = Fragment(-500,500,"MagnetX","G", "sensehat")
-			self.sh_magy = Fragment(-500,500,"MagnetY","G", "sensehat")
-			self.sh_magz = Fragment(-500,500,"MagnetZ","G", "sensehat")
-			self.sh_accx = Fragment(-500,500,"AccelX","g", "sensehat")
-			self.sh_accy = Fragment(-500,500,"AccelY","g", "sensehat")
-			self.sh_accz = Fragment(-500,500,"AccelZ","g", "sensehat")
-
 		if configure.ir_thermo:
 			i2c = io.I2C(configure.PIN_SCL, configure.PIN_SDA, frequency=100000)
 			self.mlx = adafruit_mlx90614.MLX90614(i2c)
 
 		if configure.envirophat: 
-
-			self.ep_temp = Fragment(0,65,"Thermometer",self.deg_sym + "c","Envirophat")
-			self.ep_colo = Fragment(20,80,"Colour", "RGB","Envirophat")
-			self.ep_baro = Fragment(260,1260,"Barometer","hPa","Envirophat")
-			self.ep_magx = Fragment(-500,500,"Magnetomer X","G","Envirophat")
-			self.ep_magy = Fragment(-500,500,"Magnetomer Y","G","Envirophat")
-			self.ep_magz = Fragment(-500,500,"Magnetomer Z","G","Envirophat")
-			self.ep_accx = Fragment(-500,500,"Accelerometer X (EP)","g","Envirophat")
-			self.ep_accy = Fragment(-500,500,"Accelerometer Y (EP)","g","Envirophat")
-			self.ep_accz = Fragment(-500,500,"Accelerometer Z (EP)","g","Envirophat")
+	
+			self.ep_temp = 23.5
+			self.ep_colo = [0,0,0]
+			self.ep_baro = 0
+			self.ep_magx = 0
+			self.ep_magy = 0
+			self.ep_magz = 0
+			self.ep_accx = 0
+			self.ep_accy = 0
+			self.ep_accz = 0
 
 		if configure.bme:
 			print("state:", configure.bme )
@@ -250,8 +240,7 @@ class sensor(object):
 		if configure.gps:
 			gps_data = GPS_function()
 			position = [gps_data["lat"],gps_data["lon"]]
-			self.gps_speed.set(gps_data["speed"],timestamp, position)
-			sensorlist.append((self.gps_speed))
+			
 		else:
 			position = [37.7820885,-122.3045112]
 			# USS Hornet - Sea, Air and Space Museum (Alameda) , Pavel Knows ;)
@@ -269,15 +258,15 @@ class sensor(object):
 		magdata = sense.get_compass_raw()
 		acceldata = sense.get_accelerometer_raw()
 
-		self.sh_temp.set(sense.get_temperature(),timestamp, position)
-		self.sh_humi.set(sense.get_humidity(),timestamp, position)
-		self.sh_baro.set(sense.get_pressure(),timestamp, position)
-		self.sh_magx.set(magdata["x"],timestamp, position)
-		self.sh_magy.set(magdata["y"],timestamp, position)
-		self.sh_magz.set(magdata["z"],timestamp, position)
-		self.sh_accx.set(acceldata['x'],timestamp, position)
-		self.sh_accy.set(acceldata['y'],timestamp, position)
-		self.sh_accz.set(acceldata['z'],timestamp, position)
+		self.sh_temp = sense.get_temperature()
+		self.sh_humi = sense.get_humidity()
+		self.sh_baro = sense.get_pressure()
+		self.sh_magx = magdata["x"]
+		self.sh_magy = magdata["y"]
+		self.sh_magz = magdata["z"]
+		self.sh_accx = acceldata['x']
+		self.sh_accy = acceldata['y']
+		self.sh_accz = acceldata['z']
 			
 		return self.sh_temp, self.sh_baro, self.sh_humi, self.sh_magx, self.sh_magy, self.sh_magz, self.sh_accx, self.sh_accy, self.sh_accz
 		
@@ -324,6 +313,22 @@ class sensor(object):
 		self.sinwav2 = (float(self.sin2_gen()*100),timestamp)		
 		return self.sinewav, self.tanwave, self.coswave, self.sinwav2
 
+	def get_envirophat(self):
+		self.rgb = light.rgb()
+		self.analog_values = analog.read_all()
+		self.mag_values = motion.magnetometer()
+		self.acc_values = [round(x, 2) for x in motion.accelerometer()]
+
+		self.ep_temp = weather.temperature()
+		self.ep_colo = light.light()
+		self.ep_baro = weather.pressure(unit='hpa')
+		self.ep_magx = self.mag_values[0]
+		self.ep_magy = self.mag_values[1]
+		self.ep_magz = self.mag_values[2]
+		self.ep_accx = self.acc_values[0]
+		self.ep_accy = self.acc_values[1]
+		self.ep_accz = self.acc_values[2]	
+		return self.ep_temp, self.ep_baro, self.ep_colo, self.ep_magx, self.ep_magy, self.ep_magz, self.ep_accx, self.ep_accy, self.ep_accz
 
 
 
@@ -351,22 +356,7 @@ class sensor(object):
 			sensorlist.extend(self.get_thermal_frame())
 
 		if configure.envirophat:
-			self.rgb = light.rgb()
-			self.analog_values = analog.read_all()
-			self.mag_values = motion.magnetometer()
-			self.acc_values = [round(x, 2) for x in motion.accelerometer()]
-
-			self.ep_temp.set(weather.temperature(),timestamp, position)
-			self.ep_colo.set(light.light(),timestamp, position)
-			self.ep_baro.set(weather.pressure(unit='hpa'), timestamp, position)
-			self.ep_magx.set(self.mag_values[0],timestamp, position)
-			self.ep_magy.set(self.mag_values[1],timestamp, position)
-			self.ep_magz.set(self.mag_values[2],timestamp, position)
-			self.ep_accx.set(self.acc_values[0],timestamp, position)
-			self.ep_accy.set(self.acc_values[1],timestamp, position)
-			self.ep_accz.set(self.acc_values[2],timestamp, position)
-
-			sensorlist.extend((self.ep_temp, self.ep_baro, self.ep_colo, self.ep_magx, self.ep_magy, self.ep_magz, self.ep_accx, self.ep_accy, self.ep_accz))
+			sensorlist.extend(self.get_envirophat())
 
 		
 		# load the fragments into the sensorlist
@@ -469,6 +459,29 @@ def sensor_process():
 		if generators:
 			generatorsCurve = sensors.get_generators()
 			publish("generators",generatorsCurve)
+			
+		if configure.gps:
+			gps_parsed = sensors.get_gps()
+			publish("GPS_DATA",gps_parsed)
+			
+		if configure.sensehat:
+			sensehat_data = sensors.get_sensehat()
+			publish("sensehat",sensehat_data)
+			
+		if configure.envirophat:
+			envirophat_data = sensors.get_envirophat()
+			publish("envirophat",envirophat_data)
+			
+		if configure.envirophat:
+			envirophat_data = sensors.get_envirophat()
+			publish("envirophat",envirophat_data)
+			
+		if configure.pocket_geiger:
+			pocket_geigert_data = sensors.get_pocket_geiger()
+			publish("pocket_geiger",pocket_geiger_data)
+
+
+
 
 
 		timed.logtime()
