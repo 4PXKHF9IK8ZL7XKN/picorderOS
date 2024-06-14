@@ -71,7 +71,7 @@ connection = pika.BlockingConnection(pika.ConnectionParameters('localhost'))
 channel = connection.channel()
 
     
-def delcare_channel():
+def declare_channel():
     print("Setup Channels for Sensors")
     channel.exchange_declare(exchange='sensor_data', exchange_type='topic')
     
@@ -438,16 +438,13 @@ def sensor_process():
 			ir_thermo_data = sensors.get_ir_thermo()
 			publish("ir_thermo",ir_thermo_data)
 
-
-
-
 		timed.logtime()
 
 
         
         
 def main():
-	delcare_channel()
+	declare_channel()
  
 	while not configure.status == "quit":
 		while True:
