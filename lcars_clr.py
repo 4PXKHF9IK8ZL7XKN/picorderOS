@@ -725,7 +725,7 @@ class StartUp(object):
 
 
 		if self.interval.timelapsed() > configure.boot_delay:
-			status = "msd"
+			status = "multi"
 		else:
 			status = "startup"
 
@@ -1308,7 +1308,9 @@ class MultiFrame(object):
 	# push the image frame and contents to the draw object.
 	def push(self,draw):
 
-		channel.basic_get()
+		msg_header_array, properties, body = channel.basic_get(queue='')
+		if body is not None:			
+			print(msg_header_array, properties, body)
 		# returns mode_a to the main loop unless something causes state change
 		status,payload  = self.events.check()
 
