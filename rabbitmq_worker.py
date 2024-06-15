@@ -60,7 +60,7 @@ def threaded_rabbitmq_worker():
 	msg_header_array, properties, body = channel.basic_get(queue='sensor_metadata')
 	if body is not None:			
 		sensor_index_dict = ast.literal_eval(body.decode())	
-		configure.max_sensors[0] = [sensor_index_dict['sensor_index']]
+		configure.max_sensors[0] = sensor_index_dict['sensor_index']
 		ret_index = sensor_index_dict.pop('sensor_index')
 		mapping_book_byname = sensor_index_dict
 		for i in sensor_index_dict:
@@ -74,9 +74,10 @@ def threaded_rabbitmq_worker():
 		exchange='sensor_data', queue='', routing_key='#')
 
 	def callback(ch, method, properties, body):
+		print('book=', mapping_book_byname)
 		print('index=', mapping_book_byname[method.routing_key])
-		configure.sensors[mapping_book_byname[method.routing_key]][0] = body.decode()
-
+		print('populating=', method.routing_key)
+		#configure.sensor_info[mapping_book_byname[method.routing_key]] 
 
 		print(f" [x] {method.routing_key}:{body}")
 
