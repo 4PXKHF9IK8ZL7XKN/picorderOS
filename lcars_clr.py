@@ -1322,8 +1322,10 @@ class MultiFrame(object):
 		data_c = []
 		datas = [data_a,data_b,data_c]
 
+		print('sensors', configure.sensors[0][0])
 		for i in range(3):
 
+			
 			# determines the sensor keys for each of the three main sensors
 			this_index = int(configure.sensors[i][0])
 
