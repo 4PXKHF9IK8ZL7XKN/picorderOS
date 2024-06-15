@@ -410,7 +410,7 @@ class MasterSystemsDisplay(object):
 		
 		ip_str = "IP:  " + IPAddr
 		host_str = "Name:  " + socket.gethostname() 
-		sense_ready = "Sensors Avl:  " + str(configure.max_sensors)
+		sense_ready = "Sensors Avl:  " + str(len(configure.sensor_info))
 		model_name = "CPU:  " + self.model
 		PLARS_size, PLARS_em_size = plars.get_plars_size()
 		db_size = "PLARS Size:  " + str(PLARS_size)
@@ -721,7 +721,7 @@ class StartUp(object):
 
 
 		if self.interval.timelapsed() > configure.boot_delay and configure.sensor_ready[0]:
-			status = "multi"
+			status = "msd"
 		else:
 			status = "startup"
 
