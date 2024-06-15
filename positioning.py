@@ -5,7 +5,7 @@ from multiprocessing import Process,Queue,Pipe
 print("INIT GPS")
 
 # Serial UART address
-port = '/dev/ttyUSB0'
+port = '/dev/ttyACM0'
 #baud = 9600
 baud = 115200
 
@@ -41,3 +41,5 @@ def GPS_function():
 
 		return gps_update
 
+
+print(GPS_function())
