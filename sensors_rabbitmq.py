@@ -11,6 +11,7 @@ from multiprocessing import Process,Queue,Pipe
 print("Loading Unified Sensor Module")
 
 generators = True
+DEBUG = False
 
 if not configure.pc:
 	import os
@@ -72,17 +73,22 @@ channel = connection.channel()
 
     
 def declare_channel():
-    print("Setup Channels for Sensors")
+    # Setup Channels for Sensors
     channel.exchange_declare(exchange='sensor_data', exchange_type='topic')
+    channel.queue_declare(queue='sensor_metadata')
     
 def publish(IN_routing_key,data):
-    
-    routing_key = str(IN_routing_key)
-    message = str(data)
-    time_unix = time.time()
-    channel.basic_publish(
-        exchange='sensor_data', routing_key=routing_key, body=message)
-    print(f" {time_unix} [x] Sent {routing_key}:{message}")
+	stack = 'sensor_data'
+	if IN_routing_key == 'sensor_metadata':
+		stack = ''
+   
+	routing_key = str(IN_routing_key)
+	message = str(data)
+	time_unix = time.time()
+	channel.basic_publish(
+        exchange=stack, routing_key=routing_key, body=message)
+	if DEBUG:
+		print(f" {time_unix} [x] Sent {stack} {routing_key}:{message}")
     
 def disconnect():
     connection.close()
@@ -289,44 +295,56 @@ class sensor(object):
 
 
 
-# the main function that collects all sensor data
-	def get(self):
+# function to get index number for aval. Sensors
+	def get_index(self):
 
-		#sensorlist holds all the data fragments to be handed to plars.
-		sensorlist = []
-
-		#timestamp for this sensor get.
-		timestamp = time.time()
-		position = self.get_gps
+		#index holds a counter about sensors that reacts to the get functions 
+		index = 0
 
 		if configure.bme:
-			sensorlist.extend(self.get_bme680())
+			rety = self.get_bme680()
+			if not rety == None: 
+				index += 1
 
 		if configure.sensehat:
-			sensorlist.extend(self.get_sensehat())
+			rety = self.get_sensehat()
+			if not rety == None: 
+				index += 1
 
 		if configure.pocket_geiger:
-			sensorlist.append(self.get_pocket_geiger())
+			rety = self.get_pocket_geiger()
+			if not rety == None: 
+				index += 1
 
 		if configure.amg8833:
-			sensorlist.extend(self.get_thermal_frame())
+			rety = self.get_thermal_frame()
+			if not rety == None: 
+				index += 1
+
 
 		if configure.envirophat:
-			sensorlist.extend(self.get_envirophat())
+			rety = self.get_envirophat()
+			if not rety == None: 
+				index += 1
+
 		
 		if configure.system_vitals:
-			sensorlist.extend(get_system_vitals())
+			rety = self.get_system_vitals()
+			if not rety == None: 
+				index += 1
+
 			
 		if generators:
-			sensorlist.extend(get_generators()) 	
-					
+			rety = self.get_generators()
+			if not rety == None: 
+				index += 1	
 
-		configure.max_sensors[0] = len(sensorlist)
+		configure.max_sensors[0] = index
 			
-		if len(sensorlist) < 1:
+		if index < 1:
 			print("NO SENSORS LOADED")
 
-		return sensorlist
+		return index
 
 	def end(self):
 		if configure.pocket_geiger:
@@ -394,6 +412,9 @@ def sensor_process():
 	sensors = sensor()
 	timed = timer()
 	wifitimer = timer()
+	
+	meta_massage = str(['sensor_index',sensors.get_index()])
+	publish('sensor_metadata',meta_massage)
 
 	while True:
 		#if timed.timelapsed() > configure.samplerate[0]:
@@ -434,7 +455,7 @@ def sensor_process():
 			pocket_geigert_data = sensors.get_pocket_geiger()
 			publish("pocket_geiger",pocket_geiger_data)
 
-		if configure.ir_thermo
+		if configure.ir_thermo:
 			ir_thermo_data = sensors.get_ir_thermo()
 			publish("ir_thermo",ir_thermo_data)
 
