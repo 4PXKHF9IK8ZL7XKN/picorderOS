@@ -79,7 +79,7 @@ flipud = True
 
 from objects import *
 
-import sensors
+#import sensors
 
 
 
