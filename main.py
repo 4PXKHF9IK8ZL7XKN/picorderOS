@@ -19,7 +19,7 @@ print("Loading Components")
 os.environ['SDL_AUDIODRIVER'] = 'alsa'
 
 from objects import *
-from sensors import *
+#from sensors import *
 from plars import *
 from input import *
 from rabbitmq_worker import *
@@ -153,7 +153,7 @@ def Main():
 	if configure.audio[0]:
 		audio_thread.join()
 
-	sensor_thread.join()
+	#sensor_thread.join()
 	led_thread.join()
 	input_thread.join()
 	plars.shutdown()
