@@ -303,6 +303,10 @@ class sensor(object):
 
 		#index holds a counter about sensors that reacts to the get functions 
 		index = {'sensor_index': 0}
+		
+		# we have a dummy GPS that sends at least static data
+		index['sensor_index'] += 1
+		index.update({ "GPS_DATA" : index['sensor_index']})
 
 		if configure.bme:
 			rety = self.get_bme680()
@@ -439,7 +443,7 @@ def sensor_process():
 		
 		if configure.amg8833:
 			thermal_frame = sensors.get_thermal_frame()
-			publish("termal_frame",thermal_frame)
+			publish("thermal_frame",thermal_frame)
 			
 		if configure.system_vitals:
 			system_vitals = sensors.get_system_vitals()
