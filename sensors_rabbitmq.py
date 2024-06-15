@@ -73,9 +73,12 @@ channel = connection.channel()
 
     
 def declare_channel():
-    # Setup Channels for Sensors
-    channel.exchange_declare(exchange='sensor_data', exchange_type='topic')
-    channel.queue_declare(queue='sensor_metadata')
+	# Setup Channels for Sensors
+	channel.exchange_declare(exchange='sensor_data', exchange_type='topic')
+	channel.queue_declare(queue='sensor_metadata')
+	# cleanup entreys , we could have multible index
+	channel.queue_purge(queue='sensor_metadata')
+
     
 def publish(IN_routing_key,data):
 	stack = 'sensor_data'
@@ -299,49 +302,59 @@ class sensor(object):
 	def get_index(self):
 
 		#index holds a counter about sensors that reacts to the get functions 
-		index = 0
+		index = {'sensor_index': 0}
 
 		if configure.bme:
 			rety = self.get_bme680()
 			if not rety == None: 
-				index += 1
+				index['sensor_index'] += 1
+				index.update({ "bme680" : index['sensor_index']})
 
 		if configure.sensehat:
 			rety = self.get_sensehat()
 			if not rety == None: 
-				index += 1
+				index['sensor_index'] += 1
+				index.update({ "sensehat" : index['sensor_index']})
 
 		if configure.pocket_geiger:
 			rety = self.get_pocket_geiger()
 			if not rety == None: 
-				index += 1
+				index['sensor_index'] += 1
+				index.update({ "pocket_geiger" : index['sensor_index']})
 
 		if configure.amg8833:
 			rety = self.get_thermal_frame()
 			if not rety == None: 
-				index += 1
-
-
+				index['sensor_index'] += 1
+				index.update({ "thermal_frame" : index['sensor_index']})
+				
 		if configure.envirophat:
 			rety = self.get_envirophat()
 			if not rety == None: 
-				index += 1
-
+				index['sensor_index'] += 1
+				index.update({ "envirophat" : index['sensor_index']})
 		
 		if configure.system_vitals:
 			rety = self.get_system_vitals()
 			if not rety == None: 
-				index += 1
-
+				index['sensor_index'] += 1
+				index.update({ "system_vitals" : index['sensor_index']})
 			
 		if generators:
 			rety = self.get_generators()
 			if not rety == None: 
-				index += 1	
+				index['sensor_index'] += 1
+				index.update({ "generators" : index['sensor_index']})
+				
+		if configure.ir_thermo:
+			rety = self. self.get_ir_thermo()
+			if not rety == None: 
+				index['sensor_index'] += 1
+				index.update({ "ir_thermo" : index['sensor_index']})
 
 		configure.max_sensors[0] = index
 			
-		if index < 1:
+		if index['sensor_index'] < 1:
 			print("NO SENSORS LOADED")
 
 		return index
@@ -413,7 +426,8 @@ def sensor_process():
 	timed = timer()
 	wifitimer = timer()
 	
-	meta_massage = str(['sensor_index',sensors.get_index()])
+	meta_massage = str(sensors.get_index())
+	print(meta_massage)
 	publish('sensor_metadata',meta_massage)
 
 	while True:
