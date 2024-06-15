@@ -2,13 +2,22 @@
 from objects import *
 import pika
 import sys
+import ast
 
-def threaded_rabbitmq_worker:
+
+def threaded_rabbitmq_worker():
 	connection = pika.BlockingConnection(
 		pika.ConnectionParameters(host='localhost'))
 	channel = connection.channel()
 
 	channel.exchange_declare(exchange='sensor_data', exchange_type='topic')
+	channel.queue_declare(queue='sensor_metadata');
+	
+	msg_header_array, properties, body = channel.basic_get(queue='sensor_metadata')
+	if body is not None:			
+		array_pack = ast.literal_eval(body.decode())	
+		key, configure.max_sensors = array_pack
+		configure.sensor_ready[0] = True
 
 	result = channel.queue_declare('', exclusive=True)
 	queue_name = result.method.queue
