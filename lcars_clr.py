@@ -5,6 +5,7 @@ import math
 import time
 import socket
 import pika
+import ast
 
 from operator import itemgetter
 
@@ -63,30 +64,13 @@ back_col = 1
 connection = pika.BlockingConnection(pika.ConnectionParameters('localhost'))
 channel = connection.channel()
     
-def delcare_channel():
-	print("Setup Channels for Sensors")
-	channel.queue_declare(queue='sensor_demo')
-	channel.queue_declare(queue='sensor_sensehat')
-	channel.queue_declare(queue='sensor_adafruit_bme680')
-	channel.queue_declare(queue='sensor_mlx90614')
-	channel.queue_declare(queue='sensor_system_vitals')
-	channel.queue_declare(queue='sensor_RadiationWatch')
-	channel.queue_declare(queue='sensor_AMG88XX')
-	channel.queue_declare(queue='sensor_WIFI2450')
-	channel.queue_declare(queue='sensor_NEMA_Serial')
-    
-def publish():
-	channel.basic_publish(exchange='',
-						routing_key='sensor_demo',
-						body='Hello World!')
-	print(" [x] Sent 'Hello World!'")
-    
-def rmqcallback(ch, method, properties, body):
-	print(f" [x] Received {body}")   
-    
+def declare_channel():
+    print("Setup Channels for Sensors")
+    channel.exchange_declare(exchange='sensor_data', exchange_type='topic')
+    channel.queue_declare(queue='sensor_metadata');
+
 def disconnect():
 	connection.close()
-
 
 
 class DrawGrid(object):
@@ -389,6 +373,7 @@ class MasterSystemsDisplay(object):
 	def __init__(self):
 		self.title = None
 		self.status_list = None
+		self.sensor_index = None
 		#self.draw = draw
 
 		# the set labels for the screen
@@ -424,8 +409,12 @@ class MasterSystemsDisplay(object):
 			IPAddr = "No IP Found"
 		
 		ip_str = "IP:  " + IPAddr
-		host_str = "Name:  " + socket.gethostname()
-		sense_ready = "Sensors Avl:  " + str(len(configure.sensor_info))
+		host_str = "Name:  " + socket.gethostname() 
+		msg_header_array, properties, body = channel.basic_get(queue='sensor_metadata')
+		if body is not None:			
+			array_pack = ast.literal_eval(body.decode())	
+			key, self.sensor_index = array_pack
+		sense_ready = "Sensors Avl:  " + str(self.sensor_index)
 		model_name = "CPU:  " + self.model
 		PLARS_size, PLARS_em_size = plars.get_plars_size()
 		db_size = "PLARS Size:  " + str(PLARS_size)
@@ -735,8 +724,8 @@ class StartUp(object):
 		self.item.center(self.titley+self.jump,0, 320,draw)
 
 
-		if self.interval.timelapsed() > configure.boot_delay and configure.sensor_ready[0]:
-			status = "multi"
+		if self.interval.timelapsed() > configure.boot_delay:
+			status = "msd"
 		else:
 			status = "startup"
 
@@ -1153,9 +1142,6 @@ class MultiFrame(object):
 
 	def __init__(self):
 	
-		# subscribing to rabbitmq messeges	
-		channel.basic_consume(queue='sensor_demo', on_message_callback=rmqcallback, auto_ack=True)
-
 		# Sets the topleft origin of the graph
 		self.graphx = 22*2
 		self.graphy = 25*2
@@ -1693,4 +1679,6 @@ class ColourScreen(object):
 
 	def run(self):	
 		configure.status[0] = self.carousel[configure.status[0]]()
+		
+declare_channel()
 		
