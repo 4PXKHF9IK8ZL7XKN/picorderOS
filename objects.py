@@ -343,23 +343,19 @@ class preferences(object):
 		# holds theme state for UI
 		self.theme = [0]
 
-		# Sensor Thingi
-		# sets the number of max sensors for user configuration
 		# (is automatically set by the sensor module at startup)
 		self.max_sensors = [0]
 
-		# Sensor Thingi
 		# sets the upper and lower threshold for the alert
 		self.TEMP_ALERT = (int(config['SENSORS']['alert_low']),int(config['SENSORS']['alert_high']))
 
 		# toggles interpolation for thermal camera
 		self.interpolate = [True]
 
-		# 2 Sensor Data thingis to delete
 		# flag to command the main loop
-		#self.sensor_ready = [False]
+		self.sensor_ready = [False]
 		self.screen_halt = [False]
-		#self.sensor_halt = [False]
+		self.sensor_halt = [False]
 
 		# An integer determines which sensor in the dataset to plot
 		self.sensor1 = [0]
