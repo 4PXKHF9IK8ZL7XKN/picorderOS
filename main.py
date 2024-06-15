@@ -84,8 +84,8 @@ def Main():
 	# The following code sets up the various threads that the rest of the program will use
 	
 	#start the sensor loop
-	sensor_thread = Thread(target = threaded_sensor, args = ())
-	sensor_thread.start()
+	#sensor_thread = Thread(target = threaded_sensor, args = ())
+	#sensor_thread.start()
 
 
 	# if leds enabled start the event monitor for LEDs
