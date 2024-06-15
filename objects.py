@@ -387,9 +387,9 @@ class preferences(object):
 
 		self.displayinterval=[float(config['GLOBALS']['displayinterval'])]
 
-		# Topic to Delete
+
 		# holds sensor data (issued by the sensor module at init)
-		#self.sensor_info = []
+		self.sensor_info = []
 
 		# holds the global state of the program (allows secondary modules to quit the program should we require it)
 		self.status = ["startup"]
