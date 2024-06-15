@@ -410,11 +410,7 @@ class MasterSystemsDisplay(object):
 		
 		ip_str = "IP:  " + IPAddr
 		host_str = "Name:  " + socket.gethostname() 
-		msg_header_array, properties, body = channel.basic_get(queue='sensor_metadata')
-		if body is not None:			
-			array_pack = ast.literal_eval(body.decode())	
-			key, self.sensor_index = array_pack
-		sense_ready = "Sensors Avl:  " + str(self.sensor_index)
+		sense_ready = "Sensors Avl:  " + str(configure.max_sensors)
 		model_name = "CPU:  " + self.model
 		PLARS_size, PLARS_em_size = plars.get_plars_size()
 		db_size = "PLARS Size:  " + str(PLARS_size)
@@ -724,7 +720,7 @@ class StartUp(object):
 		self.item.center(self.titley+self.jump,0, 320,draw)
 
 
-		if self.interval.timelapsed() > configure.boot_delay:
+		if self.interval.timelapsed() > configure.boot_delay and configure.sensor_ready[0]:
 			status = "multi"
 		else:
 			status = "startup"
@@ -1308,9 +1304,6 @@ class MultiFrame(object):
 	# push the image frame and contents to the draw object.
 	def push(self,draw):
 
-		msg_header_array, properties, body = channel.basic_get(queue='')
-		if body is not None:			
-			print(msg_header_array, properties, body)
 		# returns mode_a to the main loop unless something causes state change
 		status,payload  = self.events.check()
 
