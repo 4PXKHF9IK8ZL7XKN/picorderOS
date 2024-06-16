@@ -719,9 +719,9 @@ class StartUp(object):
 		#draw the title and version
 		self.item.center(self.titley+self.jump,0, 320,draw)
 		
-		print("intervall:", self.interval.timelapsed())
-		print("delay:", configure.boot_delay)
-		print("sensors:", configure.sensor_ready[0])		
+		#print("intervall:", self.interval.timelapsed())
+		#print("delay:", configure.boot_delay)
+		#print("sensors:", configure.sensor_ready[0])		
 
 		if self.interval.timelapsed() > configure.boot_delay and configure.sensor_ready[0]:
 			status = "multi"
@@ -1329,7 +1329,6 @@ class MultiFrame(object):
 		data_c = []
 		datas = [data_a,data_b,data_c]
 
-		print('sensors', configure.sensors[0][0])
 		for i in range(3):
 
 			
