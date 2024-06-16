@@ -7,10 +7,14 @@ import time
 import psutil
 import numpy
 
+GPS_DATA = [4747.0000, 4747.0000]
 mapping_book = {}
 mapping_book_byname = {}
 
-GPS_DATA = [4747.0000, 4747.0000]
+connection = pika.BlockingConnection(pika.ConnectionParameters(host='localhost'))
+channel = connection.channel()
+channel.exchange_declare(exchange='sensor_data', exchange_type='topic')
+channel.queue_declare(queue='sensor_metadata');
 
 # An object to store each sensor value and context.
 class Fragment(object):
@@ -186,32 +190,42 @@ class Sensor(object):
 		configure.max_sensors[0] = len(sensorlist)
 		
 		return sensorlist
-			
 
-def threaded_rabbitmq_worker():
-	connection = pika.BlockingConnection(
-		pika.ConnectionParameters(host='localhost'))
-	channel = connection.channel()
-
-	channel.exchange_declare(exchange='sensor_data', exchange_type='topic')
-	channel.queue_declare(queue='sensor_metadata');
+def callback_rabbitmq(ch, method, properties, body):
+	#print('book=', mapping_book_byname)
+	#print('populating=', method.routing_key)
+	if method.routing_key == 'GPS_DATA':
+		GPS_DATA = body.decode()
+	#print(f" [x] {method.routing_key}:{body}")			
 	
-	msg_header_array, properties, body = channel.basic_get(queue='sensor_metadata')
-	if body is not None:			
+def callback_rabbitmq_meta(ch, method, properties, body):
+	global mapping_book_byname
+	global mapping_book
+	if body == None:
+		time.sleep(0.2)
+	else:
 		sensor_index_dict = ast.literal_eval(body.decode())	
 		configure.max_sensors[0] = sensor_index_dict['sensor_index']
 		ret_index = sensor_index_dict.pop('sensor_index')
 		mapping_book_byname = sensor_index_dict
 		for i in sensor_index_dict:
 			mapping_book.update({sensor_index_dict[i]: i})
-		# this is an constructor here starts the build of all data
-		sensors = Sensor()
-		try:
-			sensor_data = sensors.get()
-		except:
-			pass
+		channel.basic_cancel('sensor_metadata')
+			
+			
+def threaded_rabbitmq_worker():
+	global mapping_book_byname
+	global mapping_book
+	channel.basic_consume(consumer_tag='sensor_metadata',queue='sensor_metadata',on_message_callback=callback_rabbitmq_meta, auto_ack=True)
+	# Waiting for the Metadata message ca 10 sec
+	channel.start_consuming()
+	# this is an constructor here starts the build of all data
+	sensors = Sensor()
+	try:
+		sensor_data = sensors.get()
+	except:
+		pass		
 		#thermal_frame = sensors.get_thermal_frame()
-		configure.sensor_ready[0] = True
 
 	result = channel.queue_declare('', exclusive=True)
 	queue_name = result.method.queue
@@ -219,14 +233,8 @@ def threaded_rabbitmq_worker():
 	channel.queue_bind(
 		exchange='sensor_data', queue='', routing_key='#')
 
-	def callback(ch, method, properties, body):
-		print('book=', mapping_book_byname)
-		print('index=', mapping_book_byname[method.routing_key])
-		print('populating=', method.routing_key)
-		#configure.sensor_info[mapping_book_byname[method.routing_key]].append("static")
-		if method.routing_key == 'GPS_DATA':
-			GPS_DATA = body.decode()
-		#print(f" [x] {method.routing_key}:{body}")
-
-	channel.basic_consume(queue='',on_message_callback=callback, auto_ack=True)
-	channel.start_consuming()
+	if len(mapping_book_byname) > 0:
+		print("Sensors Ready")
+		configure.sensor_ready[0] = True
+		channel.basic_consume(queue='',on_message_callback=callback_rabbitmq, auto_ack=True)
+		channel.start_consuming()
