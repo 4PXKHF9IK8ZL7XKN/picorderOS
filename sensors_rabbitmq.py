@@ -430,6 +430,8 @@ def sensor_process():
 	timed = timer()
 	wifitimer = timer()
 	
+	counter = 0
+	
 	meta_massage = str(sensors.get_index())
 	print(meta_massage)
 	publish('sensor_metadata',meta_massage)
@@ -476,7 +478,14 @@ def sensor_process():
 		if configure.ir_thermo:
 			ir_thermo_data = sensors.get_ir_thermo()
 			publish("ir_thermo",ir_thermo_data)
+			
+		if counter == 10:
+			meta_massage = str(sensors.get_index())
+			print(meta_massage)
+			publish('sensor_metadata',meta_massage)
+			counter = 0
 
+		counter += 1
 		timed.logtime()
 
 
