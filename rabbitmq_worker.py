@@ -50,6 +50,8 @@ class Fragment(object):
 	
 class Sensor(object):
 	def __init__(self):
+	
+			self.sensorlist = []
 			self.gps_speed = Fragment(0.0,0.0,"GPS Speed","kn", "gps")
 	
 			self.totalmem = psutil.virtual_memory()
@@ -111,7 +113,7 @@ class Sensor(object):
 		
 	def get(self):
 		#sensorlist holds all the data fragments to be handed to plars.
-		sensorlist = []
+		self.sensorlist = []
 
 		#timestamp for this sensor get.
 		timestamp = time.time()
@@ -124,7 +126,7 @@ class Sensor(object):
 		self.bme_press.set(0,timestamp, position)
 		self.bme_voc.set(0 / 1000,timestamp, position)
 		
-		sensorlist.extend((self.bme_temp,self.bme_humi,self.bme_press, self.bme_voc))
+		self.sensorlist.extend((self.bme_temp,self.bme_humi,self.bme_press, self.bme_voc))
 		
 		magdata = {"x":0,"y":0,"z":0}
 		acceldata = {"x":0,"y":0,"z":0}
@@ -139,13 +141,13 @@ class Sensor(object):
 		self.sh_accy.set(acceldata['y'],timestamp, position)
 		self.sh_accz.set(acceldata['z'],timestamp, position)
 
-		sensorlist.extend((self.sh_temp, self.sh_baro, self.sh_humi, self.sh_magx, self.sh_magy, self.sh_magz, self.sh_accx, self.sh_accy, self.sh_accz))
+		self.sensorlist.extend((self.sh_temp, self.sh_baro, self.sh_humi, self.sh_magx, self.sh_magy, self.sh_magz, self.sh_accx, self.sh_accy, self.sh_accz))
 		
 		data = {"uSvh":0}
 		rad_data = float(data["uSvh"])
 		
 		self.radiat.set(rad_data*100, timestamp, position)
-		sensorlist.append(self.radiat)
+		self.sensorlist.append(self.radiat)
 		
 		data = numpy.array([0,80])
 		
@@ -155,7 +157,7 @@ class Sensor(object):
 		self.amg_high.set(high,timestamp, position)
 		self.amg_low.set(low,timestamp, position)
 
-		sensorlist.extend((self.amg_high, self.amg_low))
+		self.sensorlist.extend((self.amg_high, self.amg_low))
 		
 		self.mag_values = {0:0,1:0,2:0}
 		self.acc_values = {0:0,1:0,2:0}
@@ -170,7 +172,7 @@ class Sensor(object):
 		self.ep_accy.set(self.acc_values[1],timestamp, position)
 		self.ep_accz.set(self.acc_values[2],timestamp, position)
 
-		sensorlist.extend((self.ep_temp, self.ep_baro, self.ep_colo, self.ep_magx, self.ep_magy, self.ep_magz, self.ep_accx, self.ep_accy, self.ep_accz))
+		self.sensorlist.extend((self.ep_temp, self.ep_baro, self.ep_colo, self.ep_magx, self.ep_magy, self.ep_magz, self.ep_accx, self.ep_accy, self.ep_accz))
 		
 		self.cputemp.set(0,timestamp, position)
 		self.cpuperc.set(float(psutil.cpu_percent()),timestamp, position)
@@ -183,19 +185,51 @@ class Sensor(object):
 		self.coswave.set(float(1*100),timestamp, position)
 		self.sinwav2.set(float(1*100),timestamp, position)
 		
-		sensorlist.extend((self.cputemp, self.cpuperc, self.virtmem, self.bytsent, self.bytrece))
+		self.sensorlist.extend((self.cputemp, self.cpuperc, self.virtmem, self.bytsent, self.bytrece))
 		
-		sensorlist.extend((self.sinewav, self.tanwave, self.coswave, self.sinwav2)) 
+		self.sensorlist.extend((self.sinewav, self.tanwave, self.coswave, self.sinwav2)) 
 		
-		configure.max_sensors[0] = len(sensorlist)
+		configure.max_sensors[0] = len(self.sensorlist)
 		
-		return sensorlist
+		return self.sensorlist
+		
+	def update_bme680(self,var1,var2,var3,var4,var5):
+		timestamp = time.time()
+		position = GPS_DATA
+		self.bme_temp.set(var1,timestamp, position)
+		self.bme_humi.set(var2,timestamp, position)
+		self.bme_press.set(var3,timestamp, position)
+		self.bme_voc.set(var4,timestamp, position)			
+		self.sensorlist.extend((self.bme_temp,self.bme_humi,self.bme_press, self.bme_voc))	
+		return
+		
+	def update_system_vitals(self,var1,var2,var3,var4,var5,var6,var7,var8):
+		timestamp = time.time()
+		position = GPS_DATA
+		self.cputemp.set(var3,timestamp, position)
+		self.cpuperc.set(float(var4),timestamp, position)
+		self.virtmem.set(float(var5),timestamp, position)
+		self.bytsent.set(float(var7),timestamp, position)
+		self.bytrece.set(float(var8),timestamp, position)
+		self.sensorlist.extend((self.cputemp, self.cpuperc, self.virtmem, self.bytsent, self.bytrece))
+		return
 
 def callback_rabbitmq(ch, method, properties, body):
 	#print('book=', mapping_book_byname)
 	#print('populating=', method.routing_key)
+	global sensor_data
+	sensors = Sensor()
 	if method.routing_key == 'GPS_DATA':
 		GPS_DATA = body.decode()
+	elif method.routing_key == 'bme680':
+		var1,var2,var3,var4,var5 = body.decode().split(",")
+		sensors.update_bme680(var1,var2,var3,var4,var5)
+	elif method.routing_key == 'system_vitals':
+		print("type:",type(body.decode()))
+		var1 = body.decode().split(",")
+		#print(var1)
+		#sensors.update_system_vitals(var1,var2,var3,var4,var5,var6,var7,var8)
+	sensor_data = sensors.get()
 	#print(f" [x] {method.routing_key}:{body}")			
 	
 def callback_rabbitmq_meta(ch, method, properties, body):
@@ -235,6 +269,7 @@ def threaded_rabbitmq_worker():
 
 	if len(mapping_book_byname) > 0:
 		print("Sensors Ready")
+		print("Avail:", len(configure.sensor_info))
 		configure.sensor_ready[0] = True
 		channel.basic_consume(queue='',on_message_callback=callback_rabbitmq, auto_ack=True)
 		channel.start_consuming()
