@@ -718,10 +718,13 @@ class StartUp(object):
 
 		#draw the title and version
 		self.item.center(self.titley+self.jump,0, 320,draw)
-
+		
+		print("intervall:", self.interval.timelapsed())
+		print("delay:", configure.boot_delay)
+		print("sensors:", configure.sensor_ready[0])		
 
 		if self.interval.timelapsed() > configure.boot_delay and configure.sensor_ready[0]:
-			status = "msd"
+			status = "multi"
 		else:
 			status = "startup"
 
@@ -1138,6 +1141,8 @@ class MultiFrame(object):
 
 	def __init__(self):
 	
+		print("ENTERING MUTLIFRAME MODE")
+	
 		# Sets the topleft origin of the graph
 		self.graphx = 22*2
 		self.graphy = 25*2
@@ -1303,6 +1308,8 @@ class MultiFrame(object):
 
 	# push the image frame and contents to the draw object.
 	def push(self,draw):
+	
+		print("ENTERING MUTLIFRAME MODE")
 
 		# returns mode_a to the main loop unless something causes state change
 		status,payload  = self.events.check()
