@@ -6,7 +6,8 @@ import time
 import socket
 import pika
 import ast
-from rabbitmq_worker import Sensor
+from classes import Sensor
+from classes import Fragment
 
 from operator import itemgetter
 
@@ -1252,9 +1253,9 @@ class MultiFrame(object):
 			raw_a = str(self.A_Data)
 			adjusted_a = self.arrangelabel(raw_a)
 			a_string = adjusted_a + " " + str(configure.sensor_info[configure.sensor1[0]][2])
-			print("sensor:",str(configure.sensor_info[configure.sensor1[0]][2]))
-			print("sensor:",str(configure.sensor_info[configure.sensor2[0]][2]))
-			print("sensor:",str(configure.sensor_info[configure.sensor3[0]][2]))
+			#print("sensor:",str(configure.sensor_info[configure.sensor1[0]][2]))
+			#print("sensor:",str(configure.sensor_info[configure.sensor2[0]][2]))
+			#print("sensor:",str(configure.sensor_info[configure.sensor3[0]][2]))
 
 			raw_b = str(self.B_Data)
 			adjusted_b = self.arrangelabel(raw_b)
@@ -1269,9 +1270,9 @@ class MultiFrame(object):
 
 			#set string to item description
 			
-			print("sensor2:",str(configure.sensor_info[configure.sensor1[0]][0])[:6])
-			print("sensor2:",str(configure.sensor_info[configure.sensor2[0]][0])[:6])
-			print("sensor2:",str(configure.sensor_info[configure.sensor3[0]][0])[:6])
+			#print("sensor2:",str(configure.sensor_info[configure.sensor1[0]][0])[:6])
+			#print("sensor2:",str(configure.sensor_info[configure.sensor2[0]][0])[:6])
+			#print("sensor2:",str(configure.sensor_info[configure.sensor3[0]][0])[:6])
 			
 			
 			self.A_Desc.string = str(configure.sensor_info[configure.sensor1[0]][0])[:6]
@@ -1296,8 +1297,8 @@ class MultiFrame(object):
 
 			carousel = [self.A_Data,self.B_Data,self.C_Data]
 			carousel2 = [configure.sensor_info[configure.sensor1[0]][2],configure.sensor_info[configure.sensor2[0]][2],configure.sensor_info[configure.sensor3[0]][2]]
-			print("carousel",carousel)
-			print("carousel2",carousel2)
+			#print("carousel",carousel)
+			#print("carousel2",carousel2)
 
 			this = self.selection - 1
 
@@ -1348,11 +1349,11 @@ class MultiFrame(object):
 
 			
 			# determines the sensor keys for each of the three main sensors
-			print("slices:",configure.sensors[i][0])
+			#print("slices:",configure.sensors[i][0])
 			this_index = int(configure.sensors[i][0])
-			print("index:", this_index)
+			#print("index:", this_index)
 
-			print("info:", configure.sensor_info[this_index])
+			#print("info:", configure.sensor_info[this_index])
 			dsc,dev,sym,maxi,mini = configure.sensor_info[this_index]
 
 			senseslice.append(["47", dsc, dev, sym, mini, maxi])
