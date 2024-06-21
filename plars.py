@@ -8,6 +8,7 @@ from random import randint
 import json
 import random
 import time
+import math
 
 #	PLARS (Picorder Library Access and Retrieval System) aims to provide a
 #	single surface for storing and retrieving data for display in any of the
@@ -53,7 +54,11 @@ class PLARS(object):
 		self.file_path = "data/datacore.csv"
 		self.em_file_path = "data/em_datacore.csv"
 
-
+		self.index = 0
+		self.data_line = []
+		self.value = 0
+		self.value1 = 10
+		self.value2 = 180
 
 		if configure.datalog[0]:
 
@@ -81,10 +86,10 @@ class PLARS(object):
 		pd.set_option('display.float_format', '{:.7f}'.format)
 
 		#create a buffer object to hold screen data
-		self.buffer = pd.DataFrame(columns=['value','min','max','dsc','sym','dev','timestamp','latitude','longitude'])
-
+		self.buffer = {'index':[],'value':[],'min':[],'max':[],'dsc':[],'sym':[],'dev':[],'timestamp':[]}
+		
 		#create a buffer for wifi/bt data
-		self.buffer_em = pd.DataFrame(columns=['ssid','signal','quality','frequency','encrypted','channel','dev','mode','dsc','timestamp','latitude','longitude'])
+		self.buffer_em = ['index','ssid','signal','quality','frequency','encrypted','channel','dev','mode','dsc','timestamp','latitude','longitude']
 
 
 		# variables for EM stats call
@@ -333,9 +338,21 @@ class PLARS(object):
 		#self.lock.acquire()
 		
 		fragdata = []
-		data_line = [0,1,3,4,5,5,5,3,0,2,1,2,3]
 		
-		value = random.randint(1, 100) 
+		print("self.value:", self.value, self.value1, self.value2)
+		
+		self.value = self.value + 10
+		
+		if self.value >= 361:
+			self.value = 0
+			self.value1 = self.value1 * -1
+			
+		self.value2 = self.value2 + self.value1
+
+		value = math.sin(self.value2 * 100000 )
+		value1 = 0
+		value2 = 0
+		#value = random.randint(1, 100) 
 		
 		timestamp = time.time()
 		
@@ -362,15 +379,29 @@ class PLARS(object):
 		
 		
 		if dsc == 'Hygrometer' or 'Barometer' or 'Thermometer':
-			item = [value,mini,maxi,dsc,symb,dev,timestamp]
-			fragdata.append(item)
+			setofitems = [value,mini,maxi,dsc,symb,dev,timestamp]
+			self.data_line.append(value)
+			self.data_line.append(value1)
+			self.data_line.append(value2)
+			#fragdata.append(item)
+			
+			self.index = self.index + 1
 			
 			# creates a new dataframe to add new data to
-			newdata = pd.DataFrame(fragdata, columns=['value','min','max','dsc','sym','dev','timestamp'])
+			#newdata = {'dsc':dsc,index:{'value':[],'min':[],'max':[],'dsc':[],'sym':[],'dev':[],'timestamp':[]}}
+			#newdata['dsc'==dsc][index]['value'].append(value)
+			#newdata['dsc'==dsc][index]['min'].append(mini)
+			#newdata['dsc'==dsc][index]['max'].append(maxi)
+			#newdata['dsc'==dsc][index]['dsc'].append(dsc)
+			#newdata['dsc'==dsc][index]['sym'].append(symb)
+			#newdata['dsc'==dsc][index]['dev'].append(dev)
+			#newdata['dsc'==dsc][index]['timestamp'].append(timestamp)
+			
 
 			# appends the new data to the buffer
 			#self.buffer = self.buffer.append(newdata, ignore_index=True)
-			self.buffer = pd.concat([self.buffer,newdata]).drop_duplicates().reset_index(drop=True)
+			#self.buffer = pd.concat([self.buffer,newdata]).drop_duplicates().reset_index(drop=True)
+			#self.buffer = self.buffer.append(item)
 
 			# get buffer size to determine how many rows to remove from the end
 			currentsize = len(self.buffer)
@@ -385,28 +416,28 @@ class PLARS(object):
 			length = currentsize - targetsize
 		
 			# Filters the pd Dataframe to a Device like dsc="Thermometer" 
-			result = self.buffer[self.buffer["dsc"] == dsc]
+			#result = self.buffer[self.buffer["dsc"] == dsc]
 
-			untrimmed_data = result.loc[result['dev'] == dev]
+			#untrimmed_data = result.loc[result['dev'] == dev]
 			#print('untrimmed_data',untrimmed_data)
 
 			# trim it to length (num).
-			trimmed_data = untrimmed_data.tail(num)
+			#trimmed_data = untrimmed_data.tail(num)
 			#print('trimmed_data',trimmed_data)
 
 		# return a list of the values
-		data_line = trimmed_data['value'].tolist()
+		#data_line = trimmed_data['value'].tolist()
 		#print('values',data_line)
 		
 		
-		times = trimmed_data['timestamp'].tolist()
-		result = [data_line,times]	
+		#times = trimmed_data['timestamp'].tolist()
+		#result = [data_line,times]	
 		
 		#result = self.buffer,dsc,dev,num
 
-		timelength = 1
+		timelength = self.index
 		
-		
+		#print('data_line:', self.index, self.data_line )
 		
 
 		#timelength = 0
@@ -416,7 +447,7 @@ class PLARS(object):
 
 
 
-		return data_line, length
+		return self.data_line, timelength
 
 
 	def get_em(self,dev,frequency):
@@ -569,7 +600,7 @@ def threaded_plars():
 		print("Avail:", len(configure.sensor_info))
 		configure.sensor_ready[0] = True
 		channel.basic_consume(queue='',on_message_callback=callback_rabbitmq, auto_ack=True)
-		channel.start_consuming()
+		#channel.start_consuming()
 
 
 # Creates a plars database object as soon as it is loaded.
