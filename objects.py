@@ -6,7 +6,12 @@ import time, configparser
 import threading
 from os.path import exists
 
-print("Import Objects")
+generators = True
+DEBUG = False
+
+GPS_DATA = [4747.0000, 4747.0000]
+
+
 
 class preferences(object):
 	def str2bool(self,v):
@@ -416,7 +421,7 @@ class preferences(object):
 		# Global holder for current position (lat,lon) as provided by GPS/etc. 
 		self.position = [47,47]
 
-
+		print("Import Objects")
 # create a shared object for global variables and settings.
 configure = preferences()
 

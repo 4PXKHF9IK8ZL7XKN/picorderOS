@@ -19,10 +19,8 @@ print("Loading Components")
 os.environ['SDL_AUDIODRIVER'] = 'alsa'
 
 from objects import *
-#from sensors import *
 from plars import *
 from input import *
-from rabbitmq_worker import *
 
 if configure.audio[0]:
 	from audio import *
@@ -87,11 +85,9 @@ def Main():
 	#start the sensor loop
 	#sensor_thread = Thread(target = threaded_sensor, args = ())
 	#sensor_thread.start()
-	
-	# start a shovel loop
-	# we want to lissen what rabbitmq posts, so we need a service that runs in background and populates variables 
-	shovel_thread = Thread(target = threaded_rabbitmq_worker, args = ())
-	shovel_thread.start()
+
+	plars_thread = Thread(target = threaded_plars, args = ())
+	plars_thread.start()
 
 	# if leds enabled start the event monitor for LEDs
 	if configure.leds[0]:
@@ -153,6 +149,7 @@ def Main():
 	if configure.audio[0]:
 		audio_thread.join()
 
+	#shovel_thread.join()
 	#sensor_thread.join()
 	led_thread.join()
 	input_thread.join()

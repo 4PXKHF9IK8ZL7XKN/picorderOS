@@ -13,12 +13,11 @@ from PIL import ImageFont
 from PIL import ImageDraw
 
 import numpy
-import threading
 from array import *
 from plars import *
 from multiprocessing import Process,Queue,Pipe
 
-print("Loading Python IL Module ... PID: ", threading.get_native_id())
+print("Loading Python IL Module")
 
 # function to calculate onscreen coordinates of graph pixels as a process.
 def graph_prep_process(conn,samples,datalist,auto,newrange,targetrange,sourcerange,linepoint,jump,sourcelow):
@@ -233,7 +232,8 @@ class graph_area(object):
 		if self.type == 0:
 			index = configure.sensors[self.ident][0]
 			dsc,dev,sym,maxi,mini = configure.sensor_info[index]
-			recent, self.timelength = plars.get_recent(dsc,dev,num = self.samples, time = True)
+			recent, self.timelength = plars.get_recent(dsc,dev,num = self.samples, timeing = True)
+			#print("PIL:", recent)
 
 
 			# for returning last value on multigraph
@@ -250,7 +250,7 @@ class graph_area(object):
 		# Testing a new graph
 		elif self.type == 2:
 			recent = plars.get_recent(dsc,dev,num = self.samples)
-
+			print('recent:', recent)
 
 
 		cords = self.graphprep(recent)
