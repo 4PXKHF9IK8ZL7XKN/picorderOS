@@ -13,11 +13,16 @@ from PIL import ImageFont
 from PIL import ImageDraw
 
 import numpy
+from display_class import *
 from array import *
 from plars import *
 from multiprocessing import Process,Queue,Pipe
+from luma.core.render import canvas
+
 
 print("Loading Python IL Module")
+
+print("Display",device_link.device)
 
 # function to calculate onscreen coordinates of graph pixels as a process.
 def graph_prep_process(conn,samples,datalist,auto,newrange,targetrange,sourcerange,linepoint,jump,sourcelow):
@@ -210,63 +215,66 @@ class graph_area(object):
 
 
 	def render(self, draw, auto = True, dot = True, ranger = None):
+		print("Render! - PILGRAPH")
+
+		with canvas(device_link.device, dither=True) as draw:
+
+			return_value = 0
+
+			self.auto = configure.auto[0]
+
+			# for PLARS we reduce the common identifier of our currently selected sensor
+			# by using its description (dsc) and device (dev): eg
+			# BME680 has a thermometer and hygrometer,
+			# therefore the thermometer's dsc is "thermometer" and the device is 'BME680'
+			# the hygrometer's dsc is "hygrometer" and the the device is "BME680"
+
+			# so every time through the loop PILgraph will pull the latest sensor
+			# settings.
+
+			# standard pilgraph: takes DSC,DEV keypairs from screen drawer, asks
+			# plars for data, graphs it.
+
+			# Standard graph
+			if self.type == 0:
+				index = configure.sensors[self.ident][0]
+				dsc,dev,sym,maxi,mini = configure.sensor_info[index]
+				recent, self.timelength = plars.get_recent(dsc,dev,num = self.samples, timeing = True)
+				#print("PIL:", recent)
+				
 
 
-		return_value = 0
+				# for returning last value on multigraph
+				if len(recent) == 0:
+					return_value = 47
+				else:
+					return_value = recent[-1]
 
-		self.auto = configure.auto[0]
-
-		# for PLARS we reduce the common identifier of our currently selected sensor
-		# by using its description (dsc) and device (dev): eg
-		# BME680 has a thermometer and hygrometer,
-		# therefore the thermometer's dsc is "thermometer" and the device is 'BME680'
-		# the hygrometer's dsc is "hygrometer" and the the device is "BME680"
-
-		# so every time through the loop PILgraph will pull the latest sensor
-		# settings.
-
-		# standard pilgraph: takes DSC,DEV keypairs from screen drawer, asks
-		# plars for data, graphs it.
-
-		# Standard graph
-		if self.type == 0:
-			index = configure.sensors[self.ident][0]
-			dsc,dev,sym,maxi,mini = configure.sensor_info[index]
-			recent, self.timelength = plars.get_recent(dsc,dev,num = self.samples, timeing = True)
-			#print("PIL:", recent)
-
-
-			# for returning last value on multigraph
-			if len(recent) == 0:
-				return_value = 47
-			else:
+			# EM pilgraph: pulls wifi data only.
+			elif self.type == 1:
+				recent = plars.get_top_em_history(no = self.samples)
 				return_value = recent[-1]
 
-		# EM pilgraph: pulls wifi data only.
-		elif self.type == 1:
-			recent = plars.get_top_em_history(no = self.samples)
-			return_value = recent[-1]
-
-		# Testing a new graph
-		elif self.type == 2:
-			recent = plars.get_recent(dsc,dev,num = self.samples)
-			print('recent:', recent)
+			# Testing a new graph
+			elif self.type == 2:
+				recent = plars.get_recent(dsc,dev,num = self.samples)
+				print('recent:', recent)
 
 
-		cords = self.graphprep(recent)
-		self.buff = recent
+			cords = self.graphprep(recent)
+			self.buff = recent
 
-		# draws the line graph
-		draw.line(cords,self.colour,self.width)
+			# draws the line graph
+			draw.line(cords,self.colour,self.width)
 
-		# draws the line dot.
-		if dot:
-			x1 = cords[0][0] - (self.dotw/2)
-			y1 = cords[0][1] - (self.doth/2)
+			# draws the line dot.
+			if dot:
+				x1 = cords[0][0] - (self.dotw/2)
+				y1 = cords[0][1] - (self.doth/2)
 
-			x2 = cords[0][0] + (self.dotw/2)
-			y2 = cords[0][1] + (self.doth/2)
-			draw.ellipse([x1,y1,x2,y2],self.colour)
+				x2 = cords[0][0] + (self.dotw/2)
+				y2 = cords[0][1] + (self.doth/2)
+				draw.ellipse([x1,y1,x2,y2],self.colour)
 
 
 		return return_value

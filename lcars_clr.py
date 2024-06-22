@@ -1220,7 +1220,7 @@ class MultiFrame(object):
 	def arrangelabel(self,data,range = ".1f"):
 		datareturn = format(float(data), range)
 		return datareturn
-
+    #fast graph drawing with python on LCD
 	# defines the labels for the screen
 	def labels(self):
 
@@ -1323,6 +1323,8 @@ class MultiFrame(object):
 	# push the image frame and contents to the draw object.
 	def push(self,draw):
 	
+		print("LCARS - PUSH")
+
 		sensors = Sensor()
 	
 		#print("ENTERING MUTLIFRAME MODE")
@@ -1374,21 +1376,26 @@ class MultiFrame(object):
 
 
 		# turns each channel on individually
-		if self.selection == 0:
-			self.C_Data = self.C_Graph.render(self.draw)
-			self.B_Data = self.B_Graph.render(self.draw)
-			self.A_Data = self.A_Graph.render(self.draw)
+		if self.selection == 0:	
+			for i in range(64):
+				self.C_Data = self.C_Graph.render(self.draw)
+				self.B_Data = self.B_Graph.render(self.draw)
+				self.A_Data = self.A_Graph.render(self.draw)
+			
 
 
 
 		if self.selection == 1:
-			self.A_Data = self.A_Graph.render(self.draw)
+			for i in range(64):
+				self.A_Data = self.A_Graph.render(self.draw)
 
 		if self.selection == 2:
-			self.B_Data = self.B_Graph.render(self.draw)
+			for i in range(64):
+				self.B_Data = self.B_Graph.render(self.draw)
 
 		if self.selection == 3:
-			self.C_Data =  self.C_Graph.render(self.draw)
+			for i in range(64):
+				self.C_Data =  self.C_Graph.render(self.draw)
 
 
 		self.labels()
@@ -1621,17 +1628,18 @@ class ColourScreen(object):
 		return self.status
 
 	def graph_screen(self):
-		self.newimage = self.blankimage.copy()
-		self.newimage.paste(self.lcarsframe,(0,0))
-		self.draw = ImageDraw.Draw(self.newimage)
+		print("Struct - Overall lcars")
+		#self.newimage = self.blankimage.copy()
+		#self.newimage.paste(self.lcarsframe,(0,0))
+		#self.draw = ImageDraw.Draw(self.newimage)
 
-		last_status = self.status
+		#last_status = self.status
 		self.status = self.multi_frame.push(self.draw)
 
-		if self.status == last_status:
-			self.pixdrw()
-		else:
-			self.loading()
+		#if self.status == last_status:
+			#self.pixdrw()
+		#else:
+			#self.loading()
 
 		return self.status
 

@@ -8,13 +8,16 @@
 import sys
 import logging
 import threading
+from display_class import *
 
 from objects import *
 from multiprocessing import Process,Queue,Pipe
 import signal
 from luma.core import cmdline, error
 
-print("Unified Display Module loading ... PID: ", threading.get_native_id())
+
+
+print("Unified Display Module loading")
 
 def display_settings(device, args):
     """
@@ -39,28 +42,29 @@ def display_settings(device, args):
     return f'Version: {version}\nDisplay: {args.display}\n{iface}Dimensions: {device.width} x {device.height} PID: {threading.get_native_id()}\n{"-" * 60}'
 
 def get_device(actual_args=None):
-    """
+    
+	"""
     Create device from command-line arguments and return it.
     """
-    if actual_args is None:
-        actual_args = sys.argv[1:]
-    parser = cmdline.create_parser(description='luma.examples arguments')
-    args = parser.parse_args(actual_args)
+	if actual_args is None:
+		actual_args = sys.argv[1:]
+	parser = cmdline.create_parser(description='luma.examples arguments')
+	args = parser.parse_args(actual_args)
 
-    if args.config:
+	if args.config:
         # load config from file
-        config = cmdline.load_config(args.config)
-        args = parser.parse_args(config + actual_args)
+		config = cmdline.load_config(args.config)
+		args = parser.parse_args(config + actual_args)
 
-    # create device
-    try:
-        device = cmdline.create_device(args)
-        print(display_settings(device, args))
-        return device
+	# create device
+	try:
+		device = cmdline.create_device(args)
+		print(display_settings(device, args))
+		return device
 
-    except error.Error as e:
-        parser.error(e)
-        return None
+	except error.Error as e:
+		parser.error(e)
+		return None
 
 if configure.display == 3:
         from luma.core.render import canvas
@@ -74,9 +78,11 @@ if configure.display == 3:
 
         if not configure.pc:
                 device = get_device(['--interface', 'spi', '--display', 'st7789', '--spi-port', '0', '--spi-bus-speed', '52000000', '--width', '320', '--height', '240','--mode','RGB' ])
+                device_link.device = device
                 #device = get_device(['--interface', 'spi', '--display', 'st7789', '--spi-port', '0', '--spi-bus-speed', '52000000', '--width', '160', '--height', '128','--mode','RGB' ])
         else:
                 device = pygame(width = 160, height = 128)
+                device_link.device = device
 
 if configure.display == 1:
 	from luma.core.render import canvas

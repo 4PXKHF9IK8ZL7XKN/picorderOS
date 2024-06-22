@@ -339,7 +339,8 @@ class PLARS(object):
 		
 		fragdata = []
 		
-		print("self.value:", self.value, self.value1, self.value2)
+		print("PULL - PLARS")
+		#print("self.value:", self.value, self.value1, self.value2)
 		
 		self.value = self.value + 10
 		
