@@ -1323,7 +1323,7 @@ class MultiFrame(object):
 	# push the image frame and contents to the draw object.
 	def push(self,draw):
 	
-		print("LCARS - PUSH")
+		#print("LCARS - PUSH")
 
 		sensors = Sensor()
 	
@@ -1377,7 +1377,7 @@ class MultiFrame(object):
 
 		# turns each channel on individually
 		if self.selection == 0:	
-			for i in range(64):
+			for i in range(1):
 				self.C_Data = self.C_Graph.render(self.draw)
 				self.B_Data = self.B_Graph.render(self.draw)
 				self.A_Data = self.A_Graph.render(self.draw)
@@ -1386,15 +1386,15 @@ class MultiFrame(object):
 
 
 		if self.selection == 1:
-			for i in range(64):
+			for i in range(1):
 				self.A_Data = self.A_Graph.render(self.draw)
 
 		if self.selection == 2:
-			for i in range(64):
+			for i in range(1):
 				self.B_Data = self.B_Graph.render(self.draw)
 
 		if self.selection == 3:
-			for i in range(64):
+			for i in range(1):
 				self.C_Data =  self.C_Graph.render(self.draw)
 
 
@@ -1628,18 +1628,17 @@ class ColourScreen(object):
 		return self.status
 
 	def graph_screen(self):
-		print("Struct - Overall lcars")
-		#self.newimage = self.blankimage.copy()
-		#self.newimage.paste(self.lcarsframe,(0,0))
-		#self.draw = ImageDraw.Draw(self.newimage)
+		self.newimage = self.blankimage.copy()
+		self.newimage.paste(self.lcarsframe,(0,0))
+		self.draw = ImageDraw.Draw(self.newimage)
 
-		#last_status = self.status
+		last_status = self.status
 		self.status = self.multi_frame.push(self.draw)
 
-		#if self.status == last_status:
-			#self.pixdrw()
-		#else:
-			#self.loading()
+		if self.status == last_status:
+			self.pixdrw()
+		else:
+			self.loading()
 
 		return self.status
 
