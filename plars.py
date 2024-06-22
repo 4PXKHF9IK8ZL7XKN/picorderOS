@@ -40,10 +40,6 @@ class PLARS(object):
 
 	BUFFER_GLOBAL = pd.DataFrame(columns=['value','min','max','dsc','sym','dev','timestamp','latitude','longitude'])
 	
-	GLOBAL_INDEX = 0
-	
-	GLOBAL_VALUE = 0
-
 	def __init__(self):
 
 		# add a lock to avoid race conditions
@@ -351,11 +347,11 @@ class PLARS(object):
 	def get_recent(self, dsc, dev, num, timeing):	
 		# Filters the pd Dataframe to a Device like dsc="Thermometer" 
 		
-		PLARS.GLOBAL_INDEX = PLARS.GLOBAL_INDEX +1
+
 		
 		result = PLARS.BUFFER_GLOBAL[PLARS.BUFFER_GLOBAL["dsc"] == dsc]
-		print("result")
-		print(result)
+		##print("result")
+		##print(result)
 		
 		untrimmed_data = result.loc[result['dev'] == dev]
 
@@ -507,7 +503,7 @@ def threaded_plars():
 		print("Avail:", len(configure.sensor_info))
 		configure.sensor_ready[0] = True
 		channel.basic_consume(queue='',on_message_callback=callback_rabbitmq, auto_ack=True)
-		while True
+		while True:
 			try:
 				channel.start_consuming()
 			except:
