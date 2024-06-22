@@ -38,6 +38,12 @@ print("Loading Picorder Library Access and Retrieval System Module")
 
 class PLARS(object):
 
+	BUFFER_GLOBAL = pd.DataFrame(columns=['value','min','max','dsc','sym','dev','timestamp','latitude','longitude'])
+	
+	GLOBAL_INDEX = 0
+	
+	GLOBAL_VALUE = 0
+
 	def __init__(self):
 
 		# add a lock to avoid race conditions
@@ -53,12 +59,8 @@ class PLARS(object):
 		# create buffer
 		self.file_path = "data/datacore.csv"
 		self.em_file_path = "data/em_datacore.csv"
+		
 
-		self.index = 0
-		self.data_line = []
-		self.value = 0
-		self.value1 = 10
-		self.value2 = 180
 
 		if configure.datalog[0]:
 
@@ -86,10 +88,10 @@ class PLARS(object):
 		pd.set_option('display.float_format', '{:.7f}'.format)
 
 		#create a buffer object to hold screen data
-		self.buffer = {'index':[],'value':[],'min':[],'max':[],'dsc':[],'sym':[],'dev':[],'timestamp':[]}
+		self.buffer = pd.DataFrame(columns=['value','min','max','dsc','sym','dev','timestamp','latitude','longitude'])
 		
 		#create a buffer for wifi/bt data
-		self.buffer_em = ['index','ssid','signal','quality','frequency','encrypted','channel','dev','mode','dsc','timestamp','latitude','longitude']
+		self.buffer_em = pd.DataFrame(columns=['ssid','signal','quality','frequency','encrypted','channel','dev','mode','dsc','timestamp','latitude','longitude'])
 
 
 		# variables for EM stats call
@@ -291,164 +293,84 @@ class PLARS(object):
 	# initialized sensor.
 	# Sensor data is taken in as Fragment() instance objects. Each one contains
 	# the sensor value and context for it (scale, symbol, unit, etc).
-	def update(self,data):
-
-		print("update Call")
-		# sets/requests the thread lock to prevent other threads reading data.
-		#self.lock.acquire()
-
-
-		# breaks out the compilation of existing and newest dataframe as a process.
-		#q = Queue()
-
-		#get_process = Process(target=update_proc, args=(q, self.buffer, data,['value','min','max','dsc','sym','dev','timestamp','latitude','longitude'],))
-		#get_process.start()
-
-		# return a list of the values from the process
+	def update(self,ch, method, properties, body):
+		#print('book=', mapping_book_byname)
+		#print('populating=', method.routing_key)
 		
+		timestamp = time.time()
+		value = random.randint(1, 100) 
+		sensors = Sensor()
+		fragdata = []
+		sensor_values = []
+		timestamp = time.time()
 		
+		BME680 = [[0,-40,8,'Thermometer','\xB0','BME680','timestamp'],[0,0,100,'Hygrometer','%','BME680','timestamp'],[0,300,1100,'Barometer','hPa','BME680','timestamp'],[0,0,500,'VOC','ppm','BME680','timestamp'],[0,0,1100,'ALT','m','BME680','timestamp']]
+			
+		if method.routing_key == 'GPS_DATA':
+			GPS_DATA = body.decode()
+		elif method.routing_key == 'bme680':	
+			# decodes data byte stream and splits the values by comma
+			sensor_values = body.decode().strip("()").split(",")		
+			index = 0
+			for value in sensor_values:
+				#print("BME680:", float(value))
+				BME680[index][0] = float(value)					
+				BME680[index][6] = timestamp
+				#print("MATRIX", BME680[index])
+				fragdata.append(BME680[index])		
+				# creates a new dataframe to add new data 	
+				newdata = pd.DataFrame(fragdata, columns=['value','min','max','dsc','sym','dev','timestamp'])
+				PLARS.BUFFER_GLOBAL = pd.concat([PLARS.BUFFER_GLOBAL,newdata]).drop_duplicates().reset_index(drop=True)
+				#PLARS.BUFFER_GLOBAL = pd.concat([PLARS.BUFFER_GLOBAL,newdata]).reset_index(drop=True)
+				index = index + 1			
 		
-		print("BUFFER",self.buffer)
-		
-		result = update_proc_call(self.buffer,array,['value','min','max','dsc','sym','dev','timestamp','latitude','longitude'])
+		elif method.routing_key == 'system_vitals':
+			#print("type:",type(body.decode()))
+			var1 = body.decode().split(",")	
 
-		# sets the new dataframe as the buffer
-		self.buffer = result		
 
-		# get buffer size to determine how many rows to remove from the end
-		currentsize = len(self.buffer)
-		
-		
+		currentsize = len(PLARS.BUFFER_GLOBAL)
 
-		if configure.trim_buffer[0]:
-			# if buffer is larger than double the buffer size
-			if currentsize >= configure.buffer_size[0] * 2:
-				self.buffer = self.trimbuffer(configure.buffer_size[0])
+		if configure.buffer_size[0] == 0:
+			targetsize = 64 * configure.max_sensors[0]
+		else:
+			targetsize = configure.buffer_size[0]
 
-		# release the thread lock for other threads
-		#self.lock.release()
+
+		# determine difference between buffer and target size
+		length = currentsize - targetsize
+		if currentsize > targetsize:
+			# when 200 is reached the first index is dropped, we cant see him.
+			PLARS.BUFFER_GLOBAL.drop(range(0, length), inplace=True)
+
+
 
 
 	# return a list of n most recent data from specific sensor defined by keys
 	# gets Called from pilgraph
-	def get_recent(self, dsc, dev, num, timeing):
+	def get_recent(self, dsc, dev, num, timeing):	
+		# Filters the pd Dataframe to a Device like dsc="Thermometer" 
+		
+		PLARS.GLOBAL_INDEX = PLARS.GLOBAL_INDEX +1
+		
+		result = PLARS.BUFFER_GLOBAL[PLARS.BUFFER_GLOBAL["dsc"] == dsc]
+		print("result")
+		print(result)
+		
+		untrimmed_data = result.loc[result['dev'] == dev]
 
-		# (self, dsc, dev, num = 5, timeing = False):
-		# set the thread lock so other threads are unable to add sensor data
-		#self.lock.acquire()
-		
-		fragdata = []
-		
-		print("PULL - PLARS")
-		#print("self.value:", self.value, self.value1, self.value2)
-		
-		self.value = self.value + 10
-		
-		if self.value >= 361:
-			self.value = 0
-			self.value1 = self.value1 * -1
-			
-		self.value2 = self.value2 + self.value1
+		# trim it to length (num).
+		trimmed_data = untrimmed_data.tail(num)
 
-		value = math.sin(self.value2 * 100000 )
-		value1 = 0
-		value2 = 0
-		#value = random.randint(1, 100) 
-		
-		timestamp = time.time()
-		
-		#print('dsc', dsc)
-		#print('dev', dev)
-		#print('num', num)
-
-		
-		#print('get:', self.buffer )
-		
-		if dsc == 'Hygrometer':
-			mini = 0
-			maxi = 100
-			symb =  "%"
-		elif dsc == 'Barometer':
-			mini = 300
-			maxi = 1100
-			symb =  "hPa"	
-		elif dsc == 'Thermometer':
-			mini = -40
-			maxi = 85
-			symb =  '\xB0'	
-		
-		
-		
-		if dsc == 'Hygrometer' or 'Barometer' or 'Thermometer':
-			setofitems = [value,mini,maxi,dsc,symb,dev,timestamp]
-			self.data_line.append(value)
-			self.data_line.append(value1)
-			self.data_line.append(value2)
-			#fragdata.append(item)
-			
-			self.index = self.index + 1
-			
-			# creates a new dataframe to add new data to
-			#newdata = {'dsc':dsc,index:{'value':[],'min':[],'max':[],'dsc':[],'sym':[],'dev':[],'timestamp':[]}}
-			#newdata['dsc'==dsc][index]['value'].append(value)
-			#newdata['dsc'==dsc][index]['min'].append(mini)
-			#newdata['dsc'==dsc][index]['max'].append(maxi)
-			#newdata['dsc'==dsc][index]['dsc'].append(dsc)
-			#newdata['dsc'==dsc][index]['sym'].append(symb)
-			#newdata['dsc'==dsc][index]['dev'].append(dev)
-			#newdata['dsc'==dsc][index]['timestamp'].append(timestamp)
-			
-
-			# appends the new data to the buffer
-			#self.buffer = self.buffer.append(newdata, ignore_index=True)
-			#self.buffer = pd.concat([self.buffer,newdata]).drop_duplicates().reset_index(drop=True)
-			#self.buffer = self.buffer.append(item)
-
-			# get buffer size to determine how many rows to remove from the end
-			currentsize = len(self.buffer)
-
-			targetsize = configure.buffer_size[0]
-			
-			#print('currentsize',currentsize)
-			
-			#print('targetsize ',targetsize )
-
-			# determine difference between buffer and target size
-			length = currentsize - targetsize
-		
-			# Filters the pd Dataframe to a Device like dsc="Thermometer" 
-			#result = self.buffer[self.buffer["dsc"] == dsc]
-
-			#untrimmed_data = result.loc[result['dev'] == dev]
-			#print('untrimmed_data',untrimmed_data)
-
-			# trim it to length (num).
-			#trimmed_data = untrimmed_data.tail(num)
-			#print('trimmed_data',trimmed_data)
 
 		# return a list of the values
-		#data_line = trimmed_data['value'].tolist()
-		#print('values',data_line)
-		
-		
-		#times = trimmed_data['timestamp'].tolist()
-		#result = [data_line,times]	
-		
-		#result = self.buffer,dsc,dev,num
-
-		timelength = self.index
-		
-		#print('data_line:', self.index, self.data_line )
-		
-
-		#timelength = 0
-
-		#if len(result[1]) > 0:			
-		#	timelength = max(result[1]) - min(result[1])
+		data_line = trimmed_data['value'].tolist()		
+		times = trimmed_data['timestamp'].tolist()
 
 
+		timelength = num
 
-		return self.data_line, timelength
+		return data_line, timelength
 
 
 	def get_em(self,dev,frequency):
@@ -535,30 +457,16 @@ class PLARS(object):
 	def convert_epoch(self, time):
 		return datetime.datetime.fromtimestamp(time)
 		
+	def response_check(self):
+		return True
+		
+# updates the dataframe in memory with the most recent sensor values from each
+# initialized sensor.
+# Sensor data is taken in as Fragment() instance objects. Each one contains
+# the sensor value and context for it (scale, symbol, unit, etc).
 def callback_rabbitmq(ch, method, properties, body):
-	#print('book=', mapping_book_byname)
-	#print('populating=', method.routing_key)
-	timestamp = time.time()
-	sensors = Sensor()
-	#fragment = [Fragment(0,100,'BME680','°c',41),Fragment(0,100,'BME680','%',41),Fragment(0,100,'BME680','hPa',41)]
-	timestamp = time.time()
-	
-	data_array = []
-	
-	if method.routing_key == 'GPS_DATA':
-		GPS_DATA = body.decode()
-	elif method.routing_key == 'bme680':
-		var1,var2,var3,var4,var5 = body.decode().split(",")
-		#sensors.update_bme680(var1,var2,var3,var4,var5)
-	elif method.routing_key == 'system_vitals':
-		#print("type:",type(body.decode()))
-		var1 = body.decode().split(",")
-		#print(var1)
-		#sensors.update_system_vitals(var1,var2,var3,var4,var5,var6,var7,var8)
-	#sensor_data = sensors.get()
-	#conn.send([sensor_data])
-	#conn.send([sensor_data, thermal_frame])
-	#print(f" [x] {method.routing_key}:{body}")			
+	plars = PLARS()
+	plars.update(ch, method, properties, body)
 	
 def callback_rabbitmq_meta(ch, method, properties, body):
 	global mapping_book_byname
@@ -576,8 +484,6 @@ def callback_rabbitmq_meta(ch, method, properties, body):
 
 # create a process that can run seperately and handle requests
 def threaded_plars():
-    
-	
 	channel.basic_consume(consumer_tag='sensor_metadata',queue='sensor_metadata',on_message_callback=callback_rabbitmq_meta, auto_ack=True)
 	# Waiting for the Metadata message ca 10 sec
 	channel.start_consuming()
@@ -601,7 +507,11 @@ def threaded_plars():
 		print("Avail:", len(configure.sensor_info))
 		configure.sensor_ready[0] = True
 		channel.basic_consume(queue='',on_message_callback=callback_rabbitmq, auto_ack=True)
-		#channel.start_consuming()
+		while True
+			try:
+				channel.start_consuming()
+			except:
+				pass
 
 
 # Creates a plars database object as soon as it is loaded.
