@@ -466,11 +466,7 @@ def sensor_process():
 		if configure.envirophat:
 			envirophat_data = sensors.get_envirophat()
 			publish("envirophat",envirophat_data)
-			
-		if configure.envirophat:
-			envirophat_data = sensors.get_envirophat()
-			publish("envirophat",envirophat_data)
-			
+						
 		if configure.pocket_geiger:
 			pocket_geigert_data = sensors.get_pocket_geiger()
 			publish("pocket_geiger",pocket_geiger_data)
