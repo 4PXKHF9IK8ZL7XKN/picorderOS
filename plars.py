@@ -304,6 +304,8 @@ class PLARS(object):
 		
 		BME680 = [[0,-40,85,'Thermometer','\xB0','BME680','timestamp','latitude','longitude'],[0,0,100,'Hygrometer','%','BME680','timestamp','latitude','longitude'],[0,300,1100,'Barometer','hPa','BME680','timestamp','latitude','longitude'],[0,0,500,'VOC','ppm','BME680','timestamp','latitude','longitude'],[0,0,1100,'ALT','m','BME680','timestamp','latitude','longitude']]
 		SYSTEMVITALES = [[0,0,'inf','Timer','t','RaspberryPi','timestamp','latitude','longitude'],[0,0,4,'INDICATOR','IND','RaspberryPi','timestamp','latitude','longitude'],[0,-25,100,'CpuTemp','\xB0','RaspberryPi','timestamp','latitude','longitude'],[0,0,400,'CpuPercent','%','RaspberryPi','timestamp','latitude','longitude'],[0,0,4800000,'VirtualMemory','b','RaspberryPi','timestamp','latitude','longitude'],[0,0,100,'disk_usage','%','RaspberryPi','timestamp','latitude','longitude'],[0,0,100000,'BytesSent','b','RaspberryPi','timestamp','latitude','longitude'],[0,0,100000,'BytesReceived','b','RaspberryPi','timestamp','latitude','longitude']]
+		GENERATORS = [[0,-100,100,'SineWave','','RaspberryPi','timestamp','latitude','longitude'],[0,-500,500,'TangentWave','','RaspberryPi','timestamp','latitude','longitude'],[0,-100,100,'CosWave','','RaspberryPi','timestamp','latitude','longitude'],[0,-100,100,'SineWave2','','RaspberryPi','timestamp','latitude','longitude']]
+		SENSEHAT = [[0,-40,120,'Thermometer','\xB0','sensehat','timestamp','latitude','longitude'],[0,0,100,'Hygrometer','%','sensehat','timestamp','latitude','longitude'],[0,260,1260,'Barometer','hPa','sensehat','timestamp','latitude','longitude'],[0,-500,500,'MagnetX','G','sensehat','timestamp','latitude','longitude'],[0,-500,500,'MagnetY','G','sensehat','timestamp','latitude','longitude'],[0,-500,500,'MagnetZ','G','sensehat','timestamp','latitude','longitude'],[0,-500,500,'"AccelX','g','sensehat','timestamp','latitude','longitude'],[0,-500,500,'"AccelY','g','sensehat','timestamp','latitude','longitude'],[0,-500,500,'"AccelZ','g','sensehat','timestamp','latitude','longitude']]
 			
 		# configure buffersize
 		if configure.buffer_size[0] == 0:
@@ -329,13 +331,12 @@ class PLARS(object):
 				# creates a new dataframe to add new data 	
 				newdata = pd.DataFrame(fragdata, columns=['value','min','max','dsc','sym','dev','timestamp','latitude','longitude'])
 				PLARS.BUFFER_GLOBAL = pd.concat([PLARS.BUFFER_GLOBAL,newdata]).drop_duplicates().reset_index(drop=True)
-				#PLARS.BUFFER_GLOBAL = pd.concat([PLARS.BUFFER_GLOBAL,newdata]).reset_index(drop=True)
-				index = index + 1		
-				
+				#PLARS.BUFFER_GLOBAL = pd.concat([PLARS.BUFFER_GLOBAL,newdata]).reset_index(drop=True)	
 				# we get len of one sensor
 				currentsize_persensor = len(PLARS.BUFFER_GLOBAL[PLARS.BUFFER_GLOBAL["dsc"] == BME680[index][3]])
 				if currentsize_persensor > targetsize:
-					trimmbuffer_flag = True				
+					trimmbuffer_flag = True		
+				index = index + 1			
 	
 		elif method.routing_key == 'system_vitals':
 			sensor_array_unclean = []
@@ -392,6 +393,73 @@ class PLARS(object):
 					trimmbuffer_flag = True		
 				index = index + 1	
 				
+		elif method.routing_key == 'generators':
+		    # decodes data byte stream and splits the values by comma
+			sensor_values = body.decode().strip("()").split(",")		
+			index = 0
+			for value in sensor_values:
+				#print("GENERATORS:", float(value))
+				GENERATORS[index][0] = float(value)					
+				GENERATORS[index][6] = timestamp
+				GENERATORS[index][7] = PLARS.GPS_DATA[0]
+				GENERATORS[index][8] = PLARS.GPS_DATA[1]
+				#print("MATRIX", GENERATORS[index])
+				fragdata.append(GENERATORS[index])		
+				# creates a new dataframe to add new data 	
+				newdata = pd.DataFrame(fragdata, columns=['value','min','max','dsc','sym','dev','timestamp','latitude','longitude'])
+				PLARS.BUFFER_GLOBAL = pd.concat([PLARS.BUFFER_GLOBAL,newdata]).drop_duplicates().reset_index(drop=True)
+				#PLARS.BUFFER_GLOBAL = pd.concat([PLARS.BUFFER_GLOBAL,newdata]).reset_index(drop=True)	
+				# we get len of one sensor
+				currentsize_persensor = len(PLARS.BUFFER_GLOBAL[PLARS.BUFFER_GLOBAL["dsc"] == GENERATORS[index][3]])
+				if currentsize_persensor > targetsize:
+					trimmbuffer_flag = True	
+				index = index + 1	
+					
+		elif method.routing_key == 'sensehat':
+		    # decodes data byte stream and splits the values by comma
+			sensor_values = body.decode().strip("()").split(",")		
+			index = 0
+			for value in sensor_values:
+				#print("SENSEHAT:", float(value))
+				SENSEHAT[index][0] = float(value)					
+				SENSEHAT[index][6] = timestamp
+				SENSEHAT[index][7] = PLARS.GPS_DATA[0]
+				SENSEHAT[index][8] = PLARS.GPS_DATA[1]
+				#print("MATRIX", SENSEHAT[index])
+				fragdata.append(SENSEHAT[index])		
+				# creates a new dataframe to add new data 	
+				newdata = pd.DataFrame(fragdata, columns=['value','min','max','dsc','sym','dev','timestamp','latitude','longitude'])
+				PLARS.BUFFER_GLOBAL = pd.concat([PLARS.BUFFER_GLOBAL,newdata]).drop_duplicates().reset_index(drop=True)
+				#PLARS.BUFFER_GLOBAL = pd.concat([PLARS.BUFFER_GLOBAL,newdata]).reset_index(drop=True)
+				# we get len of one sensor
+				currentsize_persensor = len(PLARS.BUFFER_GLOBAL[PLARS.BUFFER_GLOBAL["dsc"] == GENERATORS[index][3]])
+				if currentsize_persensor > targetsize:
+					trimmbuffer_flag = True		
+				index = index + 1	
+				
+							
+		elif method.routing_key == 'envirophat':
+		    # decodes data byte stream and splits the values by comma
+			sensor_values = body.decode().strip("()").split(",")		
+			index = 0
+
+		elif method.routing_key == 'pocket_geiger':
+		    # decodes data byte stream and splits the values by comma
+			sensor_values = body.decode().strip("()").split(",")		
+			index = 0
+			
+		elif method.routing_key == 'ir_thermo':
+		    # decodes data byte stream and splits the values by comma
+			sensor_values = body.decode().strip("()").split(",")		
+			index = 0
+		
+		elif method.routing_key == 'thermal_frame':
+		    # decodes data byte stream and splits the values by comma
+			sensor_values = body.decode().strip("()").split(",")		
+			index = 0
+		
+			
+				
 
 
 		# PD Fails to handel over 1650 rows so we trim the buffer when 64 rows on any sensor gets reached
@@ -416,7 +484,7 @@ class PLARS(object):
 		
 		#print("Buffer")
 		#print(PLARS.BUFFER_GLOBAL[PLARS.BUFFER_GLOBAL["dsc"] == 'CpuTemp')
-		print(PLARS.BUFFER_GLOBAL)
+		#print(PLARS.BUFFER_GLOBAL)
 		
 		untrimmed_data = result.loc[result['dev'] == dev]
 
@@ -493,7 +561,7 @@ class PLARS(object):
 		targetsize_all_sensors = targetsize * configure.max_sensors[0]
 
 		# get buffer size to determine how many rows to remove from the end
-		currentsize = len(PLARS.BUFFER_GLOBAL) * 3
+		currentsize = len(PLARS.BUFFER_GLOBAL) 
 
 		# determine difference between buffer and target size
 		length = currentsize - targetsize_all_sensors
