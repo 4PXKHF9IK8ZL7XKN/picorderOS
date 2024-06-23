@@ -12,7 +12,7 @@ luma.core>=2.3.1
 luma.emulator>=1.4.0
 luma.lcd>=2.9.0
 numpy
-Pillow>=9.0.1
+Pillow>=10.3.1
 psutil>=5.8.0
 pygame>=2.1.0
 scipy
