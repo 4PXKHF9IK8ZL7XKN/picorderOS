@@ -259,7 +259,7 @@ class sensor(object):
 		self.cputemp = psutil.sensors_temperatures()
 		self.virtmem = (float(psutil.virtual_memory().available * 0.0000001))
 		self.diskuse = psutil.disk_usage("/")
-		self.uptime  = time.strftime('%H:%M:%S', time.gmtime(time_delta))
+		self.uptime  = time_delta
 		self.bytsent = (float(psutil.net_io_counters().bytes_sent * 0.00001))
 		self.bytrece = (float(psutil.net_io_counters().bytes_recv * 0.00001))
 		
