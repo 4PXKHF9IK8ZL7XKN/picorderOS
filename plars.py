@@ -9,6 +9,7 @@ import json
 import random
 import time
 import math
+import psutil
 
 #	PLARS (Picorder Library Access and Retrieval System) aims to provide a
 #	single surface for storing and retrieving data for display in any of the
@@ -39,6 +40,7 @@ print("Loading Picorder Library Access and Retrieval System Module")
 class PLARS(object):
 
 	BUFFER_GLOBAL = pd.DataFrame(columns=['value','min','max','dsc','sym','dev','timestamp','latitude','longitude'])
+	GPS_DATA = [4747.0000,4747.0000]
 	
 	def __init__(self):
 
@@ -295,15 +297,23 @@ class PLARS(object):
 		
 		timestamp = time.time()
 		value = random.randint(1, 100) 
-		sensors = Sensor()
+		#sensors = Sensor()
 		fragdata = []
 		sensor_values = []
-		timestamp = time.time()
+		trimmbuffer_flag = False
 		
-		BME680 = [[0,-40,8,'Thermometer','\xB0','BME680','timestamp'],[0,0,100,'Hygrometer','%','BME680','timestamp'],[0,300,1100,'Barometer','hPa','BME680','timestamp'],[0,0,500,'VOC','ppm','BME680','timestamp'],[0,0,1100,'ALT','m','BME680','timestamp']]
+		BME680 = [[0,-40,85,'Thermometer','\xB0','BME680','timestamp','latitude','longitude'],[0,0,100,'Hygrometer','%','BME680','timestamp','latitude','longitude'],[0,300,1100,'Barometer','hPa','BME680','timestamp','latitude','longitude'],[0,0,500,'VOC','ppm','BME680','timestamp','latitude','longitude'],[0,0,1100,'ALT','m','BME680','timestamp','latitude','longitude']]
+		SYSTEMVITALES = [[0,0,'inf','Timer','t','RaspberryPi','timestamp','latitude','longitude'],[0,0,4,'INDICATOR','IND','RaspberryPi','timestamp','latitude','longitude'],[0,-25,100,'CpuTemp','\xB0','RaspberryPi','timestamp','latitude','longitude'],[0,0,400,'CpuPercent','%','RaspberryPi','timestamp','latitude','longitude'],[0,0,4800000,'VirtualMemory','b','RaspberryPi','timestamp','latitude','longitude'],[0,0,100,'disk_usage','%','RaspberryPi','timestamp','latitude','longitude'],[0,0,100000,'BytesSent','b','RaspberryPi','timestamp','latitude','longitude'],[0,0,100000,'BytesReceived','b','RaspberryPi','timestamp','latitude','longitude']]
+			
+		# configure buffersize
+		if configure.buffer_size[0] == 0:
+			targetsize = 64
+		else:
+			targetsize = configure.buffer_size[0]
+			
 			
 		if method.routing_key == 'GPS_DATA':
-			GPS_DATA = body.decode()
+			PLARS.GPS_DATA[0],PLARS.GPS_DATA[1]  = body.decode().strip("[]").split(",")	
 		elif method.routing_key == 'bme680':	
 			# decodes data byte stream and splits the values by comma
 			sensor_values = body.decode().strip("()").split(",")		
@@ -312,34 +322,86 @@ class PLARS(object):
 				#print("BME680:", float(value))
 				BME680[index][0] = float(value)					
 				BME680[index][6] = timestamp
+				BME680[index][7] = PLARS.GPS_DATA[0]
+				BME680[index][8] = PLARS.GPS_DATA[1]
 				#print("MATRIX", BME680[index])
 				fragdata.append(BME680[index])		
 				# creates a new dataframe to add new data 	
-				newdata = pd.DataFrame(fragdata, columns=['value','min','max','dsc','sym','dev','timestamp'])
+				newdata = pd.DataFrame(fragdata, columns=['value','min','max','dsc','sym','dev','timestamp','latitude','longitude'])
 				PLARS.BUFFER_GLOBAL = pd.concat([PLARS.BUFFER_GLOBAL,newdata]).drop_duplicates().reset_index(drop=True)
 				#PLARS.BUFFER_GLOBAL = pd.concat([PLARS.BUFFER_GLOBAL,newdata]).reset_index(drop=True)
-				index = index + 1			
-		
+				index = index + 1		
+				
+				# we get len of one sensor
+				currentsize_persensor = len(PLARS.BUFFER_GLOBAL[PLARS.BUFFER_GLOBAL["dsc"] == BME680[index][4]])
+				if currentsize_persensor > targetsize:
+					trimmbuffer_flag = True				
+	
 		elif method.routing_key == 'system_vitals':
-			#print("type:",type(body.decode()))
-			var1 = body.decode().split(",")	
+			sensor_array_unclean = []
+			sensor_values = [0,1,2,3,4,5,6,7]
+			#decodes data byte stream and splits the values by comma
+			sensor_array_unclean = body.decode().strip("()").split(",")
+			cleanup_index = 0
+			for value4555 in sensor_array_unclean:
+				if cleanup_index == 0:
+					# uptime
+					sensor_values[0] = value4555.strip("'")
+				elif cleanup_index == 1:
+					# CPU Load Overall last min
+					sensor_values[1] = float(value4555.strip('( '))
+				elif cleanup_index == 5:
+					# CPU Temperatur
+					array2541 = value4555.rsplit('=')
+					sensor_values[2] = float(array2541[1])
+				elif cleanup_index == 8:
+					# CPU Load in Percentage
+					sensor_values[3] = float(value4555)
+				elif cleanup_index == 9:
+					# virtual mem
+					sensor_values[4] = float(value4555)
+				elif cleanup_index == 13:
+					# diskussage in percentage i skipped bytes
+					array56461 = value4555.rsplit('=')			
+					sensor_values[5] = float(array56461[1].strip(' )'))
+				elif cleanup_index == 14:
+					# bytes send bytes
+					sensor_values[6] = float(value4555)
+				elif cleanup_index == 15:
+					# bytes rec 
+					sensor_values[7] = float(value4555)
+				cleanup_index = cleanup_index + 1
+				
+			for item in sensor_values:
+				print("item:", item)
+
+			index = 0
+			for value in sensor_values:
+				print("SYSTEMVITALES:", value)
+				SYSTEMVITALES[index][0] = value					
+				SYSTEMVITALES[index][6] = timestamp
+				SYSTEMVITALES[index][7] = PLARS.GPS_DATA[0]
+				SYSTEMVITALES[index][8] = PLARS.GPS_DATA[1]
+				print("MATRIX", SYSTEMVITALES[index])
+				fragdata.append(SYSTEMVITALES[index])		
+				# creates a new dataframe to add new data 	
+				newdata = pd.DataFrame(fragdata, columns=['value','min','max','dsc','sym','dev','timestamp','latitude','longitude'])
+				PLARS.BUFFER_GLOBAL = pd.concat([PLARS.BUFFER_GLOBAL,newdata]).drop_duplicates().reset_index(drop=True)
+				#PLARS.BUFFER_GLOBAL = pd.concat([PLARS.BUFFER_GLOBAL,newdata]).reset_index(drop=True)
+				index = index + 1		
+								
+				# we get len of one sensor
+				currentsize_persensor = len(PLARS.BUFFER_GLOBAL[PLARS.BUFFER_GLOBAL["dsc"] == SYSTEMVITALES[index][4]])
+				print("SIZE:", currentsize_persensor)
+				if currentsize_persensor > targetsize:
+					trimmbuffer_flag = True		
+					
+				
 
 
-		currentsize = len(PLARS.BUFFER_GLOBAL)
-
-		if configure.buffer_size[0] == 0:
-			targetsize = 64 * configure.max_sensors[0]
-		else:
-			targetsize = configure.buffer_size[0]
-
-
-		# determine difference between buffer and target size
-		length = currentsize - targetsize
-		if currentsize > targetsize:
-			# when 200 is reached the first index is dropped, we cant see him.
-			PLARS.BUFFER_GLOBAL.drop(range(0, length), inplace=True)
-
-
+		# PD Fails to handel over 1650 rows so we trim the buffer when 64 rows on any sensor gets reached
+		if trimmbuffer_flag:
+				PLARS.BUFFER_GLOBAL = self.trimbuffer(targetsize)
 
 
 	# return a list of n most recent data from specific sensor defined by keys
@@ -347,11 +409,18 @@ class PLARS(object):
 	def get_recent(self, dsc, dev, num, timeing):	
 		# Filters the pd Dataframe to a Device like dsc="Thermometer" 
 		
-
+		#print("Sensor_count:",configure.max_sensors[0])
+		
+		currentsize = len(PLARS.BUFFER_GLOBAL)
+		
+		#print("currentsize ",currentsize )
 		
 		result = PLARS.BUFFER_GLOBAL[PLARS.BUFFER_GLOBAL["dsc"] == dsc]
-		##print("result")
-		##print(result)
+		#print("result")
+		#print(result)
+		
+		#print("Buffer")
+		#print(PLARS.BUFFER_GLOBAL)
 		
 		untrimmed_data = result.loc[result['dev'] == dev]
 
@@ -378,7 +447,7 @@ class PLARS(object):
 	# returns all sensor data in the buffer for the specific sensor (dsc,dev)
 	def get_sensor(self,dsc,dev):
 
-		result = self.buffer[self.buffer["dsc"] == dsc]
+		result = PLARS.BUFFER_GLOBAL[PLARS.BUFFER_GLOBAL["dsc"] == dsc]
 
 		result2 = result.loc[result['dev'] == dev]
 
@@ -425,18 +494,19 @@ class PLARS(object):
 
 	def trimbuffer(self, targetsize):
 		# should take the buffer in memory and trim some of it
+		targetsize_all_sensors = targetsize * configure.max_sensors[0]
 
 		# get buffer size to determine how many rows to remove from the end
-		currentsize = len(self.buffer)
+		currentsize = len(PLARS.BUFFER_GLOBAL) * 3
 
 		# determine difference between buffer and target size
-		length = currentsize - targetsize
+		length = currentsize - targetsize_all_sensors
 
 		# make a new dataframe of the most recent data to keep using
-		newbuffer = self.buffer.tail(targetsize)
+		newbuffer = PLARS.BUFFER_GLOBAL.tail(targetsize_all_sensors)
 
 		# slice off the rows outside the buffer and backup to disk
-		tocore = self.buffer.head(length)
+		tocore = PLARS.BUFFER_GLOBAL.head(length)
 
 		if configure.datalog[0]:
 				self.append_to_core(tocore)
@@ -483,7 +553,6 @@ def threaded_plars():
 	channel.basic_consume(consumer_tag='sensor_metadata',queue='sensor_metadata',on_message_callback=callback_rabbitmq_meta, auto_ack=True)
 	# Waiting for the Metadata message ca 10 sec
 	channel.start_consuming()
-
 	
 	try:
 		sensor_data = sensors.get()
