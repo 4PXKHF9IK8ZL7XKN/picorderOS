@@ -333,7 +333,7 @@ class PLARS(object):
 				index = index + 1		
 				
 				# we get len of one sensor
-				currentsize_persensor = len(PLARS.BUFFER_GLOBAL[PLARS.BUFFER_GLOBAL["dsc"] == BME680[index][4]])
+				currentsize_persensor = len(PLARS.BUFFER_GLOBAL[PLARS.BUFFER_GLOBAL["dsc"] == BME680[index][3]])
 				if currentsize_persensor > targetsize:
 					trimmbuffer_flag = True				
 	
@@ -371,31 +371,26 @@ class PLARS(object):
 					# bytes rec 
 					sensor_values[7] = float(value4555)
 				cleanup_index = cleanup_index + 1
-				
-			for item in sensor_values:
-				print("item:", item)
 
 			index = 0
 			for value in sensor_values:
-				print("SYSTEMVITALES:", value)
-				SYSTEMVITALES[index][0] = value					
+				#print("SYSTEMVITALES:", value)
+				SYSTEMVITALES[index][0] = float(value)					
 				SYSTEMVITALES[index][6] = timestamp
 				SYSTEMVITALES[index][7] = PLARS.GPS_DATA[0]
 				SYSTEMVITALES[index][8] = PLARS.GPS_DATA[1]
-				print("MATRIX", SYSTEMVITALES[index])
+				#print("MATRIX", SYSTEMVITALES[index])
 				fragdata.append(SYSTEMVITALES[index])		
 				# creates a new dataframe to add new data 	
 				newdata = pd.DataFrame(fragdata, columns=['value','min','max','dsc','sym','dev','timestamp','latitude','longitude'])
 				PLARS.BUFFER_GLOBAL = pd.concat([PLARS.BUFFER_GLOBAL,newdata]).drop_duplicates().reset_index(drop=True)
-				#PLARS.BUFFER_GLOBAL = pd.concat([PLARS.BUFFER_GLOBAL,newdata]).reset_index(drop=True)
-				index = index + 1		
-								
+				#PLARS.BUFFER_GLOBAL = pd.concat([PLARS.BUFFER_GLOBAL,newdata]).reset_index(drop=True)										
 				# we get len of one sensor
-				currentsize_persensor = len(PLARS.BUFFER_GLOBAL[PLARS.BUFFER_GLOBAL["dsc"] == SYSTEMVITALES[index][4]])
-				print("SIZE:", currentsize_persensor)
+				#print("dsc", SYSTEMVITALES[index][3])
+				currentsize_persensor = len(PLARS.BUFFER_GLOBAL[PLARS.BUFFER_GLOBAL["dsc"] == SYSTEMVITALES[index][3]])
 				if currentsize_persensor > targetsize:
 					trimmbuffer_flag = True		
-					
+				index = index + 1	
 				
 
 
@@ -420,7 +415,8 @@ class PLARS(object):
 		#print(result)
 		
 		#print("Buffer")
-		#print(PLARS.BUFFER_GLOBAL)
+		#print(PLARS.BUFFER_GLOBAL[PLARS.BUFFER_GLOBAL["dsc"] == 'CpuTemp')
+		print(PLARS.BUFFER_GLOBAL)
 		
 		untrimmed_data = result.loc[result['dev'] == dev]
 
