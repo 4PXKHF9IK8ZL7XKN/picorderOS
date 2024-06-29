@@ -1,11 +1,18 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 from objects import *
+import sys
 import time
 import math
 import numpy
 import threading
 import pika
+import signal
+import sys
+import RPi.GPIO as GPIO
+import busio as io
+from datetime import timedelta
+
 from multiprocessing import Process,Queue,Pipe
 # the following is a sensor module for use with the PicorderOS
 print("Loading Unified Sensor Module")
@@ -13,12 +20,36 @@ print("Loading Unified Sensor Module")
 generators = True
 DEBUG = False
 
+# Delcares the IRQ Pins for Cap Touch 
+BUTTON_GPIOA = 17
+BUTTON_GPIOB = 27
+
+# set the BUS Freq
+I2C_FRQ = 100000
+
+# A Timer to reset the interrupt, when the data was not pulled correctly , otherwise the trigger stucks
+WAIT_TIME_SECONDS = 0.5
+
+# config the i2c device
+i2c = io.I2C(configure.PIN_SCL, configure.PIN_SDA, frequency=I2C_FRQ)
+
 if not configure.pc:
 	import os
 	
+	
+if configure.input_cap_mpr121:
+	import adafruit_mpr121
+	import board
+	import busio
+	import signal
+	
+	# Note you can optionally change the address of the device:
+	mpr121A = adafruit_mpr121.MPR121(i2c, address=0x5A)
+	mpr121B = adafruit_mpr121.MPR121(i2c, address=0x5B)	
+	
 if configure.bme:
 	import adafruit_bme680
-	import busio as io
+	
 	
 if configure.sensehat:
 	# instantiates and defines paramaters for the sensehat
@@ -57,7 +88,6 @@ if configure.pocket_geiger:
 if configure.amg8833:
 	import adafruit_amg88xx
 	import busio
-	i2c = busio.I2C(configure.PIN_SCL, configure.PIN_SDA)
 	amg = adafruit_amg88xx.AMG88XX(i2c)
 
 if configure.EM:
@@ -70,6 +100,8 @@ if configure.gps:
 
 connection = pika.BlockingConnection(pika.ConnectionParameters('localhost'))
 channel = connection.channel()
+
+
 
     
 def declare_channel():
@@ -96,6 +128,53 @@ def publish(IN_routing_key,data):
 def disconnect():
     connection.close()
         
+def signal_handler(sig, frame):
+    GPIO.cleanup()
+    sys.exit(0)
+     
+    
+# Interrupt Callback functions for the Touch Sensors
+def button_callbackB(channel):
+	touchB_dict = {"DICT":"B",0:False,1:False,2:False,3:False,4:False,5:False,6:False,7:False,8:False,9:False,10:False,11:False}
+	for i in range(12):
+		touchB_dict[i] = mpr121B[i].value
+	publish("touch",touchB_dict)
+    
+
+def button_callbackA(channel):
+	touchA_dict = {"DICT":"A",0:False,1:False,2:False,3:False,4:False,5:False,6:False,7:False,8:False,9:False,10:False,11:False}
+	for i in range(12):
+		touchA_dict[i] = mpr121A[i].value
+	publish("touch",touchA_dict)
+
+
+def reset():
+    if not GPIO.input(17) or not GPIO.input(27):
+        for i in range(12):
+            null = mpr121B[i].value
+            null = mpr121A[i].value
+
+# This Class helps to start a thread that runs a timer non blocking to reset the IRQ signal on the mpr121
+class Job(threading.Thread):
+    def __init__(self, interval, execute, *args, **kwargs):
+        threading.Thread.__init__(self)
+        self.daemon = False
+        self.stopped = threading.Event()
+        self.interval = interval
+        self.execute = execute
+        self.args = args
+        self.kwargs = kwargs
+
+    def stop(self):
+                self.stopped.set()
+                self.join()
+    def run(self):
+            while not self.stopped.wait(self.interval.total_seconds()):
+                self.execute(*self.args, **self.kwargs)
+
+
+
+
 
 class sensor(object):
 
@@ -142,7 +221,6 @@ class sensor(object):
 			self.sense.low_light = True
 
 		if configure.ir_thermo:
-			i2c = io.I2C(configure.PIN_SCL, configure.PIN_SDA, frequency=100000)
 			self.mlx = adafruit_mlx90614.MLX90614(i2c)
 
 		if configure.envirophat: 
@@ -159,7 +237,6 @@ class sensor(object):
 
 		if configure.bme:
 			# Create library object using our Bus I2C port
-			i2c = io.I2C(configure.PIN_SCL, configure.PIN_SDA)
 			self.bme680 = adafruit_bme680.Adafruit_BME680_I2C(i2c, address=0x76, debug=False)
 			self.bme680.sea_level_pressure = 1013.25
 
@@ -484,20 +561,33 @@ def sensor_process():
 		counter += 1
 		timed.logtime()
 
-
-        
+       
         
 def main():
 	declare_channel()
+	
+	# setup GPIO IRQ
+	GPIO.setmode(GPIO.BCM)
+	GPIO.setup(BUTTON_GPIOA, GPIO.IN)
+	GPIO.setup(BUTTON_GPIOB, GPIO.IN)
+
+	GPIO.add_event_detect(BUTTON_GPIOA, GPIO.BOTH, callback=button_callbackA, bouncetime=50)
+	GPIO.add_event_detect(BUTTON_GPIOB, GPIO.BOTH, callback=button_callbackB, bouncetime=50) 
+    
+    # setup the thread with timer and start the IRQ reset function
+	job = Job(interval=timedelta(seconds=WAIT_TIME_SECONDS), execute=reset)
+	job.start()
+    
+    
  
 	while not configure.status == "quit":
 		while True:
 		    sensor_process()
 
 if __name__ == "__main__":
-    try:
-        main()
-        disconnect()
-        sense_process.terminate() 
-    except KeyboardInterrupt:
-        pass
+	try:
+		main()
+		disconnect()
+		signal.signal(signal.SIGINT, signal_handler)
+	except KeyboardInterrupt:
+		pass
