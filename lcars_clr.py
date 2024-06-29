@@ -7,7 +7,7 @@ import socket
 import pika
 import ast
 from classes import Sensor
-from classes import Fragment
+#from classes import Fragment
 
 from operator import itemgetter
 
