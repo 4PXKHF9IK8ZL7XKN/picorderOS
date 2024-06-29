@@ -124,10 +124,16 @@ def publish(IN_routing_key,data):
 	routing_key = str(IN_routing_key)
 	message = str(data)
 	time_unix = time.time()
-	channel.basic_publish(
-        exchange=stack, routing_key=routing_key, body=message)
+	try:
+		channel.basic_publish(exchange=stack, routing_key=routing_key, body=message)
+	except:
+		raise Exception("Publish Faild, connection lost") 
+		disconnect()
+		sys.exit(1)
+		
 	if DEBUG:
 		print(f" {time_unix} [x] Sent {stack} {routing_key}:{message}")
+
     
 def disconnect():
     connection.close()
@@ -592,8 +598,6 @@ def sensor_process():
 
 		counter += 1
 		timed.logtime()
-
-       
         
 def main():
 	declare_channel()
@@ -619,7 +623,14 @@ def main():
 if __name__ == "__main__":
 	try:
 		main()
-		disconnect()
 		signal.signal(signal.SIGINT, signal_handler)
-	except KeyboardInterrupt:
-		pass
+	except KeyboardInterrupt or Exception:
+		disconnect()
+		
+# input's from input.py
+# configure.input_pcf8575
+# configure.input_cap_mpr121
+# configure.sensehat adn configure.input_joystick
+# configure.input_gpio
+# configure.input_kb
+# configure.input_cap1208
