@@ -8,6 +8,7 @@
 
 import os
 import sys
+from picosevent import *
 from threading import Thread
 from luma.core.sprite_system import framerate_regulator
 
@@ -20,7 +21,7 @@ os.environ['SDL_AUDIODRIVER'] = 'alsa'
 
 from objects import *
 from plars import *
-from input import *
+#from input import *
 
 if configure.audio[0]:
 	from audio import *
@@ -89,6 +90,10 @@ def Main():
 	plars_thread = Thread(target = threaded_plars, args = ())
 	plars_thread.start()
 
+	#start event thread for backwards compatibility 
+	event_thread = Thread(target = threaded_events, args = ())
+	event_thread.start()
+
 	# if leds enabled start the event monitor for LEDs
 	if configure.leds[0]:
 		led_thread = Thread(target = ripple_async, args = ())
@@ -96,8 +101,8 @@ def Main():
 
 
 	# start the input monitor thread
-	input_thread = Thread(target = threaded_input, args = ())
-	input_thread.start()
+	#input_thread = Thread(target = threaded_input, args = ())
+	#input_thread.start()
 
 	#start the audio service thread
 	if configure.audio[0]:
@@ -152,7 +157,7 @@ def Main():
 	#shovel_thread.join()
 	#sensor_thread.join()
 	led_thread.join()
-	input_thread.join()
+	event_thread.join()
 	plars.shutdown()
 	sys.exit()
 
