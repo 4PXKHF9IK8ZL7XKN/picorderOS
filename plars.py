@@ -1,7 +1,7 @@
 from multiprocessing import Process,Queue,Pipe
 from objects import *
-from classes import Sensor
-from classes import Fragment
+#from classes import Sensor
+#from classes import Fragment
 from random import randint
 
 
