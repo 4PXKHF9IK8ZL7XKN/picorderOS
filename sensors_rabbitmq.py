@@ -8,7 +8,9 @@ import numpy
 import threading
 import pika
 import signal
+import serial
 import sys
+from pynmeagps import NMEAReader
 import RPi.GPIO as GPIO
 import busio as io
 from datetime import timedelta
@@ -32,6 +34,13 @@ WAIT_TIME_SECONDS = 0.5
 
 # config the i2c device
 i2c = io.I2C(configure.PIN_SCL, configure.PIN_SDA, frequency=I2C_FRQ)
+
+
+if configure.gps:
+	# configure serial port for GPS
+	port = '/dev/ttyACM0'
+	baud = 115200
+	serialPort = serial.Serial(port, baudrate = baud, timeout = 0.5)
 
 if not configure.pc:
 	import os
@@ -92,11 +101,6 @@ if configure.amg8833:
 
 if configure.EM:
 	from modulated_em import *
-
-if configure.gps:
-	from positioning import *
-
-
 
 connection = pika.BlockingConnection(pika.ConnectionParameters('localhost'))
 channel = connection.channel()
@@ -173,7 +177,35 @@ class Job(threading.Thread):
                 self.execute(*self.args, **self.kwargs)
 
 
+def GPS_function():
 
+		gps_update = {"lat" : 47.00, "lon" : 47.00, "speed" : 0.00,"altitude":0.00, "track" : 0.00, "sats":0}
+
+		stream = serial.Serial(port, baud, timeout=3)
+		nmr = NMEAReader(stream)
+		(raw_data, parsed_data) = nmr.read()
+
+		if hasattr(parsed_data, "lat"):
+
+			if parsed_data.lat != '':
+				gps_update["lat"] = float(parsed_data.lat)
+
+			if parsed_data.lon != '':
+				gps_update["lon"] = float(parsed_data.lon)
+
+
+		if hasattr(parsed_data, "altitude"):
+
+			if parsed_data.altitude != '':
+				gps_update["altitude"] = float(parsed_data.altitude)
+
+
+		if hasattr(parsed_data, "speed"):
+
+			if parsed_data.speed != '':
+				gps_update["speed"] = float(parsed_data.speed)
+
+		return gps_update
 
 
 class sensor(object):
