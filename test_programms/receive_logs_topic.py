@@ -4,7 +4,7 @@ import sys
 from pygame import mixer
 
 mixer.init()
-alert=mixer.Sound('assets/beep.wav')
+alert=mixer.Sound('../assets/beep.wav')
 
 connection = pika.BlockingConnection(
     pika.ConnectionParameters(host='localhost'))
@@ -16,7 +16,7 @@ result = channel.queue_declare('', exclusive=True)
 queue_name = result.method.queue
 
 channel.queue_bind(
-    exchange='sensor_data', queue='', routing_key='touch')
+    exchange='sensor_data', queue='', routing_key='EVENT')
 
 print(' [*] Waiting for logs. To exit press CTRL+C')
 
