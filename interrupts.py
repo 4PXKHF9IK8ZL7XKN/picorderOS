@@ -47,17 +47,15 @@ def signal_handler(sig, frame):
 def button_callbackB(channel):
     #print("B Button pressed:", GPIO.input(BUTTON_GPIOB))
     for i in range(12):
-        if mpr121B[i].value:
-            print('Input B {} touched!'.format(i))
-            alert.play()
+    	print(mpr121B[i].value)
+        alert.play()
     
 
 def button_callbackA(channel):
     #print("A Button pressed:", GPIO.input(BUTTON_GPIOA))
     for i in range(12):
-        if mpr121A[i].value:
-            print('Input A {} touched!'.format(i))
-            alert.play()
+    	print(mpr121B[i].value)
+        alert.play()
 
 class Job(threading.Thread):
     def __init__(self, interval, execute, *args, **kwargs):
