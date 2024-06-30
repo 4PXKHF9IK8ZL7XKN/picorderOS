@@ -5,27 +5,56 @@
 # To do:
 # - request from PLARS the N most recent values for the sensor assigned to this identifier
 
+#	PLARS (Picorder Library Access and Retrieval System) aims to provide a
+#	single surface for storing and retrieving data for display in any of the
+#	different Picorder screen modes.
 
-
+from multiprocessing import Process,Queue,Pipe
 from objects import *
+from piosclasses import *
+from random import randint
+import os
+import numpy
+import random
+import time
+import datetime
+import math
+from plars import *
+
 from PIL import Image
 from PIL import ImageFont
 from PIL import ImageDraw
 
-import numpy
 from display_class import *
 from array import *
-from plars import *
-from multiprocessing import Process,Queue,Pipe
 from luma.core.render import canvas
 
+import json
+import ast
+import pandas as pd
 
-print("Loading Python IL Module")
+
+
+print("Loading Python IL Module 2")
 
 print("Display",device_link.device)
 
+
+# Standard LCARS colours
+lcars_orange = (255,153,0)
+lcars_pink = (204,153,204)
+lcars_blue = (153,153,208)
+lcars_red = (204,102,102)
+lcars_peach = (255,204,153)
+lcars_bluer = (153,153,255)
+lcars_orpeach = (255,153,102)
+lcars_pinker = (204,102,153)
+lcars_grid = (47,46,84)
+
+theme1 =  [lcars_orange,lcars_blue,lcars_pinker]
+
 # function to calculate onscreen coordinates of graph pixels as a process.
-def graph_prep_process(conn,samples,datalist,auto,newrange,targetrange,sourcerange,linepoint,jump,sourcelow):
+def graph_prep_process(samples,datalist,auto,newrange,targetrange,sourcerange,linepoint,jump,sourcelow):
 	newlist = []
 	# for each vertical bar in the graph size
 	for i in range(samples):
@@ -58,7 +87,7 @@ def graph_prep_process(conn,samples,datalist,auto,newrange,targetrange,sourceran
 		# increment the cursor
 		linepoint = linepoint + jump
 
-	conn.put(newlist)
+	return newlist
 
 
 class graph_area(object):
@@ -125,9 +154,9 @@ class graph_area(object):
 			self.buff.append(self.datalow)
 
 
-	# the following function returns the graph list.
-	def grabglist(self):
-		return self.glist
+		# the following function returns the graph list.
+		def grabglist(self):
+			return self.glist
 
 	# the following function returns the data list.
 	def grabdlist(self):
@@ -159,7 +188,6 @@ class graph_area(object):
 	# the highest and lowest currently displayed values are presented.
 	# takes in a list/array with length => span
 	def graphprep(self, datalist, ranger = None):
-
 		index = configure.sensors[self.ident][0]
 
 		dsc,dev,sym,maxi,mini = configure.sensor_info[index]
@@ -177,7 +205,7 @@ class graph_area(object):
 
 		# if this graph ISNT for WIFI.
 		if self.type == 0:
-			# grabs the currently selected sensors range data.
+		# grabs the currently selected sensors range data.
 			sourcelow = mini
 			sourcehigh = maxi
 
@@ -188,7 +216,7 @@ class graph_area(object):
 
 			sourcehigh = -5
 
-			self.sourcerange = [sourcelow,sourcehigh]
+		self.sourcerange = [sourcelow,sourcehigh]
 
 		# get the range of the data.
 		if len(datalist) > 0:
@@ -200,23 +228,13 @@ class graph_area(object):
 
 		self.newrange = (self.datalow,self.datahigh)
 
-
-
-		q = Queue()
-		prep_process = Process(target=graph_prep_process, args=(q,self.samples,datalist,self.auto,self.newrange,self.targetrange,self.sourcerange,self.linepoint,self.jump,sourcelow,))
-		prep_process.start()
-
-		prep_process.join()
-		result = q.get()
+		result = graph_prep_process(self.samples,datalist,self.auto,self.newrange,self.targetrange,self.sourcerange,self.linepoint,self.jump,sourcelow)
 
 		return result
 
 
-
-
 	def render(self, draw, auto = True, dot = True, ranger = None):
 		#print("Render! - PILGRAPH")
-
 		return_value = 0
 
 		self.auto = configure.auto[0]
@@ -229,7 +247,7 @@ class graph_area(object):
 
 		# so every time through the loop PILgraph will pull the latest sensor
 		# settings.
-
+	
 		# standard pilgraph: takes DSC,DEV keypairs from screen drawer, asks
 		# plars for data, graphs it.
 
@@ -237,9 +255,9 @@ class graph_area(object):
 		if self.type == 0:
 			index = configure.sensors[self.ident][0]
 			dsc,dev,sym,maxi,mini = configure.sensor_info[index]
-			recent, self.timelength = plars.get_recent(dsc,dev,num = self.samples, timeing = True)
+			recent, self.timelength = get_recent(dsc,dev,num = self.samples, timeing = True)
 			#print("PIL:", recent)
-			
+		
 
 
 			# for returning last value on multigraph
@@ -250,12 +268,12 @@ class graph_area(object):
 
 		# EM pilgraph: pulls wifi data only.
 		elif self.type == 1:
-			recent = plars.get_top_em_history(no = self.samples)
+			recent = get_top_em_history(no = self.samples)
 			return_value = recent[-1]
 
 		# Testing a new graph
 		elif self.type == 2:
-			recent = plars.get_recent(dsc,dev,num = self.samples)
+			recent = get_recent(dsc,dev,num = self.samples)
 			print('recent:', recent)
 
 
@@ -276,3 +294,12 @@ class graph_area(object):
 
 
 		return return_value
+
+
+
+
+
+
+
+
+

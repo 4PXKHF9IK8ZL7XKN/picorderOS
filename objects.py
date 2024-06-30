@@ -11,8 +11,6 @@ DEBUG = False
 
 GPS_DATA = [4747.0000, 4747.0000]
 
-
-
 class preferences(object):
 	def str2bool(self,v):
   		return v.lower() in ("yes", "true", "t", "1")
