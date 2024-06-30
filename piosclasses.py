@@ -1,9 +1,27 @@
 #!/usr/bin/python
 print("Exspand Classes")
+import os
 import numpy
 import time
+import datetime
+import json
+import random
+import math
+import psutil
+import json
+import pika
+import ast
 
+from multiprocessing import Process,Queue,Pipe
 from objects import *
+from random import randint
+from array import *
+import pandas as pd
+
+#	PLARS (Picorder Library Access and Retrieval System) aims to provide a
+#	single surface for storing and retrieving data for display in any of the
+#	different Picorder screen modes.
+
 
 
 if not configure.pc:
@@ -56,11 +74,6 @@ if configure.amg8833:
 if configure.EM:
 	from modulated_em import *
 
-#if configure.gps:
-#	from positioning import *
-
-	
-		
 # An object to store each sensor value and context.
 class Fragment(object):
 
