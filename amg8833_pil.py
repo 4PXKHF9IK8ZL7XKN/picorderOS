@@ -3,6 +3,8 @@
 import random
 import math
 import numpy
+from objects import *
+from plars import *
 
 # Load up the image library stuff to help draw bitmaps to push to the screen
 import PIL.ImageOps
@@ -14,7 +16,6 @@ print("Loading AMG8833 Thermal Camera Module")
 import numpy as np
 from scipy.interpolate import griddata
 from colour import Color
-from plars import *
 
 # some utility functions
 def constrain(val, min_val, max_val):
@@ -77,7 +78,7 @@ rotate = False
 fliplr = False
 flipud = True
 
-from objects import *
+
 
 #import sensors
 
@@ -265,9 +266,9 @@ class ThermalGrid(object):
 				surface.rectangle([(x, y), (x2, y2)], fill = colors[constrain(int(pixel), 0, COLORDEPTH - 1)], outline=None)
 
 	def update(self):
-
+		thermal_frame = []
 		if configure.amg8833:
-			self.data = plars.thermal_frame
+			self.data = thermal_frame
 
 			if len(self.data) < 1:
 				self.data = self.dummy
