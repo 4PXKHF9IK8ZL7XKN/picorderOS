@@ -31,6 +31,8 @@ release_threshold = 2
 
 DEBUG = False
 
+configure.eventlist[0] = [0,0,0,0,0,0,0,0]
+
 connection = pika.BlockingConnection(
     pika.ConnectionParameters(host='localhost'))
 channel = connection.channel()
@@ -42,8 +44,10 @@ queue_name = result.method.queue
 
 channel.queue_bind(
     exchange='sensor_data', queue='', routing_key='touch')
-
+    
 def publish(IN_routing_key,data):
+	configure.beep_ready[0] = True
+	configure.eventready[0] = True	
 	stack = 'sensor_data'
 	if IN_routing_key == 'sensor_metadata':
 		stack = ''
@@ -60,14 +64,14 @@ def publish(IN_routing_key,data):
 	if DEBUG:
 		print(f" {time_unix} [x] Sent {stack} {routing_key}:{message}")
 		
-
-configure.beep_ready[0] = True
-
 def callback(ch, method, properties, body):
 	EVENT_MAP = { 'geo': False  , 'met': False, 'bio': False, 'lib': False, 'pwr': False, 'f1/f2': False, 'I': False, 'E': False, 'accpt/pool': False, 'intrship/tricrder': False, 'EMRG': False, 'fwd/input': False, 'rvs/erase': False, 'Ib': False, 'Eb': False, 'Id': False, 'Door_open': False, 'Door_close': False, 'LOW-POWER': False, 'next':False, 'ENTER':False, 'cancel/switch': False, 'SERIAL': False  }
 	# pcf8575 can map 16 inputs
 	configure.input_pcf8575
 	# mpr121 can map 12 inputs
+	
+	print("array:", configure.eventlist[0])
+	
 	if configure.input_cap_mpr121:
 		sensor_dict_unclean = body.decode()
 		sensor_dict = ast.literal_eval(sensor_dict_unclean)
@@ -78,20 +82,28 @@ def callback(ch, method, properties, body):
 				if not key == 'DICT':
 					if key == 0:
 						EVENT_MAP['geo'] = sensor_dict[key]
+						configure.eventlist[0][0] =  sensor_dict[key]
 					elif key == 1:
 						EVENT_MAP['met'] = sensor_dict[key]
+						configure.eventlist[0][1] =  sensor_dict[key]
 					elif key == 2:
 						EVENT_MAP['bio'] = sensor_dict[key]
+						configure.eventlist[0][2] =  sensor_dict[key]
 					elif key == 3:
 						EVENT_MAP['lib'] = sensor_dict[key]
+						configure.eventlist[0][3] =  sensor_dict[key]
 					elif key == 4:
 						EVENT_MAP['pwr'] = sensor_dict[key]
+						configure.eventlist[0][4] =  sensor_dict[key]
 					elif key == 5:
 						EVENT_MAP['f1/f2'] = sensor_dict[key]
+						configure.eventlist[0][5] =  sensor_dict[key]
 					elif key == 6:
 						EVENT_MAP['I'] = sensor_dict[key]
+						configure.eventlist[0][6] =  sensor_dict[key]
 					elif key == 7:
 						EVENT_MAP['E'] = sensor_dict[key]
+						configure.eventlist[0][7] =  sensor_dict[key]
 					elif key == 8:
 						EVENT_MAP['cancel/switch'] = sensor_dict[key]
 					# no mapping here all keys in the top part of the tric are mapped
@@ -105,18 +117,25 @@ def callback(ch, method, properties, body):
 				if not key == 'DICT':
 					if key == 0:
 						EVENT_MAP['accpt/pool'] = sensor_dict[key]
+						#configure.eventlist[0][8] =  sensor_dict[key]						
 					elif key == 1:
 						EVENT_MAP['intrship/tricrder'] = sensor_dict[key]
+						#configure.eventlist[0][9] =  sensor_dict[key]
 					elif key == 2:
 						EVENT_MAP['EMRG'] = sensor_dict[key]
+						#configure.eventlist[0][10] =  sensor_dict[key]
 					elif key == 3:
 						EVENT_MAP['fwd/input'] = sensor_dict[key]
+						#configure.eventlist[0][11] =  sensor_dict[key]
 					elif key == 4:
 						EVENT_MAP['rvs/erase'] = sensor_dict[key]
+						#configure.eventlist[0][12] =  sensor_dict[key]
 					elif key == 5:
 						EVENT_MAP['Ib'] = sensor_dict[key]
+						#configure.eventlist[0][13] =  sensor_dict[key]
 					elif key == 6:
 						EVENT_MAP['Eb'] = sensor_dict[key]
+						#configure.eventlist[0][14] =  sensor_dict[key]
 					elif key == 7:
 						EVENT_MAP['Id'] = sensor_dict[key]
 					elif key == 8:
