@@ -298,7 +298,7 @@ class preferences(object):
 		self.eventready = [False]
 
 		# contains the current button state (0 is unpressed, 1 is pressed)
-		self.events = [0,0,0,0,0,0,0,0]
+		self.events = [0,0,0,0,0,0,0,0,0,0,0,0,0,0]
 
 		# holds state for beep input feedback
 		self.beep_ready = [False]
