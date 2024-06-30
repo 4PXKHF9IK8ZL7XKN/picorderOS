@@ -9,6 +9,7 @@
 import os
 import sys
 from picosevent import *
+from plars import *
 from threading import Thread
 from luma.core.sprite_system import framerate_regulator
 
@@ -20,7 +21,6 @@ print("Loading Components")
 os.environ['SDL_AUDIODRIVER'] = 'alsa'
 
 from objects import *
-from plars import *
 #from input import *
 
 if configure.audio[0]:
