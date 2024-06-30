@@ -126,10 +126,14 @@ def publish(IN_routing_key,data):
 	time_unix = time.time()
 	try:
 		channel.basic_publish(exchange=stack, routing_key=routing_key, body=message)
-	except:
-		raise Exception("Publish Faild, connection lost") 
-		disconnect()
-		sys.exit(1)
+	except Exception as e:
+		print("An error occurred:",e)
+		try:
+			raise Exception('Terminating')
+		finally:
+			os._exit(1)
+		
+		
 		
 	if DEBUG:
 		print(f" {time_unix} [x] Sent {stack} {routing_key}:{message}")
@@ -626,6 +630,7 @@ if __name__ == "__main__":
 		signal.signal(signal.SIGINT, signal_handler)
 	except KeyboardInterrupt or Exception:
 		disconnect()
+		exit()
 		
 # input's from input.py
 # configure.input_pcf8575
