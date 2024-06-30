@@ -40,13 +40,15 @@ print("Loading Picorder Library Access and Retrieval System Module")
 # Broken out functions for use with processing:
 
 BUFFER_GLOBAL = pd.DataFrame(columns=['value','min','max','dsc','sym','dev','timestamp','latitude','longitude'])
+BUFFER_GLOBAL_EM = pd.DataFrame(columns=['ssid','signal','quality','frequency','encrypted','channel','dev','mode','dsc','timestamp','latitude','longitude'])
+
 
 # PLARS opens a data frame at initialization.
 # If the csv file exists it opens it, otherwise creates it.
 # core is used to refer to the archive on disk for sensor data
 # em_core is used to refer to the archive on disk for EM data
 # buffer is created as a truncated dataframe for drawing to screen.
-# buffer_em is created as a truncated dataframe for drawing  to screen.
+# BUFFER_GLOBAL_EM is created as a truncated dataframe for drawing  to screen.
 	
 # create buffer
 file_path = "data/datacore.csv"
@@ -83,7 +85,7 @@ if configure.datalog[0]:
 	buffer = pd.DataFrame(columns=['value','min','max','dsc','sym','dev','timestamp','latitude','longitude'])
 	
 	#create a buffer for wifi/bt data
-	buffer_em = pd.DataFrame(columns=['ssid','signal','quality','frequency','encrypted','channel','dev','mode','dsc','timestamp','latitude','longitude'])
+	BUFFER_GLOBAL_EM = pd.DataFrame(columns=['ssid','signal','quality','frequency','encrypted','channel','dev','mode','dsc','timestamp','latitude','longitude'])
 
 
 	# variables for EM stats call
@@ -105,13 +107,13 @@ if configure.datalog[0]:
 def get_plars_size():
 
 	# set the thread lock so other threads are unable to add data
-	lock.acquire()
+	
 
-	main_size = len(buffer)
-	em_size = len(buffer_em)
+	main_size = len(BUFFER_GLOBAL_EM)
+	em_size = len(BUFFER_GLOBAL_EM)
 	
 	# release the thread lock.
-	lock.release()
+	
 	return main_size, em_size
 
 def get_em_stats():
@@ -121,7 +123,7 @@ def get_em_stats():
 def shutdown():
 	if configure.datalog[0]:
 		append_to_core(buffer)
-		append_to_em_core(buffer_em)
+		append_to_em_core(BUFFER_GLOBAL_EM)
 
 # gets the latest CSV file
 def get_core():
@@ -138,13 +140,13 @@ def append_to_em_core( data):
 
 def get_recent_bt_list():
 	# set the thread lock so other threads are unable to add data
-	lock.acquire()
+	
 
 	# get the most recent ssids discovered
 	recent_em = get_bt_recent()
 
 	# release the thread lock.
-	lock.release()
+	
 
 	return recent_em.values.tolist()
 
@@ -153,7 +155,7 @@ def get_recent_bt_list():
 def get_recent_em_list():
 
 	# set the thread lock so other threads are unable to add data
-	lock.acquire()
+	
 
 	# get the most recent ssids discovered
 	recent_em = get_em_recent()
@@ -162,7 +164,7 @@ def get_recent_em_list():
 	recent_em.sort_values(by=['signal'], ascending = False)
 
 	# release the thread lock.
-	lock.release()
+	
 
 	return recent_em.values.tolist()
 
@@ -183,7 +185,7 @@ def get_top_em_info():
 	return identity.values.tolist()
 
 def get_em_recent():
-	wifi_buffer = buffer_em.loc[buffer_em['dsc'] == "wifi"]
+	wifi_buffer = BUFFER_GLOBAL_EM.loc[BUFFER_GLOBAL_EM['dsc'] == "wifi"]
 
 	# find the most recent timestamp
 	time_column = wifi_buffer["timestamp"]
@@ -197,7 +199,7 @@ def em_been_seen( seen):
 	pass
 
 def get_bt_recent():
-	bt_buffer = buffer_em.loc[buffer_em['dsc'] == "bluetooth"]
+	bt_buffer = BUFFER_GLOBAL_EM.loc[BUFFER_GLOBAL_EM['dsc'] == "bluetooth"]
 	# find the most recent timestamp
 	time_column = bt_buffer["timestamp"]
 	most_recent = time_column.max()
@@ -210,7 +212,7 @@ def get_top_em_history( no = 5):
 	# suitable to be fed into pilgraph for graphing.
 
 	# set the thread lock so other threads are unable to add data
-	lock.acquire()
+	
 
 	#limit focus to data from that timestamp
 	focus = get_em_recent()
@@ -231,7 +233,7 @@ def get_top_em_history( no = 5):
 
 
 	# release the thread lock.
-	lock.release()
+	
 
 	return get_recent_em(dev,frq, num = no)
 
@@ -240,7 +242,7 @@ def update_em(data):
 	#print("Updating EM Dataframe:")
 
 	# sets/requests the thread lock to prevent other threads reading data.
-	lock.acquire()
+	
 
 
 	# logs some data for statistics.nan
@@ -250,12 +252,12 @@ def update_em(data):
 
 
 	for sample in data:
-		if sample[6] not in buffer_em["dev"].values and sample[6] not in em_idents:
+		if sample[6] not in BUFFER_GLOBAL_EM["dev"].values and sample[6] not in em_idents:
 			em_idents.append(sample[6])
 
 	q = Queue()
 
-	get_process = Process(target=update_em_proc, args=(q, buffer_em, data,['ssid','signal','quality','frequency','encrypted','channel','dev','mode','dsc','timestamp','latitude','longitude'],))
+	get_process = Process(target=update_em_proc, args=(q, BUFFER_GLOBAL_EM, data,['ssid','signal','quality','frequency','encrypted','channel','dev','mode','dsc','timestamp','latitude','longitude'],))
 	get_process.start()
 
 	# return a list of the values
@@ -263,18 +265,18 @@ def update_em(data):
 	get_process.join()
 
 	# appends the new data to the buffer
-	buffer_em = result
+	BUFFER_GLOBAL_EM = result
 
 
 	# get buffer size to determine how many rows to remove from the end
-	currentsize = len(buffer_em)
+	currentsize = len(BUFFER_GLOBAL_EM)
 
 	if configure.trim_buffer[0]:
 		# if buffer is larger than double the buffer size
 		if currentsize >= configure.buffer_size[0] * 2:
-			buffer_em = trim_em_buffer(configure.buffer_size[0])
+			BUFFER_GLOBAL_EM = trim_em_buffer(configure.buffer_size[0])
 
-	lock.release()
+	
 
 
 # updates the thermal frame for display
@@ -494,7 +496,7 @@ def get_recent(dsc, dev, num, timeing):
 
 
 def get_em(dev,frequency):
-	result = buffer_em.loc[buffer_em['dev'] == dev]
+	result = BUFFER_GLOBAL_EM.loc[BUFFER_GLOBAL_EM['dev'] == dev]
 	result2 = result.loc[result["frequency"] == frequency]
 
 	return result2
@@ -530,16 +532,16 @@ def trim_em_buffer( targetsize):
 	# should take the buffer in memory and trim some of it
 
 	# get buffer size to determine how many rows to remove from the end
-	currentsize = len(buffer_em)
+	currentsize = len(BUFFER_GLOBAL_EM)
 
 	# determine difference between buffer and target size
 	length = currentsize - targetsize
 
 	# make a new dataframe of the most recent data to keep using
-	newbuffer = buffer_em.tail(targetsize)
+	newbuffer = BUFFER_GLOBAL_EM.tail(targetsize)
 
 	# slice off the rows outside the buffer and backup to disk
-	tocore = buffer_em.head(length)
+	tocore = BUFFER_GLOBAL_EM.head(length)
 
 	if configure.datalog[0]:
 			append_to_em_core(tocore)
