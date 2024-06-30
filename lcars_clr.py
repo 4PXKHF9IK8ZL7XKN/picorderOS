@@ -176,6 +176,7 @@ class Dialogue(object):
 		# first the sensor palette configuration
 
 		self.events = Events([self.result,0,"last",0,0,0,0,0], "poweroff")
+		print("EVENTS:",self.events)
 
 	def push(self, draw):
 
@@ -394,6 +395,7 @@ class MasterSystemsDisplay(object):
 			self.model = "Unknown"
 
 		self.events = Events([1,2,"last",0,0,0,0,0],"msd")
+		print("EVENTS:",self.events)
 
 
 	def load_list(self):
@@ -413,7 +415,7 @@ class MasterSystemsDisplay(object):
 		host_str = "Name:  " + socket.gethostname() 
 		sense_ready = "Sensors Avl:  " + str(len(configure.sensor_info))
 		model_name = "CPU:  " + self.model
-		PLARS_size, PLARS_em_size = plars.get_plars_size()
+		PLARS_size, PLARS_em_size = get_plars_size()
 		db_size = "PLARS Size:  " + str(PLARS_size)
 		em_size = "PLARS EM Size:  " + str(PLARS_em_size)
 
@@ -474,6 +476,7 @@ class PowerMenu(object):
 		self.C_Label = LabelObj("Exit",font, colour = lcars_orpeach)
 
 		self.events = Events([1,2,"last","last",0,"msd",0,0],"settings")
+		print("EVENTS:",self.events)
 
 
 		# device needs to show multiple settings
@@ -597,6 +600,7 @@ class SettingsFrame(object):
 		self.C_Label = LabelObj("Exit",font, colour = lcars_orpeach)
 
 		self.events = Events([1,2,"last","last",0,"msd",0,0],"settings")
+		print("EVENTS:",self.events)
 
 
 		# device needs to show multiple settings
@@ -763,6 +767,7 @@ class PowerDown(object):
 		# first the sensor palette configuration
 
 		self.events = Events(["shutdown",0,"last","0",0,0,0,0], "poweroff")
+		print("EVENTS:",self.events)
 
 
 	def push(self, draw):
@@ -842,9 +847,10 @@ class EMFrame(object):
 		self.freqmap_grid = DrawGrid(self.vizX1, self.vizY1, self.vizW, self.vizH, lcars_grid)
 
 		self.events = Events([1,"multi",0,"settings","poweroff",2,0,0],"modem")
+		print("EVENTS:",self.events)
 
 	def draw_indicators(self,draw):
-			idents, cur_no, max_no = plars.get_em_stats()
+			idents, cur_no, max_no = get_em_stats()
 			self.indicator1.string = str(cur_no)
 			self.indicator1.r_align(14,67,draw)
 
@@ -858,7 +864,7 @@ class EMFrame(object):
 	def domin_transciever(self,draw):
 
 			# grab EM data from plars
-			info = plars.get_top_em_info()[0]
+			info = get_top_em_info()[0]
 			rect_coords = (self.graphx,self.graphy,self.graphx + self.gspanx,self.graphy + self.gspany)
 			draw.rounded_rectangle(rect_coords, outline = lcars_grid, width = 1, radius = 2)
 
@@ -887,7 +893,7 @@ class EMFrame(object):
 			list_for_labels = []
 
 			# grab EM list
-			em_list = plars.get_recent_em_list()
+			em_list = get_recent_em_list()
 
 			if len(em_list) > 0:
 				#sort it so strongest is first
@@ -907,7 +913,7 @@ class EMFrame(object):
 
 	def em_statistics(self,draw):
 		
-		idents, cur_no, max_no = plars.get_em_stats()
+		idents, cur_no, max_no = get_em_stats()
 
 		self.draw_title("Modulated EM Stats", draw)
 
@@ -928,7 +934,7 @@ class EMFrame(object):
 		list_for_labels = []
 
 		# grab EM list
-		bt_list = plars.get_recent_bt_list()
+		bt_list = get_recent_bt_list()
 
 
 		# prepare a list of the data received for display
@@ -967,7 +973,7 @@ class EMFrame(object):
 			self.draw_title("EM Channel Analysis", draw)
 
 			#grab EM list
-			unsorted_em_list = plars.get_recent_em_list()
+			unsorted_em_list = get_recent_em_list()
 			noossids = len(unsorted_em_list)
 
 
@@ -1102,7 +1108,7 @@ class EMFrame(object):
 			else:
 				self.selection = 4
 
-		if len(plars.get_top_em_info()) < 1:
+		if len(get_top_em_info()) < 1:
 			self.selection = -1
 
 		# if no wifi available.
@@ -1168,8 +1174,8 @@ class MultiFrame(object):
 		# Sets the coordinates of onscreen labels.
 		self.labely = 94*2
 		self.labelx = 25*2
-
-
+		
+		self.titley = 2
 
 		self.decimal = 1
 
@@ -1211,6 +1217,7 @@ class MultiFrame(object):
 		self.title = LabelObj("Multi-Graph",titlefont, colour = lcars_peach)
 
 		self.events = Events(["modem",1,0,"settings","poweroff","thermal",0,0,0],"multi")
+		print("EVENTS:",self.events)
 
 	# takes a value and sheds the second digit after the decimal place
 	def arrangelabel(self,data,range = ".1f"):
@@ -1292,7 +1299,7 @@ class MultiFrame(object):
 
 			adjusted = self.arrangelabel(raw, '.2f')
 			self.focus_Label.string = adjusted + str(carousel2[this])
-			self.focus_Label.r_align(156,self.titley-2,self.draw)
+			self.focus_Label.r_align(156,self.titley -2,self.draw)
 
 			self.focus_high_Label.string = "max " + self.arrangelabel(str(this_bundle.get_high()), '.1f')
 			self.focus_high_Label.push(self.labelx,self.labely,self.draw)
@@ -1407,6 +1414,7 @@ class ThermalFrame(object):
 
 
 		self.events = Events(["modem",1,0,"settings","poweroff","multi",0,0],"thermal")
+		print("EVENTS:",self.events)
 
 
 	# this function takes a value and sheds the second digit after the decimal place
@@ -1521,7 +1529,7 @@ class ColourScreen(object):
 		self.lcarsframe = Image.open('/tmp/lcarsframe.png')
 		self.blankimage = Image.open('/tmp/backscreen.png')
 		self.lcarsblankimage = Image.open('/tmp/lcarsframeblank.png')
-		#self.tbar = Image.open('assets/lcarssplitframe.png')
+		self.tbar = Image.open('assets/lcarssplitframe.png')
 		self.burger = Image.open('/tmp/lcarsburgerframe.png')
 		self.tr109_schematic = Image.open('/tmp/tr109.png')
 
@@ -1626,7 +1634,7 @@ class ColourScreen(object):
 		return self.status
 
 	def thermal_screen(self):
-		self.newimage = self.image.copy()
+		self.newimage = self.burger.copy()
 		self.draw = ImageDraw.Draw(self.newimage)
 		last_status = self.status
 		self.status = self.thermal_frame.push(self.draw)
