@@ -6,7 +6,8 @@ import time
 import socket
 import pika
 import ast
-from classes import Sensor
+from threading import Thread
+from piosclasses import Sensor
 #from classes import Fragment
 
 from operator import itemgetter
@@ -34,8 +35,6 @@ from PIL import ImageDraw
 # load the module that draws graphs
 from pilgraph import *
 from amg8833_pil import *
-from plars import *
-
 
 # Load default font.
 microfont = ImageFont.truetype("assets/babs.otf",int(device.height * 0.055)) 
@@ -724,7 +723,6 @@ class StartUp(object):
 		#print("intervall:", self.interval.timelapsed())
 		#print("delay:", configure.boot_delay)
 		#print("sensors:", configure.sensor_ready[0])		
-
 		if self.interval.timelapsed() > configure.boot_delay and configure.sensor_ready[0]:
 			status = "multi"
 		else:
@@ -1142,9 +1140,7 @@ class EMFrame(object):
 class MultiFrame(object):
 
 	def __init__(self):
-	
-		print("ENTERING MUTLIFRAME MODE")
-	
+
 		# Sets the topleft origin of the graph
 		self.graphx = 22*2
 		self.graphy = 25*2
@@ -1173,7 +1169,7 @@ class MultiFrame(object):
 		self.labely = 94*2
 		self.labelx = 25*2
 
-		self.A_Data = 33
+
 
 		self.decimal = 1
 
@@ -1220,7 +1216,7 @@ class MultiFrame(object):
 	def arrangelabel(self,data,range = ".1f"):
 		datareturn = format(float(data), range)
 		return datareturn
-    #fast graph drawing with python on LCD
+
 	# defines the labels for the screen
 	def labels(self):
 
@@ -1248,14 +1244,10 @@ class MultiFrame(object):
 
 		# depending on which number the "selection" variable takes on. print the item and its unit symbol
 
-		# Sensor Value Label
 		if self.selection == 0:
 			raw_a = str(self.A_Data)
 			adjusted_a = self.arrangelabel(raw_a)
 			a_string = adjusted_a + " " + str(configure.sensor_info[configure.sensor1[0]][2])
-			#print("sensor:",str(configure.sensor_info[configure.sensor1[0]][2]))
-			#print("sensor:",str(configure.sensor_info[configure.sensor2[0]][2]))
-			#print("sensor:",str(configure.sensor_info[configure.sensor3[0]][2]))
 
 			raw_b = str(self.B_Data)
 			adjusted_b = self.arrangelabel(raw_b)
@@ -1269,12 +1261,6 @@ class MultiFrame(object):
 			self.A_Label.push(self.labelx,self.labely,self.draw)
 
 			#set string to item description
-			
-			#print("sensor2:",str(configure.sensor_info[configure.sensor1[0]][0])[:6])
-			#print("sensor2:",str(configure.sensor_info[configure.sensor2[0]][0])[:6])
-			#print("sensor2:",str(configure.sensor_info[configure.sensor3[0]][0])[:6])
-			
-			
 			self.A_Desc.string = str(configure.sensor_info[configure.sensor1[0]][0])[:6]
 			self.A_Desc.push(self.labelx,self.labely+22,self.draw)
 
@@ -1297,8 +1283,6 @@ class MultiFrame(object):
 
 			carousel = [self.A_Data,self.B_Data,self.C_Data]
 			carousel2 = [configure.sensor_info[configure.sensor1[0]][2],configure.sensor_info[configure.sensor2[0]][2],configure.sensor_info[configure.sensor3[0]][2]]
-			#print("carousel",carousel)
-			#print("carousel2",carousel2)
 
 			this = self.selection - 1
 
@@ -1322,12 +1306,6 @@ class MultiFrame(object):
 
 	# push the image frame and contents to the draw object.
 	def push(self,draw):
-	
-		#print("LCARS - PUSH")
-
-		sensors = Sensor()
-	
-		#print("ENTERING MUTLIFRAME MODE")
 
 		# returns mode_a to the main loop unless something causes state change
 		status,payload  = self.events.check()
@@ -1349,19 +1327,13 @@ class MultiFrame(object):
 
 		for i in range(3):
 
-			
 			# determines the sensor keys for each of the three main sensors
-			#print("slices:",configure.sensors[i][0])
 			this_index = int(configure.sensors[i][0])
-			#print("index:", this_index)
 
-			#print("info:", configure.sensor_info[this_index])
 			dsc,dev,sym,maxi,mini = configure.sensor_info[this_index]
 
 			senseslice.append(["47", dsc, dev, sym, mini, maxi])
 
-		
-		
 
 
 		# Draws the Title
@@ -1369,33 +1341,28 @@ class MultiFrame(object):
 			this = self.selection - 1
 			self.title.string = senseslice[this][1]
 			self.title.center(frameconstruct.titley,frameconstruct.titlex,int(device.width*0.25)*-1,draw)
-		else:	
+		else:
 			self.title.string = "Multi-Graph"
 			self.title.center(frameconstruct.titley,frameconstruct.titlex,int(device.width*0.25)*-1,draw)
 
 
 
 		# turns each channel on individually
-		if self.selection == 0:	
-			for i in range(1):
-				self.C_Data = self.C_Graph.render(self.draw)
-				self.B_Data = self.B_Graph.render(self.draw)
-				self.A_Data = self.A_Graph.render(self.draw)
-			
+		if self.selection == 0:
+			self.C_Data = self.C_Graph.render(self.draw)
+			self.B_Data = self.B_Graph.render(self.draw)
+			self.A_Data = self.A_Graph.render(self.draw)
 
 
 
 		if self.selection == 1:
-			for i in range(1):
-				self.A_Data = self.A_Graph.render(self.draw)
+			self.A_Data = self.A_Graph.render(self.draw)
 
 		if self.selection == 2:
-			for i in range(1):
-				self.B_Data = self.B_Graph.render(self.draw)
+			self.B_Data = self.B_Graph.render(self.draw)
 
 		if self.selection == 3:
-			for i in range(1):
-				self.C_Data =  self.C_Graph.render(self.draw)
+			self.C_Data =  self.C_Graph.render(self.draw)
 
 
 		self.labels()
@@ -1405,6 +1372,7 @@ class MultiFrame(object):
 
 
 		return status
+
 
 class ThermalFrame(object):
 	def __init__(self):
@@ -1641,7 +1609,7 @@ class ColourScreen(object):
 			self.loading()
 
 		return self.status
-
+		
 	def voc_screen(self):
 		pass
 
