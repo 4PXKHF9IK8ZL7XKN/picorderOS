@@ -70,7 +70,7 @@ def callback(ch, method, properties, body):
 	configure.input_pcf8575
 	# mpr121 can map 12 inputs
 	
-	print("array:", configure.eventlist[0])
+	#print("array:", configure.eventlist[0])
 	
 	if configure.input_cap_mpr121:
 		sensor_dict_unclean = body.decode()
@@ -156,6 +156,7 @@ def callback(ch, method, properties, body):
 	# cap1208 can handel 8 inputs
 	configure.input_cap1208
 	publish('EVENT',EVENT_MAP)
+	print("EVENT:", EVENT_MAP)
 	#print(f" [x] {method.routing_key}:{body}")
 
 def threaded_events():
