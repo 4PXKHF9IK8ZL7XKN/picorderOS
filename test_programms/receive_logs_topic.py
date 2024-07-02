@@ -16,7 +16,7 @@ result = channel.queue_declare('', exclusive=True)
 queue_name = result.method.queue
 
 channel.queue_bind(
-    exchange='sensor_data', queue='', routing_key='EVENT')
+    exchange='sensor_data', queue='', routing_key='system_vitals')
 
 print(' [*] Waiting for logs. To exit press CTRL+C')
 
