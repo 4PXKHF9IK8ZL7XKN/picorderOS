@@ -28,6 +28,8 @@ style = "type1"
 i = 0
 i2 = 0
 
+animation_step = 0
+
 # Init rabbitmq connection
 connection = pika.BlockingConnection(
     pika.ConnectionParameters(host='localhost'))
@@ -40,7 +42,10 @@ queue_name = result.method.queue
 
 channel.queue_bind(
     exchange='sensor_data', queue='', routing_key='EVENT')
-
+    
+# A Trigger for Blinking on sensor event
+channel.queue_bind(
+    exchange='sensor_data', queue='', routing_key='bme680')
 
 def display_settings(device, args):
     """
@@ -166,7 +171,12 @@ lcars_colores = [
 {"ID":71, "NAME": "c72", "value": '#f7f7f7'}
 ]
 
-lcars_colore = lcars_colores[4]
+lcars_theme = [
+{"ID": 0 ,"NAME": "LOWER DECKS PADD THEME", "colore0": lcars_colores[42]['value'], "colore1": lcars_colores[43]['value'], "colore2": lcars_colores[44]['value'] , "colore3": lcars_colores[45]['value'], "colore4": lcars_colores[46]['value'], "colore5":lcars_colores[47]['value'], "colore6": lcars_colores[48]['value'], "colore7": lcars_colores[49]['value'], "font0": lcars_colores[34]['value'] },
+{"ID": 1 ,"NAME": "LOWER DECKS THEME", "colore0": lcars_colores[39]['value'], "colore1": lcars_colores[40]['value'], "colore2": lcars_colores[7]['value'] , "colore3": lcars_colores[29]['value'], "colore4": lcars_colores[41]['value'], "colore5":lcars_colores[41]['value'], "colore6": lcars_colores[41]['value'], "colore7": lcars_colores[49]['value'], "font0": lcars_colores[34]['value'] },
+]
+
+lcars_colore = lcars_colores[4]['value']
 
 # twisty swirly goodness
 def swirl(x, y, step):
@@ -215,40 +225,178 @@ def lcars_type0_build():
         draw.text((left + 1, top), text=text, fill="white")
         
 def lcars_type1_build(lcars_colore):
-    # Load default font.
-    lcars_microfont = ImageFont.truetype("assets/babs.otf",int(device.height * 0.055)) 
-    lcars_littlefont = ImageFont.truetype("assets/babs.otf",int(device.height * 0.079)) 
-    lcars_font = ImageFont.truetype("assets/babs.otf",int(device.height * 0.102)) 
-    lcars_titlefont = ImageFont.truetype("assets/babs.otf",int(device.height * 0.13)) 
-    lcars_bigfont = ImageFont.truetype("assets/babs.otf",int(device.height * 0.16)) 
-    lcars_giantfont = ImageFont.truetype("assets/babs.otf",int(device.height * 0.235))
+	global animation_step
 
-    with canvas(device, dither=True) as draw:
-        # top line
-        fill = lcars_colore
-        radius = device.height*0.05
-        w0, h0 = device.width*0.05, device.height*0.01
-        w1, h1 = device.width*0.05, device.height*0.9
-        w2, h2 = device.width*0.9, device.height*0.01
-        w3, h3 = device.width*0.9, device.height*0.9
-        
-        shape0 = [(w0,  h0), (w0+radius, h0+radius)]
-        shape1 = [(w1 , h1), (w1+radius, h1+radius)] 
-        shape2 = [(w2 , h2), (w2+radius, h2+radius)] 
-        shape3 = [(w3 , h3), (w3+radius, h3+radius)]
-        
-        Rshape0 = [(w0+radius/2,  h0+radius), (w2+radius/2, h0)]
-        Rshape1 = [(w1+radius/2 , h1+radius), (w3+radius/2, h3)] 
-        
-        draw.ellipse(shape0, fill, outline = fill) 
-        draw.ellipse(shape1, fill, outline = fill) 
-        draw.ellipse(shape2, fill, outline = fill) 
-        draw.ellipse(shape3, fill, outline = fill) 
-        
-        draw.rectangle(Rshape0, fill)
-        draw.rectangle(Rshape1, fill)
+	# Load default font.
+	lcars_microfont = ImageFont.truetype("assets/babs.otf",int(device.height * 0.055)) 
+	lcars_littlefont = ImageFont.truetype("assets/babs.otf",int(device.height * 0.079)) 
+	lcars_font = ImageFont.truetype("assets/babs.otf",int(device.height * 0.102)) 
+	lcars_titlefont = ImageFont.truetype("assets/babs.otf",int(device.height * 0.13)) 
+	lcars_bigfont = ImageFont.truetype("assets/babs.otf",int(device.height * 0.16)) 
+	lcars_giantfont = ImageFont.truetype("assets/babs.otf",int(device.height * 0.235))
 
-        draw.text((device.width*0.2, device.height*0.25), "Accessing",font=lcars_giantfont ,fill=lcars_colores[20]['value'])
+
+		
+	if animation_step <= 3:
+		fill_g1 = '#344470'
+		fill_g2 = '#344470'
+		fill_g3 = '#344470'
+		fill_g4 = '#344470'
+		fill_g5 = '#344470'
+		fill_g6 = '#344470'
+		fill_g7 = '#344470'
+		fill_g8 = '#344470'
+	elif animation_step == 4:
+		fill_g1 = '#88ffff'
+		fill_g2 = '#344470'
+		fill_g3 = '#344470'
+		fill_g4 = '#344470'
+		fill_g5 = '#344470'
+		fill_g6 = '#344470'
+		fill_g7 = '#344470'
+		fill_g8 = '#344470'
+	elif animation_step == 5:
+		fill_g1 = '#344470'
+		fill_g2 = '#88ffff'
+		fill_g3 = '#344470'
+		fill_g4 = '#344470'
+		fill_g5 = '#344470'
+		fill_g6 = '#344470'
+		fill_g7 = '#344470'
+		fill_g8 = '#344470'
+	elif animation_step == 6:
+		fill_g1 = '#344470'
+		fill_g2 = '#344470'
+		fill_g3 = '#88ffff'
+		fill_g4 = '#344470'
+		fill_g5 = '#344470'
+		fill_g6 = '#344470'
+		fill_g7 = '#344470'
+		fill_g8 = '#344470'
+	elif animation_step == 7:
+		fill_g1 = '#344470'
+		fill_g2 = '#344470'
+		fill_g3 = '#344470'
+		fill_g4 = '#88ffff'
+		fill_g5 = '#344470'
+		fill_g6 = '#344470'
+		fill_g7 = '#344470'
+		fill_g8 = '#344470'
+	elif animation_step == 8:
+		fill_g1 = '#344470'
+		fill_g2 = '#344470'
+		fill_g3 = '#344470'
+		fill_g4 = '#344470'
+		fill_g5 = '#88ffff'
+		fill_g6 = '#344470'
+		fill_g7 = '#344470'
+		fill_g8 = '#344470'
+	elif animation_step == 9:
+		fill_g1 = '#344470'
+		fill_g2 = '#344470'
+		fill_g3 = '#344470'
+		fill_g4 = '#344470'
+		fill_g5 = '#344470'
+		fill_g6 = '#88ffff'
+		fill_g7 = '#344470'
+		fill_g8 = '#344470'
+	elif animation_step == 10:
+		fill_g1 = '#344470'
+		fill_g2 = '#344470'
+		fill_g3 = '#344470'
+		fill_g4 = '#344470'
+		fill_g5 = '#344470'
+		fill_g6 = '#344470'
+		fill_g7 = '#88ffff'
+		fill_g8 = '#344470'
+	elif animation_step == 11:
+		fill_g1 = '#344470'
+		fill_g2 = '#344470'
+		fill_g3 = '#344470'
+		fill_g4 = '#344470'
+		fill_g5 = '#344470'
+		fill_g6 = '#344470'
+		fill_g7 = '#344470'
+		fill_g8 = '#88ffff'
+	elif animation_step >= 12:
+		fill_g1 = '#88ffff'
+		fill_g2 = '#88ffff'
+		fill_g3 = '#88ffff'
+		fill_g4 = '#88ffff'
+		fill_g5 = '#88ffff'
+		fill_g6 = '#88ffff'
+		fill_g7 = '#88ffff'
+		fill_g8 = '#88ffff'
+        
+	with canvas(device, dither=True) as draw:
+		# top line
+		fill = lcars_colore
+		fill2 = "black"
+		fill3 = "yellow"
+  
+  
+        
+		radius = device.height*0.05
+		w0, h0 = device.width*0.05, device.height*0.01
+		w1, h1 = device.width*0.05, device.height*0.9
+		w2, h2 = device.width*0.9, device.height*0.01
+		w3, h3 = device.width*0.9, device.height*0.9
+        
+		shape0 = [(w0,  h0), (w0+radius, h0+radius)]
+		shape1 = [(w1 , h1), (w1+radius, h1+radius)] 
+		shape2 = [(w2 , h2), (w2+radius, h2+radius)] 
+		shape3 = [(w3 , h3), (w3+radius, h3+radius)]
+        
+		Rshape0 = [(w0+radius/2,  h0+radius), (w2+radius/2, h0)]
+		Rshape1 = [(w1+radius/2 , h1+radius), (w3+radius/2, h3)] 
+        
+		# Ending Lines
+		Rshape4 = [(device.width*0.09 , device.height), (device.width*0.09+radius/2, 0)]
+		Rshape5 = [(w3 , device.height), (w3-radius/2, 0)]   
+		
+		# Bottom Line 10 Times 
+		Rshape6 = [(device.height*0.15 , device.height*0.7), (device.height*0.25, device.height*0.7+radius)] 
+		Rshape7 = [(device.height*0.28 , device.height*0.7), (device.height*0.38, device.height*0.7+radius)] 
+		Rshape8 = [(device.height*0.41 , device.height*0.7), (device.height*0.51, device.height*0.7+radius)]   
+		Rshape9 = [(device.height*0.54, device.height*0.7), (device.height*0.64, device.height*0.7+radius)] 
+		Rshape10 = [(device.height*0.67 , device.height*0.7), (device.height*0.77, device.height*0.7+radius)] 
+		Rshape11 = [(device.height*0.80 , device.height*0.7), (device.height*0.90, device.height*0.7+radius)] 
+		Rshape12 = [(device.height*0.93 , device.height*0.7), (device.height*1.03, device.height*0.7+radius)] 
+		Rshape13 = [(device.height*1.06 , device.height*0.7), (device.height*1.16, device.height*0.7+radius)]   
+	
+        
+		draw.ellipse(shape0, fill, outline = fill) 
+		draw.ellipse(shape1, fill, outline = fill) 
+		draw.ellipse(shape2, fill, outline = fill) 
+		draw.ellipse(shape3, fill, outline = fill) 
+        
+		draw.rectangle(Rshape0, fill)
+		draw.rectangle(Rshape1, fill)
+        
+		# Ending Lines
+		draw.rectangle(Rshape4, fill2)
+		draw.rectangle(Rshape5, fill2)
+			
+		
+		
+		# Bottom Line 10 Times 
+		draw.rectangle(Rshape6, fill_g1)
+		draw.rectangle(Rshape7, fill_g2)
+		draw.rectangle(Rshape8, fill_g3)
+		draw.rectangle(Rshape9, fill_g4)
+		draw.rectangle(Rshape10, fill_g5)
+		draw.rectangle(Rshape11, fill_g6)
+		draw.rectangle(Rshape12, fill_g7)
+		draw.rectangle(Rshape13, fill_g8)
+
+		
+        
+		if animation_step > 14:
+			if animation_step % 2 == 0:
+				draw.text((device.width*0.2, device.height*0.25), "Accessing",font=lcars_giantfont ,fill=lcars_colores[20]['value'])
+			else:
+				draw.text((device.width*0.2, device.height*0.25), "Accessing",font=lcars_giantfont ,fill=lcars_colores[43]['value'])
+		animation_step = animation_step + 1
 
 def lcars_type2_build(lcars_colore):
     # Load default font.
@@ -263,6 +411,7 @@ def lcars_type2_build(lcars_colore):
     
         fill = lcars_colore
         fill2 = "black"
+        fill3 = "yellow"
         
         #thicknis of stripes 
         radius = device.height*0.05
@@ -291,12 +440,17 @@ def lcars_type2_build(lcars_colore):
         Rshape0 = [(w0+radius/2,  h0+radius), (w2+radius/2, h0)]
         Rshape1 = [(w1+radius/2 , h1+radius), (w3+radius/2, h3)] 
         
+        # Blinking Regtangels
+        Rshape2 = [(w1+radius/2 , h1+radius), (w3+radius/2, h3)] 
+        
+        
+        
         # the connecting from top to bottom
         Rshape2 = [(w1 , h1+radius/2), (device.width*0.15, h0+radius/2)] 
         # masking line
-        Rshape3 = [(device.width*0.15-radius*0.4 , h1-radius*0.5), (device.width*0.15+radius*0.5, h0+radius*1.5)]      
+        Rshape3 = [(device.width*0.15-radius*0.4 , h1-radius*0.5), (device.width*0.15+radius*0.5, h0+radius*1.5)]         
         
-          
+        
         
         #drawing the dots 
         draw.ellipse(shape0, fill, outline = fill) 
@@ -316,7 +470,7 @@ def lcars_type2_build(lcars_colore):
         # masking dots
         draw.ellipse(shape4, fill2, outline = fill2) 
         draw.ellipse(shape5, fill2, outline = fill2) 
-
+        
 
 class LCARS_Struct(object):
     def __init__(self,  lcarse_type, lcarse_colore):
@@ -342,7 +496,8 @@ class LCARS_Struct(object):
 
 def init():
 	print("RUN")
-	lcars_type1_build(lcars_colore['value'])
+	global lcars_colore
+	lcars_type1_build("blue")
   
 
              
@@ -351,10 +506,18 @@ def callback(ch, method, properties, body):
 	global i
 	global i2
 	global lcars_colore
+	
+	if method.routing_key == 'bme680':
+		LCARS_Struct.draw(style)
+		return
+    
     
 	DICT = body.decode()
 	DICT_CLEAN = ast.literal_eval(DICT)
 	print(DICT_CLEAN)
+	
+    
+    
     
     
 	if DICT_CLEAN['geo']:
