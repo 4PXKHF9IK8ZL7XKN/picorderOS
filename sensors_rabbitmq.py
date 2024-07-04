@@ -15,11 +15,13 @@ import RPi.GPIO as GPIO
 import busio as io
 from datetime import timedelta
 
+
 from multiprocessing import Process,Queue,Pipe
 # the following is a sensor module for use with the PicorderOS
 print("Loading Unified Sensor Module")
 
 generators = True
+SCD4X = True
 DEBUG = False
 
 # Delcares the IRQ Pins for Cap Touch 
@@ -35,6 +37,9 @@ WAIT_TIME_SECONDS = 0.5
 # config the i2c device
 i2c = io.I2C(configure.PIN_SCL, configure.PIN_SDA, frequency=I2C_FRQ)
 
+# needs configure flag
+if SCD4X:
+	import adafruit_scd4x
 
 if configure.gps:
 	# configure serial port for GPS
@@ -60,6 +65,8 @@ if configure.bme:
 	import adafruit_bme680
 	
 	
+	
+	
 if configure.sensehat:
 	# instantiates and defines paramaters for the sensehat
 
@@ -81,7 +88,7 @@ if configure.sensehat:
 if configure.envirophat:
 	from envirophat import light, weather, motion, analog
 
-# support for the MLX90614 IR Thermo
+# support for the MLX90614 IR Thermoif SCD4X:
 if configure.ir_thermo:
 	import busio as io
 	import adafruit_mlx90614
@@ -240,6 +247,14 @@ class sensor(object):
 
 		# data fragments (objects that contain the most recent sensor value,
 		# plus metadata for context) are called Fragment().
+		
+		# needs config flag
+		if SCD4X:
+			self.scd4x = adafruit_scd4x.SCD4X(i2c)
+			self.scd4x.start_periodic_measurement()
+			self.scd4x_CO2 = 0000
+			self.scd4x_temp = 0000
+			self.scd4x_humi = 0000
 
 		if generators:
 			self.step = 0.0
@@ -264,6 +279,8 @@ class sensor(object):
 
 		if configure.ir_thermo:
 			self.mlx = adafruit_mlx90614.MLX90614(i2c)
+			
+			
 
 		if configure.envirophat: 
 	
@@ -334,6 +351,14 @@ class sensor(object):
 		self.bme680_voc = self.bme680.gas / 1000
 		self.bme680_alt = self.bme680.altitude 
 		return self.bme680_temp,self.bme680_humi,self.bme680_press, self.bme680_voc, self.bme680_alt
+		
+	def get_scd4x(self):
+		if self.scd4x.data_ready:
+			self.scd4x_CO2 = self.scd4x.CO2
+			self.scd4x_temp = self.scd4x.temperature
+			self.scd4x_humi = self.scd4x.relative_humidity
+		return self.scd4x_CO2, self.scd4x_temp, self.scd4x_humi
+		
 
 	def get_sensehat(self):
 		magdata = sense.get_compass_raw()
@@ -469,6 +494,12 @@ class sensor(object):
 				index['sensor_index'] += 1
 				index.update({ "generators" : index['sensor_index']})
 				
+		if SCD4X:
+			rety = self.get_scd4x()
+			if not rety == None: 
+				index['sensor_index'] += 1
+				index.update({ "scd4x" : index['sensor_index']})
+				
 		if configure.ir_thermo:
 			rety = self. self.get_ir_thermo()
 			if not rety == None: 
@@ -561,6 +592,10 @@ def sensor_process():
 		if configure.bme:
 			bme680 = sensors.get_bme680()
 			publish("bme680",bme680)
+			
+		if SCD4X:
+			scd4x = sensors.get_scd4x()
+			publish("scd4x",scd4x)
 		
 		if configure.amg8833:
 			thermal_frame = sensors.get_thermal_frame()

@@ -16,14 +16,22 @@ result = channel.queue_declare('', exclusive=True)
 queue_name = result.method.queue
 
 channel.queue_bind(
-    exchange='sensor_data', queue='', routing_key='system_vitals')
+    exchange='sensor_data', queue='', routing_key='bme680')
+
+channel.queue_bind(
+    exchange='sensor_data', queue='', routing_key='scd4x')
+
+
 
 print(' [*] Waiting for logs. To exit press CTRL+C')
 
 
 def callback(ch, method, properties, body):
+    print("bme680 legende: temp, hum, press, voc, alt")
+    print("scd41 legende: CO2, temp, humi")
+
     print(f" [x] {method.routing_key}:{body}")
-    alert.play()
+    #alert.play()
 
 channel.basic_consume(queue='',on_message_callback=callback, auto_ack=True)
 
