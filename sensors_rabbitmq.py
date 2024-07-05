@@ -353,10 +353,14 @@ class sensor(object):
 		return self.bme680_temp,self.bme680_humi,self.bme680_press, self.bme680_voc, self.bme680_alt
 		
 	def get_scd4x(self):
-		if self.scd4x.data_ready:
-			self.scd4x_CO2 = self.scd4x.CO2
-			self.scd4x_temp = self.scd4x.temperature
-			self.scd4x_humi = self.scd4x.relative_humidity
+		try:
+			if self.scd4x.data_ready:
+				self.scd4x_CO2 = self.scd4x.CO2
+				self.scd4x_temp = self.scd4x.temperature
+				self.scd4x_humi = self.scd4x.relative_humidity
+		except:
+			pass	
+		
 		return self.scd4x_CO2, self.scd4x_temp, self.scd4x_humi
 		
 
