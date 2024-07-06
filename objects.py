@@ -52,7 +52,21 @@ class preferences(object):
 							'# Wifi and BT sensors':None,
 							'EM':'no',
 							'# GPS Location Data (GPS module through USB serial)':None,
-							'GPS':'no'
+							'GPS':'no',
+							'# CO2, Temperature, Humidity Sensor':None,
+							'SCD4X':'no',
+							'# Test Function Generrating Curves':None,
+							'generators':'no',
+							'# low budget variant of the bme680':None,
+							'bmp280':'no',
+							'# Gyro + Accel':None,
+							'LSM6DS3TR':'no',
+							'#  Magnetometer':None,
+							'LIS3MDL':'no',
+							'# Light + Gesture + Proximity':None,
+							'APDS9960':'no',
+							'# Humidity':None,
+							'SHT30':'no'					
 							}										
 
 		config['INPUT'] =    {'# Controls which operator input method is active (Choose only one)':None,
@@ -218,7 +232,15 @@ class preferences(object):
 
 		# Toggles position data from USB Serial GPS module
 		self.gps = self.str2bool(config['SENSORS']['gps'])
+		
+		self.SCD4X = self.str2bool(config['SENSORS']['SCD4X'])
+		self.generators = self.str2bool(config['SENSORS']['generators'])
+		self.bmp280 = self.str2bool(config['SENSORS']['bmp280'])
 
+		self.LSM6DS3TR = self.str2bool(config['SENSORS']['LSM6DS3TR'])
+		self.LIS3MDL = self.str2bool(config['SENSORS']['LIS3MDL'])
+		self.APDS9960 = self.str2bool(config['SENSORS']['APDS9960'])
+		self.SHT30 = self.str2bool(config['SENSORS']['SHT30'])
 
 # INPUT MODULE-----------------------------------------------------------------#
 

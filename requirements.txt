@@ -1,8 +1,13 @@
-adafruit_amg88xx>=1.4.3
 Adafruit_Blinka>=6.15.0
-adafruit_circuitpython_bme680>=3.3.4
-adafruit_circuitpython_mpr121>=2.1.9
-adafruit_mpr121>=1.1.2
+adafruit_circuitpython_bme680
+adafruit_circuitpython_mpr121
+adafruit-circuitpython-apds9960
+adafruit-circuitpython-lis3mdl
+adafruit-circuitpython-lsm6ds
+adafruit-circuitpython-bmp280
+adafruit-circuitpython-scd4x
+adafruit-circuitpython-amg88xx
+adafruit-circuitpython-sht31d
 board>=1.0
 Cap1xxx>=0.1.4
 colour>=0.1.5

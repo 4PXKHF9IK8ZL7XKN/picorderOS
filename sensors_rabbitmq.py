@@ -21,7 +21,6 @@ from multiprocessing import Process,Queue,Pipe
 print("Loading Unified Sensor Module")
 
 generators = True
-SCD4X = True
 DEBUG = False
 
 # Delcares the IRQ Pins for Cap Touch 
@@ -38,7 +37,7 @@ WAIT_TIME_SECONDS = 0.5
 i2c = io.I2C(configure.PIN_SCL, configure.PIN_SDA, frequency=I2C_FRQ)
 
 # needs configure flag
-if SCD4X:
+if configure.SCD4X:
 	import adafruit_scd4x
 
 if configure.gps:
@@ -65,6 +64,20 @@ if configure.bme:
 	import adafruit_bme680
 	
 	
+if configure.bmp280:
+	import adafruit_bmp280
+	
+if configure.LSM6DS3TR:
+	from adafruit_lsm6ds.lsm6ds3 import LSM6DS3
+	
+if configure.LIS3MDL:
+	import adafruit_lis3mdl
+		
+if configure.APDS9960:
+	import adafruit_apds9960.apds9960
+	
+if configure.SHT30:
+	import adafruit_sht31d
 	
 	
 if configure.sensehat:
@@ -249,14 +262,14 @@ class sensor(object):
 		# plus metadata for context) are called Fragment().
 		
 		# needs config flag
-		if SCD4X:
+		if configure.SCD4X:
 			self.scd4x = adafruit_scd4x.SCD4X(i2c)
 			self.scd4x.start_periodic_measurement()
 			self.scd4x_CO2 = 0000
 			self.scd4x_temp = 0000
 			self.scd4x_humi = 0000
 
-		if generators:
+		if configure.generators:
 			self.step = 0.0
 			self.step2 = 0.0
 			self.steptan = 0.0
@@ -298,6 +311,11 @@ class sensor(object):
 			# Create library object using our Bus I2C port
 			self.bme680 = adafruit_bme680.Adafruit_BME680_I2C(i2c, address=0x76, debug=False)
 			self.bme680.sea_level_pressure = 1013.25
+		
+		if configure.bmp280:
+			# Create library object using our Bus I2C port
+			self.bmp280 = adafruit_bmp280.Adafruit_BMP280_I2C(i2c, address=0x77)
+			self.bmp280.sea_level_pressure = 1013.25
 
 		if configure.pocket_geiger:
 			self.radiation = RadiationWatch(configure.PG_SIG,configure.PG_NS)
@@ -305,6 +323,23 @@ class sensor(object):
 
 		if configure.amg8833:
 			self.thermal_frame = []
+			
+			
+		if configure.LSM6DS3TR:
+			self.lsm6ds3 = LSM6DS3(i2c)
+	
+		if configure.LIS3MDL:
+			self.lis3mdl = adafruit_lis3mdl.LIS3MDL(i2c)
+		
+		if configure.APDS9960:
+			self.apds9960 = adafruit_apds9960.apds9960.APDS9960(i2c)
+			self.apds9960.enable_proximity = True
+			# gesture is a blocking function and bad for i2c communication
+			self.apds9960.enable_gesture = False
+			self.apds9960.enable_color = True
+	
+		if configure.SHT30:
+			self.sht30 = adafruit_sht31d.SHT31D(i2c)
 
 
 	def sin_gen(self):
@@ -351,6 +386,35 @@ class sensor(object):
 		self.bme680_voc = self.bme680.gas / 1000
 		self.bme680_alt = self.bme680.altitude 
 		return self.bme680_temp,self.bme680_humi,self.bme680_press, self.bme680_voc, self.bme680_alt
+		
+		
+	def get_bmp280(self):
+		self.bmp280_temp = self.bmp280.temperature
+		self.bmp280_press = self.bmp280.pressure
+		self.bmp280_alt = self.bmp280.altitude 
+		return self.bmp280_temp ,self.bmp280_press, self.bmp280_alt		
+		
+	def get_sht30(self):
+		self.sht30_temp = self.sht30.temperature
+		self.sht30_rel_humi = self.sht30.relative_humidity
+		return self.sht30_temp , self.sht30_rel_humi 
+		
+	def get_lsm6ds3(self):
+		self.lsm6ds3_accel_X, self.lsm6ds3_accel_Y, self.lsm6ds3_accel_Z = self.lsm6ds3.acceleration
+		self.lsm6ds3_gyro_X, self.lsm6ds3_gyro_Y, self.lsm6ds3_gyro_Z = self.lsm6ds3.gyro
+		return self.lsm6ds3_accel_X ,self.lsm6ds3_accel_Y, self.lsm6ds3_accel_Z, self.lsm6ds3_gyro_X, self.lsm6ds3_gyro_Y, self.lsm6ds3_gyro_Z
+		
+
+	def get_lis3mdl(self):
+		self.lis3mdl_X, self.lis3mdl_Y, self.lis3mdl_Z = self.lis3mdl.magnetic
+		return self.lis3mdl_X, self.lis3mdl_Y, self.lis3mdl_Z
+		
+	def get_apds9960(self):
+		self.apds9960_proximity = self.apds9960.proximity
+		self.apds9960_gesture = self.apds9960.gesture()
+		self.apds9960_colore_r ,self.apds9960_colore_g ,self.apds9960_colore_b ,self.apds9960_colore_c = self.apds9960.color_data
+		return self.apds9960_proximity, self.apds9960_gesture, self.apds9960_colore_r ,self.apds9960_colore_g ,self.apds9960_colore_b ,self.apds9960_colore_c, 
+		
 		
 	def get_scd4x(self):
 		try:
@@ -461,6 +525,18 @@ class sensor(object):
 			if not rety == None: 
 				index['sensor_index'] += 1
 				index.update({ "bme680" : index['sensor_index']})
+				
+		if configure.bmp280:
+			rety = self.get_bmp280()
+			if not rety == None: 
+				index['sensor_index'] += 1
+				index.update({ "bmp280" : index['sensor_index']})
+				
+		if configure.SHT30:
+			rety = self.get_sht30()
+			if not rety == None: 
+				index['sensor_index'] += 1
+				index.update({ "sht30" : index['sensor_index']})
 
 		if configure.sensehat:
 			rety = self.get_sensehat()
@@ -492,17 +568,36 @@ class sensor(object):
 				index['sensor_index'] += 1
 				index.update({ "system_vitals" : index['sensor_index']})
 			
-		if generators:
+		if configure.generators:
 			rety = self.get_generators()
 			if not rety == None: 
 				index['sensor_index'] += 1
 				index.update({ "generators" : index['sensor_index']})
 				
-		if SCD4X:
+		if configure.SCD4X:
 			rety = self.get_scd4x()
 			if not rety == None: 
 				index['sensor_index'] += 1
 				index.update({ "scd4x" : index['sensor_index']})
+				
+		if configure.LSM6DS3TR:
+			rety = self.get_lsm6ds3()
+			if not rety == None: 
+				index['sensor_index'] += 1
+				index.update({ "lsm6ds3" : index['sensor_index']})
+				
+				
+		if configure.LIS3MDL:
+			rety = self.get_lis3mdl()
+			if not rety == None: 
+				index['sensor_index'] += 1
+				index.update({ "lis3mdl" : index['sensor_index']})
+				
+		if configure.APDS9960:
+			rety = self.get_apds9960()
+			if not rety == None: 
+				index['sensor_index'] += 1
+				index.update({ "apds9960" : index['sensor_index']})
 				
 		if configure.ir_thermo:
 			rety = self. self.get_ir_thermo()
@@ -597,9 +692,29 @@ def sensor_process():
 			bme680 = sensors.get_bme680()
 			publish("bme680",bme680)
 			
-		if SCD4X:
+		if configure.bmp280:
+			bmp280 = sensors.get_bmp280()
+			publish("bmp280",bmp280)
+			
+		if configure.SHT30:
+			sht30 = sensors.get_sht30()
+			publish("sht30",sht30)
+			
+		if configure.SCD4X:
 			scd4x = sensors.get_scd4x()
 			publish("scd4x",scd4x)
+			
+		if configure.LSM6DS3TR:
+			lsm6ds3 = sensors.get_lsm6ds3()
+			publish("lsm6ds3",lsm6ds3)
+			
+		if configure.LIS3MDL:
+			lis3mdl = sensors.get_lis3mdl()
+			publish("lis3mdl",lis3mdl)
+			
+		if configure.APDS9960:
+			apds9960 = sensors.get_apds9960()
+			publish("apds9960",apds9960)
 		
 		if configure.amg8833:
 			thermal_frame = sensors.get_thermal_frame()
@@ -609,7 +724,7 @@ def sensor_process():
 			system_vitals = sensors.get_system_vitals()
 			publish("system_vitals",system_vitals)
 			
-		if generators:
+		if configure.generators:
 			generatorsCurve = sensors.get_generators()
 			publish("generators",generatorsCurve)
 			
