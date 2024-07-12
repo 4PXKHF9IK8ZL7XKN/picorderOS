@@ -16,7 +16,7 @@ result = channel.queue_declare('', exclusive=True)
 queue_name = result.method.queue
 
 channel.queue_bind(
-    exchange='sensor_data', queue='', routing_key='lis3mdl')
+    exchange='sensor_data', queue='', routing_key='bme680')
 
 channel.queue_bind(
     exchange='sensor_data', queue='', routing_key='scd4x')
