@@ -13,6 +13,7 @@ import math
 import random
 import time
 import colorsys
+import threading
 import pika
 import ast
 from pathlib import Path
@@ -21,14 +22,18 @@ from luma.core.sprite_system import framerate_regulator
 from luma.core import cmdline, error
 from luma.core.render import canvas
 from PIL import ImageFont
-
+from datetime import timedelta
 
 styles = ["type0","type1", "type2", "type3"]
 style = "type1"
 i = 0
 i2 = 0
 
+# A Timer to as Frameratecontroller
+WAIT_TIME_SECONDS = 0.1
+
 animation_step = 0
+sensor_animation = 0
 
 # Init rabbitmq connection
 connection = pika.BlockingConnection(
@@ -208,6 +213,7 @@ def tunnel(x, y, step):
     return
 
 def lcars_type0_build():
+# DEmo grey
     with canvas(device, dither=True) as draw:
         draw.rectangle(device.bounding_box, outline="white", fill="grey")
         draw.text((10, 40), "Hello World", fill="white")
@@ -225,6 +231,7 @@ def lcars_type0_build():
         draw.text((left + 1, top), text=text, fill="white")
         
 def lcars_type1_build(lcars_colore):
+# ACCESS Screen 
 	global animation_step
 
 	# Load default font.
@@ -396,7 +403,6 @@ def lcars_type1_build(lcars_colore):
 				draw.text((device.width*0.2, device.height*0.25), "Accessing",font=lcars_giantfont ,fill=lcars_colores[20]['value'])
 			else:
 				draw.text((device.width*0.2, device.height*0.25), "Accessing",font=lcars_giantfont ,fill=lcars_colores[43]['value'])
-		animation_step = animation_step + 1
 
 def lcars_type2_build(lcars_colore):
     # Load default font.
@@ -439,6 +445,9 @@ def lcars_type2_build(lcars_colore):
         
         Rshape0 = [(w0+radius/2,  h0+radius), (w2+radius/2, h0)]
         Rshape1 = [(w1+radius/2 , h1+radius), (w3+radius/2, h3)] 
+        Rshape6 = [(w3 , device.height), (w3-radius/2, 0)]   
+		
+        
         
         # Blinking Regtangels
         Rshape2 = [(w1+radius/2 , h1+radius), (w3+radius/2, h3)] 
@@ -463,6 +472,9 @@ def lcars_type2_build(lcars_colore):
         draw.rectangle(Rshape0, fill)
         draw.rectangle(Rshape1, fill)
         
+        # endline 
+        draw.rectangle(Rshape6, fill2)
+        
         # the connecting from top to bottom
         draw.rectangle(Rshape2, fill)
         draw.rectangle(Rshape3, fill2)
@@ -470,7 +482,147 @@ def lcars_type2_build(lcars_colore):
         # masking dots
         draw.ellipse(shape4, fill2, outline = fill2) 
         draw.ellipse(shape5, fill2, outline = fill2) 
+
+def lcars_type3_build(lcars_colore):
+	global animation_step
+    # Load default font.
+
+	lcars_microfont = ImageFont.truetype("assets/babs.otf",int(device.height * 0.055)) 
+	lcars_littlefont = ImageFont.truetype("assets/babs.otf",int(device.height * 0.079)) 
+	lcars_font = ImageFont.truetype("assets/babs.otf",int(device.height * 0.102)) 
+	lcars_titlefont = ImageFont.truetype("assets/babs.otf",int(device.height * 0.13)) 
+	lcars_bigfont = ImageFont.truetype("assets/babs.otf",int(device.height * 0.16)) 
+	lcars_giantfont = ImageFont.truetype("assets/babs.otf",int(device.height * 0.235))
+
+	with canvas(device, dither=True) as draw:
+	
+		#draw.rectangle(device.bounding_box, outline="white", fill="grey")
+    
+		fill = lcars_colore
+		fill2 = "black"
+		fill3 = "yellow"
         
+        #thicknis of stripes 
+		radius = device.height*0.05
+		offset = device.width*0.35
+		offset2 = device.width*0.47
+        
+        #end dot locations
+		w0, h0 = device.width*0.05, device.height*0.01
+		w1, h1 = device.width*0.05, device.height*0.9
+		w2, h2 = device.width*0.9, device.height*0.01
+		w3, h3 = device.width*0.9, device.height*0.9
+		
+		# inner dots locations
+		w6, h6 = device.width*0.52, device.height*0.01
+		w7, h7 = device.width*0.52, device.height*0.9
+		w8, h8 = device.width*0.46, device.height*0.01
+		w9, h9 = device.width*0.46, device.height*0.9
+        
+		# masking dots
+		w4, h4 = device.width*0.1+radius+offset2, device.height*0.1-radius*0.75
+		w5, h5 = device.width*0.1+radius+offset2, device.height*0.8+radius*0.9
+		
+		# masking dots
+		w42, h42 = device.width*0.1+radius, device.height*0.1-radius*0.75
+		w52, h52 = device.width*0.1+radius, device.height*0.8+radius*0.9
+        
+		# dot shapes
+		shape0 = [(w0,  h0), (w0+radius, h0+radius)]
+		shape1 = [(w1 , h1), (w1+radius, h1+radius)] 
+		shape2 = [(w2 , h2), (w2+radius, h2+radius)] 
+		shape3 = [(w3 , h3), (w3+radius, h3+radius)]
+		
+		# dot shapes inner dots
+		shape6 = [(w6,  h6), (w6+radius, h6+radius)]
+		shape7 = [(w7 , h7), (w7+radius, h7+radius)] 
+		shape8 = [(w8 , h8), (w8+radius, h8+radius)] 
+		shape9 = [(w9 , h9), (w9+radius, h9+radius)]
+        
+		shape4 = [(w4 , h4), (w4+radius, h4+radius)] 
+		shape5 = [(w5 , h5), (w5+radius, h5+radius)]
+		
+		shape10 = [(offset+radius/2 , h4), (radius*1.5+offset, h4+radius)] 
+		shape11 = [(offset+radius/2 , h5), (radius*1.5+offset, h5+radius)]
+        
+        
+		Rshape0 = [(w0+radius/2,  h0+radius), (offset2+radius/2, h0)]
+		Rshape1 = [(w1+radius/2 , h1+radius), (offset2+radius/2, h3)] 
+		Rshape6 = [(w3 , device.height), (w3-radius/2, 0)]   
+		
+		Rshape7 = [(offset2+radius*2,  h0+radius), (w2+radius/2, h0)]
+		Rshape8 = [(offset2+radius*2 , h1+radius), (w3+radius/2, h3)] 
+        
+        
+		# Blinking Regtangels
+		Rshape2 = [(w1+radius/2 , h1+radius), (w3+radius/2, h3)] 
+        
+        
+        
+		# the connecting from top to bottom
+		#Rshape2 = [(w1 , h1+radius/2), (device.width*0.15, h0+radius/2)] 
+		Rshape2 = [(w1+offset , h1+radius/2), (device.width*0.15+offset, h0+radius/2)] 
+		Rshape4 = [(w1+offset2 , h1+radius/2), (device.width*0.15+offset2, h0+radius/2)] 
+		# masking line
+		Rshape3 = [(device.width*0.15-radius*0.4+offset2 , h1-radius*0.5), (device.width*0.15+radius*0.5+offset2, h0+radius*1.5)]         
+		Rshape5 = [(device.width*0.09 , device.height), (device.width*0.09+radius/2, 0)]
+		Rshape12 = [(offset+radius*0.5 , h1-radius*0.5), (offset+radius*1.5, h0+radius*1.5)]     
+        
+        #drawing the dots 
+		draw.ellipse(shape0, fill, outline = fill) 
+		draw.ellipse(shape1, fill, outline = fill) 
+		draw.ellipse(shape2, fill, outline = fill) 
+		draw.ellipse(shape3, fill, outline = fill) 
+                
+        #drawing inner the dots 
+		draw.ellipse(shape6, fill, outline = fill) 
+		draw.ellipse(shape7, fill, outline = fill) 
+		draw.ellipse(shape8, fill, outline = fill) 
+		draw.ellipse(shape9, fill, outline = fill) 
+        
+        
+        
+        
+        # rectangle overdrawing
+		draw.rectangle(Rshape0, fill)
+		draw.rectangle(Rshape1, fill)
+		draw.rectangle(Rshape7, fill)
+		draw.rectangle(Rshape8, fill)
+		
+        
+        # endline 
+		draw.rectangle(Rshape6, fill2)
+        
+		# the connecting from top to bottom
+		draw.rectangle(Rshape2, fill)
+		draw.rectangle(Rshape4, fill)
+		
+		# masking 
+		draw.rectangle(Rshape3, fill2)
+		draw.rectangle(Rshape12, fill2)
+		
+		draw.rectangle(Rshape5, fill2)
+        
+        # masking dots
+		draw.ellipse(shape4, fill2, outline = fill2) 
+		draw.ellipse(shape5, fill2, outline = fill2) 
+		
+		draw.ellipse(shape10, fill2, outline = fill2) 
+		draw.ellipse(shape11, fill2, outline = fill2) 
+                
+		#draw.textbbox((w3-radius*2.5, h3), str(animation_step))
+		#draw.text((w3-radius*2.5, h3),str(animation_step),font=lcars_microfont ,fill=lcars_colores[43]['value'])
+		
+		## Looks like i found my overlapping box
+		text = str(animation_step)
+		left, top, right, bottom = draw.textbbox((0, 0), text)
+		w, h = right - left, bottom+2 - top
+
+		left = w3-radius*2.5
+		top = h3
+		draw.rectangle((left - 1, top, left + w + 1, top + h), fill="black", outline="black")
+		draw.text((left + 1, top), text=text, fill=lcars_colores[43]['value'])
+		
 
 class LCARS_Struct(object):
     def __init__(self,  lcarse_type, lcarse_colore):
@@ -485,7 +637,7 @@ class LCARS_Struct(object):
         elif self == "type2":
             lcars_type2_build(lcars_colore)    
         elif self == "type3":
-            lcars_type2_build(lcars_colore)              
+            lcars_type3_build(lcars_colore)              
         elif self == "type4":
             with canvas(device, dither=True) as draw:
                 draw.rectangle((100, 8, 100 + 1, 33 + 1), fill=(255, 255, 0))
@@ -506,18 +658,17 @@ def callback(ch, method, properties, body):
 	global i
 	global i2
 	global lcars_colore
+	global sensor_animation
 	
 	if method.routing_key == 'bme680':
-		LCARS_Struct.draw(style)
+		sensor_animation + 1
 		return
     
     
 	DICT = body.decode()
 	DICT_CLEAN = ast.literal_eval(DICT)
 	print(DICT_CLEAN)
-	
-    
-    
+	   
     
     
 	if DICT_CLEAN['geo']:
@@ -528,15 +679,40 @@ def callback(ch, method, properties, body):
 		lcars_colore_dict = lcars_colores.pop()
 		lcars_colore = lcars_colore_dict['value']
 		lcars_colores.insert(0, lcars_colore_dict)
-    	
+
+def animation_push():
+	global animation_step
 	LCARS_Struct.draw(style)
+	animation_step = animation_step + 1
+
+# This Class helps to start a thread that runs a timer non blocking to reset the IRQ signal on the mpr121
+class Job(threading.Thread):
+    def __init__(self, interval, execute, *args, **kwargs):
+        threading.Thread.__init__(self)
+        self.daemon = False
+        self.stopped = threading.Event()
+        self.interval = interval
+        self.execute = execute
+        self.args = args
+        self.kwargs = kwargs
+
+    def stop(self):
+                self.stopped.set()
+                self.join()
+    def run(self):
+            while not self.stopped.wait(self.interval.total_seconds()):
+                self.execute(*self.args, **self.kwargs)
 
 
 if __name__ == "__main__":
 	channel.basic_consume(queue='',on_message_callback=callback, auto_ack=True)
+	# setup the thread with timer and start the IRQ reset function
+	job = Job(interval=timedelta(seconds=WAIT_TIME_SECONDS), execute=animation_push)
+	
 	try:
 		device = get_device(['--interface', 'spi', '--display', 'st7789', '--spi-port', '0', '--spi-bus-speed', '52000000', '--width', '320', '--height', '240','--mode','RGB' ])
 		init()
+		job.start()
 		channel.start_consuming()
 	except KeyboardInterrupt:
 		pass
