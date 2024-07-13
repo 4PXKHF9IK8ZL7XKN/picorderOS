@@ -210,18 +210,19 @@ def lcars_element_elbow(pos_x,pos_y,rotation,colore):
 			shape0 = [(pos_x+device.width*0.2+radius/2,  pos_y), (pos_x+device.width*0.2+radius+radius/2, pos_y+radius)]
 		
 			# masking
-			#shape1 = [(pos_x+device.width*0.075,  pos_y+radius+device.height*0.01), (pos_x+device.width*0.075+radius, pos_y+radius*2+device.height*0.01)]
-			#Rshape2 = [(pos_x+device.width*0.075, pos_y+radius+device.height*0.03), (pos_x+device.width*0.075+radius, pos_y+radius*2+device.height*0.01)]
+			shape1 = [(pos_x+device.width*0.25/2-radius/2,  pos_y+radius+device.height*0.01), (pos_x+device.width*0.25/2+radius, pos_y+radius*2+device.height*0.01)]
+			Rshape2 = [(pos_x+device.width*0.25/2-radius/2,  pos_y+radius+device.height*0.03), (pos_x+device.width*0.25/2+radius, pos_y+radius*2)]
 		elif rotation == 1:
 			print("1")
  			# Main Shape
 			Rshape0 = [(pos_x, pos_y+radius*1.5 ), (pos_x+device.width*0.23, pos_y+device.height*0.05+radius*1.5)]
 			Rshape1 = [(pos_x+device.width*0.25/2, pos_y+radius/2), (pos_x+device.width*0.26, pos_y+device.height*0.1)]
 			shape0 = [(pos_x+device.width*0.2+radius/2,  pos_y+radius*1.5), (pos_x+device.width*0.2+radius+radius/2, pos_y+radius+radius*1.5)]
-		
+			
+		# this is when the shape0 got down	
 			# masking
-			#shape1 = [(pos_x+device.width*0.09,  pos_y+radius+device.height*0.01), (pos_x+device.width*0.09+radius, pos_y+radius*2+device.height*0.01)]
-			#Rshape2 = [(pos_x+device.width*0.09, pos_y+radius+device.height*0.03), (pos_x+device.width*0.09+radius, pos_y+radius*2+device.height*0.01)]
+			shape1 = [(pos_x+device.width*0.25/2-radius/2,  pos_y+radius/2), (pos_x+device.width*0.25/2+radius, pos_y+radius+radius/3)]
+			Rshape2 = [(pos_x+device.width*0.25/2-radius/2,  pos_y+radius/2), (pos_x+device.width*0.25/2+radius, pos_y+radius)]
  
  		# This is wehen the left is rounded
 		elif rotation == 2:
@@ -229,11 +230,19 @@ def lcars_element_elbow(pos_x,pos_y,rotation,colore):
 			Rshape0 = [(pos_x+radius/2, pos_y ), (pos_x+device.width*0.23+radius/2, pos_y+device.height*0.05)]
 			Rshape1 = [(pos_x, pos_y+radius/2), (pos_x+device.width*0.25/2, pos_y+device.height*0.1)]
 			shape0 = [(pos_x,  pos_y), (pos_x+radius, pos_y+radius)]
+			
+			# masking
+			shape1 = [(pos_x+device.width*0.25/2-radius/2,  pos_y+radius+device.height*0.01), (pos_x+device.width*0.25/2+radius, pos_y+radius*2+device.height*0.01)]
+			Rshape2 = [(pos_x+device.width*0.25/2-radius/2,  pos_y+radius+device.height*0.03), (pos_x+device.width*0.25/2+radius, pos_y+radius*2)]
 		elif rotation == 3:
 			print("3")
 			Rshape0 = [(pos_x+radius/2, pos_y +radius*1.5), (pos_x+device.width*0.23+radius/2, pos_y+device.height*0.05+radius*1.5)]
 			Rshape1 = [(pos_x, pos_y+radius/2), (pos_x+device.width*0.25/2, pos_y+device.height*0.1)]
 			shape0 = [(pos_x,  pos_y+radius*1.5), (pos_x+radius, pos_y+radius+radius*1.5)]
+		# this is when the shape0 got down	
+			# masking
+			shape1 = [(pos_x+device.width*0.25/2-radius/2,  pos_y+radius/2), (pos_x+device.width*0.25/2+radius, pos_y+radius+radius/3)]
+			Rshape2 = [(pos_x+device.width*0.25/2-radius/2,  pos_y+radius/2), (pos_x+device.width*0.25/2+radius, pos_y+radius)]
  
  
     	# main shape
@@ -242,8 +251,8 @@ def lcars_element_elbow(pos_x,pos_y,rotation,colore):
 		draw.ellipse(shape0, fill, outline = fill) 
 		
 		# masking
-		#draw.ellipse(shape1, fill2, outline = fill2) 
-		#draw.rectangle(Rshape2, fill2)
+		draw.ellipse(shape1, fill2, outline = fill2) 
+		draw.rectangle(Rshape2, fill2)
 
 def lcars_type0_build():
 # DEmo grey
