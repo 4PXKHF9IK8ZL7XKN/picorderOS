@@ -24,7 +24,7 @@ from luma.core.render import canvas
 from PIL import ImageFont
 from datetime import timedelta
 
-styles = ["type0","type1", "type2", "type3"]
+styles = ["type1", "type2", "type3", "type4"]
 style = "type1"
 i = 0
 i2 = 0
@@ -183,34 +183,67 @@ lcars_theme = [
 
 lcars_colore = lcars_colores[4]['value']
 
-# twisty swirly goodness
-def swirl(x, y, step):
-    print("swirl")
-    return
+def lcars_element_elbow(pos_x,pos_y,rotation,colore):
+# element needs x,y position
+# element needs rotation form 
+# element need colore
 
-
-# roto-zooming checker board
-def checker(x, y, step):
-    print("checker")
-    return
-
-
-# weeee waaaah
-def blues_and_twos(x, y, step):
-    print("blues")
-    return
-
-
-# rainbow search spotlights
-def rainbow_search(x, y, step):
-    print("rainbow")
-    return
-
-
-# zoom tunnel
-def tunnel(x, y, step):
-    print("tunnel")
-    return
+	global animation_step
+    # Load default font.
+    
+	fill = lcars_colore
+	fill2 = "black"
+	fill3 = "yellow"
+	
+	with canvas(device, dither=True) as draw:
+	
+		draw.rectangle(device.bounding_box, outline="white", fill="grey")
+		
+		radius = device.height*0.05
+	
+		# This is wehen the Right is rounded
+		if rotation == 0:
+			print("0")
+			# Main Shape
+			Rshape0 = [(pos_x, pos_y ), (pos_x+device.width*0.23, pos_y+device.height*0.05)]
+			Rshape1 = [(pos_x+device.width*0.25/2, pos_y+radius/2), (pos_x+device.width*0.26, pos_y+device.height*0.1)]
+			shape0 = [(pos_x+device.width*0.2+radius/2,  pos_y), (pos_x+device.width*0.2+radius+radius/2, pos_y+radius)]
+		
+			# masking
+			#shape1 = [(pos_x+device.width*0.075,  pos_y+radius+device.height*0.01), (pos_x+device.width*0.075+radius, pos_y+radius*2+device.height*0.01)]
+			#Rshape2 = [(pos_x+device.width*0.075, pos_y+radius+device.height*0.03), (pos_x+device.width*0.075+radius, pos_y+radius*2+device.height*0.01)]
+		elif rotation == 1:
+			print("1")
+ 			# Main Shape
+			Rshape0 = [(pos_x, pos_y+radius*1.5 ), (pos_x+device.width*0.23, pos_y+device.height*0.05+radius*1.5)]
+			Rshape1 = [(pos_x+device.width*0.25/2, pos_y+radius/2), (pos_x+device.width*0.26, pos_y+device.height*0.1)]
+			shape0 = [(pos_x+device.width*0.2+radius/2,  pos_y+radius*1.5), (pos_x+device.width*0.2+radius+radius/2, pos_y+radius+radius*1.5)]
+		
+			# masking
+			#shape1 = [(pos_x+device.width*0.09,  pos_y+radius+device.height*0.01), (pos_x+device.width*0.09+radius, pos_y+radius*2+device.height*0.01)]
+			#Rshape2 = [(pos_x+device.width*0.09, pos_y+radius+device.height*0.03), (pos_x+device.width*0.09+radius, pos_y+radius*2+device.height*0.01)]
+ 
+ 		# This is wehen the left is rounded
+		elif rotation == 2:
+			print("2")
+			Rshape0 = [(pos_x+radius/2, pos_y ), (pos_x+device.width*0.23+radius/2, pos_y+device.height*0.05)]
+			Rshape1 = [(pos_x, pos_y+radius/2), (pos_x+device.width*0.25/2, pos_y+device.height*0.1)]
+			shape0 = [(pos_x,  pos_y), (pos_x+radius, pos_y+radius)]
+		elif rotation == 3:
+			print("3")
+			Rshape0 = [(pos_x+radius/2, pos_y +radius*1.5), (pos_x+device.width*0.23+radius/2, pos_y+device.height*0.05+radius*1.5)]
+			Rshape1 = [(pos_x, pos_y+radius/2), (pos_x+device.width*0.25/2, pos_y+device.height*0.1)]
+			shape0 = [(pos_x,  pos_y+radius*1.5), (pos_x+radius, pos_y+radius+radius*1.5)]
+ 
+ 
+    	# main shape
+		draw.rectangle(Rshape0, fill)
+		draw.rectangle(Rshape1, fill)
+		draw.ellipse(shape0, fill, outline = fill) 
+		
+		# masking
+		#draw.ellipse(shape1, fill2, outline = fill2) 
+		#draw.rectangle(Rshape2, fill2)
 
 def lcars_type0_build():
 # DEmo grey
@@ -485,6 +518,7 @@ def lcars_type2_build(lcars_colore):
 
 def lcars_type3_build(lcars_colore):
 	global animation_step
+	global sensor_animation
     # Load default font.
 
 	lcars_microfont = ImageFont.truetype("assets/babs.otf",int(device.height * 0.055)) 
@@ -625,22 +659,24 @@ def lcars_type3_build(lcars_colore):
 		
 
 class LCARS_Struct(object):
-    def __init__(self,  lcarse_type, lcarse_colore):
-        self.lcarse_type = lcarse_type
-        self.lcarse_colore = lcarse_colore
+	global lcars_colore
+	global sensor_animation
+	def __init__(self,  lcarse_type, lcarse_colore):
+		self.lcarse_type = lcarse_type
+		self.lcarse_colore = lcarse_colore
                 
-    def draw(self):
-        if self == "type0":
-            lcars_type0_build()
-        elif self == "type1":
-            lcars_type1_build(lcars_colore)
-        elif self == "type2":
-            lcars_type2_build(lcars_colore)    
-        elif self == "type3":
-            lcars_type3_build(lcars_colore)              
-        elif self == "type4":
-            with canvas(device, dither=True) as draw:
-                draw.rectangle((100, 8, 100 + 1, 33 + 1), fill=(255, 255, 0))
+	def draw(self):
+		if self == "type0":
+			lcars_type0_build()
+		elif self == "type1":
+			lcars_type1_build(lcars_colore)
+		elif self == "type2":
+			lcars_type2_build(lcars_colore)    
+		elif self == "type3":
+			lcars_type3_build(lcars_colore)              
+		elif self == "type4":
+			print(sensor_animation )
+			lcars_element_elbow(device.width*0.1+animation_step, device.height*0.1+animation_step, sensor_animation , lcars_colore)
         
         
 
@@ -661,7 +697,9 @@ def callback(ch, method, properties, body):
 	global sensor_animation
 	
 	if method.routing_key == 'bme680':
-		sensor_animation + 1
+		sensor_animation = sensor_animation + 1
+		if sensor_animation == 4:
+			sensor_animation = 0
 		return
     
     
@@ -684,6 +722,8 @@ def animation_push():
 	global animation_step
 	LCARS_Struct.draw(style)
 	animation_step = animation_step + 1
+	if animation_step == 61:
+		animation_step = 0
 
 # This Class helps to start a thread that runs a timer non blocking to reset the IRQ signal on the mpr121
 class Job(threading.Thread):
