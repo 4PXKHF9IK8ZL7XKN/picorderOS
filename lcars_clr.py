@@ -197,7 +197,7 @@ def lcars_element_elbow(pos_x,pos_y,rotation,colore):
 	
 	with canvas(device, dither=True) as draw:
 	
-		draw.rectangle(device.bounding_box, outline="white", fill="grey")
+		#draw.rectangle(device.bounding_box, outline="white", fill="grey")
 		
 		radius = device.height*0.05
 	
@@ -253,6 +253,53 @@ def lcars_element_elbow(pos_x,pos_y,rotation,colore):
 		# masking
 		draw.ellipse(shape1, fill2, outline = fill2) 
 		draw.rectangle(Rshape2, fill2)
+
+def lcars_element_end(pos_x,pos_y,rotation,colore):
+# element needs x,y position
+# element needs rotation form 
+# element need colore
+
+	global animation_step
+    # Load default font.
+    
+	fill = lcars_colore
+	fill2 = "black"
+	fill3 = "yellow"
+	
+	with canvas(device, dither=True) as draw:
+	
+		draw.rectangle(device.bounding_box, outline="white", fill="grey")
+		
+		radius = device.height*0.05
+	
+		# This is wehen the Left is rounded
+		if rotation == 0 or rotation == 1:
+			# Main Shape
+			Rshape0 = [(pos_x+radius/2, pos_y ), (pos_x+radius+radius/2, pos_y+radius)]
+			shape0 = [(pos_x,  pos_y), (pos_x+radius+radius/2, pos_y+radius)]
+			
+			#mask
+			Rshape1 = [(pos_x+radius , pos_y), (pos_x+radius+radius/2, pos_y+radius)]
+
+ 
+ 		# This is wehen the left is rounded
+		elif rotation == 2 or rotation == 3:
+			Rshape0 = [(pos_x, pos_y ), (pos_x+radius, pos_y+radius)]
+			shape0 = [(pos_x+radius/2,  pos_y), (pos_x+radius+radius/2, pos_y+radius)]
+			
+			#mask
+			Rshape1 = [(pos_x , pos_y), (pos_x+radius/2, pos_y+radius)]
+
+			
+		# main shape
+ 
+    	# main shape
+		draw.ellipse(shape0, fill, outline = fill) 
+		draw.rectangle(Rshape0, fill)
+		
+		# mask
+		draw.rectangle(Rshape1, fill2)
+		
 
 def lcars_type0_build():
 # DEmo grey
@@ -685,7 +732,7 @@ class LCARS_Struct(object):
 			lcars_type3_build(lcars_colore)              
 		elif self == "type4":
 			print(sensor_animation )
-			lcars_element_elbow(device.width*0.1+animation_step, device.height*0.1+animation_step, sensor_animation , lcars_colore)
+			lcars_element_end(device.width*0.1+animation_step, device.height*0.1+animation_step, sensor_animation , lcars_colore)
         
         
 
