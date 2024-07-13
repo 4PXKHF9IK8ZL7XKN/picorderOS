@@ -35,6 +35,13 @@ WAIT_TIME_SECONDS = 0.1
 animation_step = 0
 sensor_animation = 0
 
+lcars_microfont = None
+lcars_littlefont = None
+lcars_font = None
+lcars_titlefont = None
+lcars_bigfont = None
+lcars_giantfont = None
+
 # Init rabbitmq connection
 connection = pika.BlockingConnection(
     pika.ConnectionParameters(host='localhost'))
@@ -183,7 +190,7 @@ lcars_theme = [
 
 lcars_colore = lcars_colores[4]['value']
 
-def lcars_element_elbow(pos_x,pos_y,rotation,colore):
+def lcars_element_elbow(device, draw,pos_x,pos_y,rotation,colore):
 # element needs x,y position
 # element needs rotation form 
 # element need colore
@@ -191,70 +198,107 @@ def lcars_element_elbow(pos_x,pos_y,rotation,colore):
 	global animation_step
     # Load default font.
     
-	fill = lcars_colore
+	fill = colore
 	fill2 = "black"
 	fill3 = "yellow"
 	
-	with canvas(device, dither=True) as draw:
+	#with canvas(device, dither=True) as draw:
 	
-		#draw.rectangle(device.bounding_box, outline="white", fill="grey")
-		
-		radius = device.height*0.05
+	#draw.rectangle(device.bounding_box, outline="white", fill="grey")
 	
-		# This is wehen the Right is rounded
-		if rotation == 0:
-			print("0")
-			# Main Shape
-			Rshape0 = [(pos_x, pos_y ), (pos_x+device.width*0.23, pos_y+device.height*0.05)]
-			Rshape1 = [(pos_x+device.width*0.25/2, pos_y+radius/2), (pos_x+device.width*0.26, pos_y+device.height*0.1)]
-			shape0 = [(pos_x+device.width*0.2+radius/2,  pos_y), (pos_x+device.width*0.2+radius+radius/2, pos_y+radius)]
+	radius = device.height*0.05
+
+	# This is wehen the Right is rounded
+	if rotation == 0:
+		# Main Shape
+		Rshape0 = [(pos_x, pos_y ), (pos_x+device.width*0.23, pos_y+device.height*0.05)]
+		Rshape1 = [(pos_x+device.width*0.25/2, pos_y+radius/2), (pos_x+device.width*0.26, pos_y+device.height*0.1)]
+		shape0 = [(pos_x+device.width*0.2+radius/2,  pos_y), (pos_x+device.width*0.2+radius+radius/2, pos_y+radius)]
+	
+		# masking
+		shape1 = [(pos_x+device.width*0.25/2-radius/2,  pos_y+radius+device.height*0.01), (pos_x+device.width*0.25/2+radius, pos_y+radius*2+device.height*0.01)]
+		Rshape2 = [(pos_x+device.width*0.25/2-radius/2,  pos_y+radius+device.height*0.03), (pos_x+device.width*0.25/2+radius, pos_y+radius*2)]
+	elif rotation == 1:
+		# Main Shape
+		Rshape0 = [(pos_x, pos_y+radius*1.5 ), (pos_x+device.width*0.23, pos_y+device.height*0.05+radius*1.5)]
+		Rshape1 = [(pos_x+device.width*0.25/2, pos_y+radius/2), (pos_x+device.width*0.26, pos_y+device.height*0.1)]
+		shape0 = [(pos_x+device.width*0.2+radius/2,  pos_y+radius*1.5), (pos_x+device.width*0.2+radius+radius/2, pos_y+radius+radius*1.5)]
 		
-			# masking
-			shape1 = [(pos_x+device.width*0.25/2-radius/2,  pos_y+radius+device.height*0.01), (pos_x+device.width*0.25/2+radius, pos_y+radius*2+device.height*0.01)]
-			Rshape2 = [(pos_x+device.width*0.25/2-radius/2,  pos_y+radius+device.height*0.03), (pos_x+device.width*0.25/2+radius, pos_y+radius*2)]
-		elif rotation == 1:
-			print("1")
- 			# Main Shape
-			Rshape0 = [(pos_x, pos_y+radius*1.5 ), (pos_x+device.width*0.23, pos_y+device.height*0.05+radius*1.5)]
-			Rshape1 = [(pos_x+device.width*0.25/2, pos_y+radius/2), (pos_x+device.width*0.26, pos_y+device.height*0.1)]
-			shape0 = [(pos_x+device.width*0.2+radius/2,  pos_y+radius*1.5), (pos_x+device.width*0.2+radius+radius/2, pos_y+radius+radius*1.5)]
-			
-		# this is when the shape0 got down	
-			# masking
-			shape1 = [(pos_x+device.width*0.25/2-radius/2,  pos_y+radius/2), (pos_x+device.width*0.25/2+radius, pos_y+radius+radius/3)]
-			Rshape2 = [(pos_x+device.width*0.25/2-radius/2,  pos_y+radius/2), (pos_x+device.width*0.25/2+radius, pos_y+radius)]
- 
- 		# This is wehen the left is rounded
-		elif rotation == 2:
-			print("2")
-			Rshape0 = [(pos_x+radius/2, pos_y ), (pos_x+device.width*0.23+radius/2, pos_y+device.height*0.05)]
-			Rshape1 = [(pos_x, pos_y+radius/2), (pos_x+device.width*0.25/2, pos_y+device.height*0.1)]
-			shape0 = [(pos_x,  pos_y), (pos_x+radius, pos_y+radius)]
-			
-			# masking
-			shape1 = [(pos_x+device.width*0.25/2-radius/2,  pos_y+radius+device.height*0.01), (pos_x+device.width*0.25/2+radius, pos_y+radius*2+device.height*0.01)]
-			Rshape2 = [(pos_x+device.width*0.25/2-radius/2,  pos_y+radius+device.height*0.03), (pos_x+device.width*0.25/2+radius, pos_y+radius*2)]
-		elif rotation == 3:
-			print("3")
-			Rshape0 = [(pos_x+radius/2, pos_y +radius*1.5), (pos_x+device.width*0.23+radius/2, pos_y+device.height*0.05+radius*1.5)]
-			Rshape1 = [(pos_x, pos_y+radius/2), (pos_x+device.width*0.25/2, pos_y+device.height*0.1)]
-			shape0 = [(pos_x,  pos_y+radius*1.5), (pos_x+radius, pos_y+radius+radius*1.5)]
-		# this is when the shape0 got down	
-			# masking
-			shape1 = [(pos_x+device.width*0.25/2-radius/2,  pos_y+radius/2), (pos_x+device.width*0.25/2+radius, pos_y+radius+radius/3)]
-			Rshape2 = [(pos_x+device.width*0.25/2-radius/2,  pos_y+radius/2), (pos_x+device.width*0.25/2+radius, pos_y+radius)]
- 
- 
-    	# main shape
-		draw.rectangle(Rshape0, fill)
-		draw.rectangle(Rshape1, fill)
-		draw.ellipse(shape0, fill, outline = fill) 
+	# this is when the shape0 got down	
+		# masking
+		shape1 = [(pos_x+device.width*0.25/2-radius/2,  pos_y+radius/2), (pos_x+device.width*0.25/2+radius, pos_y+radius+radius/3)]
+		Rshape2 = [(pos_x+device.width*0.25/2-radius/2,  pos_y+radius/2), (pos_x+device.width*0.25/2+radius, pos_y+radius)]
+
+	# This is wehen the left is rounded
+	elif rotation == 2:
+		Rshape0 = [(pos_x+radius/2, pos_y ), (pos_x+device.width*0.23+radius/2, pos_y+device.height*0.05)]
+		Rshape1 = [(pos_x, pos_y+radius/2), (pos_x+device.width*0.25/2, pos_y+device.height*0.1)]
+		shape0 = [(pos_x,  pos_y), (pos_x+radius, pos_y+radius)]
 		
 		# masking
-		draw.ellipse(shape1, fill2, outline = fill2) 
-		draw.rectangle(Rshape2, fill2)
+		shape1 = [(pos_x+device.width*0.25/2-radius/2,  pos_y+radius+device.height*0.01), (pos_x+device.width*0.25/2+radius, pos_y+radius*2+device.height*0.01)]
+		Rshape2 = [(pos_x+device.width*0.25/2-radius/2,  pos_y+radius+device.height*0.03), (pos_x+device.width*0.25/2+radius, pos_y+radius*2)]
+	elif rotation == 3:
+		Rshape0 = [(pos_x+radius/2, pos_y +radius*1.5), (pos_x+device.width*0.23+radius/2, pos_y+device.height*0.05+radius*1.5)]
+		Rshape1 = [(pos_x, pos_y+radius/2), (pos_x+device.width*0.25/2, pos_y+device.height*0.1)]
+		shape0 = [(pos_x,  pos_y+radius*1.5), (pos_x+radius, pos_y+radius+radius*1.5)]
+	# this is when the shape0 got down	
+		# masking
+		shape1 = [(pos_x+device.width*0.25/2-radius/2,  pos_y+radius/2), (pos_x+device.width*0.25/2+radius, pos_y+radius+radius/3)]
+		Rshape2 = [(pos_x+device.width*0.25/2-radius/2,  pos_y+radius/2), (pos_x+device.width*0.25/2+radius, pos_y+radius)]
 
-def lcars_element_end(pos_x,pos_y,rotation,colore):
+
+	# main shape
+	draw.rectangle(Rshape0, fill)
+	draw.rectangle(Rshape1, fill)
+	draw.ellipse(shape0, fill, outline = fill) 
+	
+	# masking
+	draw.ellipse(shape1, fill2, outline = fill2) 
+	draw.rectangle(Rshape2, fill2)
+
+def lcars_element_end(device, draw, pos_x,pos_y,rotation,colore):
+# element needs x,y position
+# element needs rotation form 
+# element need colore
+
+	global animation_step
+    # Load default font.
+
+	fill2 = "black"
+	fill3 = "yellow"
+	
+	radius = device.height*0.05
+
+	# This is wehen the Left is rounded
+	if rotation == 0 or rotation == 1:
+		# Main Shape
+		Rshape0_end = [(pos_x+radius/2, pos_y ), (pos_x+radius+radius/2, pos_y+radius)]
+		shape0_end = [(pos_x,  pos_y), (pos_x+radius+radius/2, pos_y+radius)]
+		
+		#mask
+		Rshape1_end = [(pos_x+radius , pos_y), (pos_x+radius+radius/2, pos_y+radius)]
+
+
+	# This is wehen the left is rounded
+	elif rotation == 2 or rotation == 3:
+		Rshape0_end = [(pos_x, pos_y ), (pos_x+radius, pos_y+radius)]
+		shape0_end = [(pos_x+radius/2,  pos_y), (pos_x+radius+radius/2, pos_y+radius)]
+		
+		#mask
+		Rshape1_end = [(pos_x , pos_y), (pos_x+radius/2, pos_y+radius)]
+
+		
+	# main shape
+
+	# main shape
+	draw.ellipse(shape0_end, fill = colore, outline = colore) 
+	draw.rectangle(Rshape0_end, colore)
+	
+	# mask
+	draw.rectangle(Rshape1_end, fill2)
+		
+def lcars_element_side_bar(device, draw, pos_x,pos_y,rotation,colore):
 # element needs x,y position
 # element needs rotation form 
 # element need colore
@@ -262,44 +306,51 @@ def lcars_element_end(pos_x,pos_y,rotation,colore):
 	global animation_step
     # Load default font.
     
-	fill = lcars_colore
+	fill = colore
 	fill2 = "black"
-	fill3 = "yellow"
+	fill3 = "red"
 	
-	with canvas(device, dither=True) as draw:
-	
-		draw.rectangle(device.bounding_box, outline="white", fill="grey")
-		
-		radius = device.height*0.05
-	
-		# This is wehen the Left is rounded
-		if rotation == 0 or rotation == 1:
-			# Main Shape
-			Rshape0 = [(pos_x+radius/2, pos_y ), (pos_x+radius+radius/2, pos_y+radius)]
-			shape0 = [(pos_x,  pos_y), (pos_x+radius+radius/2, pos_y+radius)]
-			
-			#mask
-			Rshape1 = [(pos_x+radius , pos_y), (pos_x+radius+radius/2, pos_y+radius)]
+	radius = device.height*0.05
 
- 
- 		# This is wehen the left is rounded
-		elif rotation == 2 or rotation == 3:
-			Rshape0 = [(pos_x, pos_y ), (pos_x+radius, pos_y+radius)]
-			shape0 = [(pos_x+radius/2,  pos_y), (pos_x+radius+radius/2, pos_y+radius)]
-			
-			#mask
-			Rshape1 = [(pos_x , pos_y), (pos_x+radius/2, pos_y+radius)]
+	Rshape_sidebar = [(pos_x, pos_y ), (pos_x+device.width*0.20/2, pos_y+radius)]
+	
+	# main shape
 
-			
-		# main shape
- 
-    	# main shape
-		draw.ellipse(shape0, fill, outline = fill) 
-		draw.rectangle(Rshape0, fill)
-		
-		# mask
-		draw.rectangle(Rshape1, fill2)
-		
+	draw.rectangle(Rshape_sidebar, colore)
+	
+	
+def lcars_element_doublebar(device, draw, pos_x,pos_y, posb_x, posb_y,rotation,colore,colore2):
+# element needs x,y position
+# element needs rotation form 
+# element need colore
+
+	global animation_step
+    # Load default font.
+
+	Rshape_doublebar0 = [(pos_x, pos_y ), (posb_x, posb_y*0.5)]
+	Rshape_doublebar1 = [(pos_x, pos_y*4 ), (posb_x, posb_y)]
+	
+	# main shape
+
+	draw.rectangle(Rshape_doublebar0 , colore)
+	draw.rectangle(Rshape_doublebar1 , colore2)
+	
+def lcars_element_gibli(device, draw, pos_x,pos_y,rotation,colore):
+# element needs x,y position
+# element needs rotation form 
+# element need colore
+
+	global animation_step
+    # Load default font.
+	radius = device.height*0.05
+
+	Rshape_gibli = [(pos_x, pos_y ), (pos_x+device.width*0.07, pos_y+radius)]
+	
+	# main shape
+	draw.rectangle(Rshape_gibli , colore)
+
+
+
 
 def lcars_type0_build():
 # DEmo grey
@@ -322,171 +373,52 @@ def lcars_type0_build():
 def lcars_type1_build(lcars_colore):
 # ACCESS Screen 
 	global animation_step
-
-	# Load default font.
-	lcars_microfont = ImageFont.truetype("assets/babs.otf",int(device.height * 0.055)) 
-	lcars_littlefont = ImageFont.truetype("assets/babs.otf",int(device.height * 0.079)) 
-	lcars_font = ImageFont.truetype("assets/babs.otf",int(device.height * 0.102)) 
-	lcars_titlefont = ImageFont.truetype("assets/babs.otf",int(device.height * 0.13)) 
-	lcars_bigfont = ImageFont.truetype("assets/babs.otf",int(device.height * 0.16)) 
-	lcars_giantfont = ImageFont.truetype("assets/babs.otf",int(device.height * 0.235))
-
-
 		
-	if animation_step <= 3:
-		fill_g1 = '#344470'
-		fill_g2 = '#344470'
-		fill_g3 = '#344470'
-		fill_g4 = '#344470'
-		fill_g5 = '#344470'
-		fill_g6 = '#344470'
-		fill_g7 = '#344470'
-		fill_g8 = '#344470'
-	elif animation_step == 4:
-		fill_g1 = '#88ffff'
-		fill_g2 = '#344470'
-		fill_g3 = '#344470'
-		fill_g4 = '#344470'
-		fill_g5 = '#344470'
-		fill_g6 = '#344470'
-		fill_g7 = '#344470'
-		fill_g8 = '#344470'
-	elif animation_step == 5:
-		fill_g1 = '#344470'
-		fill_g2 = '#88ffff'
-		fill_g3 = '#344470'
-		fill_g4 = '#344470'
-		fill_g5 = '#344470'
-		fill_g6 = '#344470'
-		fill_g7 = '#344470'
-		fill_g8 = '#344470'
-	elif animation_step == 6:
-		fill_g1 = '#344470'
-		fill_g2 = '#344470'
-		fill_g3 = '#88ffff'
-		fill_g4 = '#344470'
-		fill_g5 = '#344470'
-		fill_g6 = '#344470'
-		fill_g7 = '#344470'
-		fill_g8 = '#344470'
-	elif animation_step == 7:
-		fill_g1 = '#344470'
-		fill_g2 = '#344470'
-		fill_g3 = '#344470'
-		fill_g4 = '#88ffff'
-		fill_g5 = '#344470'
-		fill_g6 = '#344470'
-		fill_g7 = '#344470'
-		fill_g8 = '#344470'
-	elif animation_step == 8:
-		fill_g1 = '#344470'
-		fill_g2 = '#344470'
-		fill_g3 = '#344470'
-		fill_g4 = '#344470'
-		fill_g5 = '#88ffff'
-		fill_g6 = '#344470'
-		fill_g7 = '#344470'
-		fill_g8 = '#344470'
-	elif animation_step == 9:
-		fill_g1 = '#344470'
-		fill_g2 = '#344470'
-		fill_g3 = '#344470'
-		fill_g4 = '#344470'
-		fill_g5 = '#344470'
-		fill_g6 = '#88ffff'
-		fill_g7 = '#344470'
-		fill_g8 = '#344470'
-	elif animation_step == 10:
-		fill_g1 = '#344470'
-		fill_g2 = '#344470'
-		fill_g3 = '#344470'
-		fill_g4 = '#344470'
-		fill_g5 = '#344470'
-		fill_g6 = '#344470'
-		fill_g7 = '#88ffff'
-		fill_g8 = '#344470'
-	elif animation_step == 11:
-		fill_g1 = '#344470'
-		fill_g2 = '#344470'
-		fill_g3 = '#344470'
-		fill_g4 = '#344470'
-		fill_g5 = '#344470'
-		fill_g6 = '#344470'
-		fill_g7 = '#344470'
-		fill_g8 = '#88ffff'
-	elif animation_step >= 12:
-		fill_g1 = '#88ffff'
-		fill_g2 = '#88ffff'
-		fill_g3 = '#88ffff'
-		fill_g4 = '#88ffff'
-		fill_g5 = '#88ffff'
-		fill_g6 = '#88ffff'
-		fill_g7 = '#88ffff'
-		fill_g8 = '#88ffff'
-        
 	with canvas(device, dither=True) as draw:
-		# top line
-		fill = lcars_colore
-		fill2 = "black"
-		fill3 = "yellow"
-  
-  
-        
-		radius = device.height*0.05
-		w0, h0 = device.width*0.05, device.height*0.01
-		w1, h1 = device.width*0.05, device.height*0.9
-		w2, h2 = device.width*0.9, device.height*0.01
-		w3, h3 = device.width*0.9, device.height*0.9
-        
-		shape0 = [(w0,  h0), (w0+radius, h0+radius)]
-		shape1 = [(w1 , h1), (w1+radius, h1+radius)] 
-		shape2 = [(w2 , h2), (w2+radius, h2+radius)] 
-		shape3 = [(w3 , h3), (w3+radius, h3+radius)]
-        
-		Rshape0 = [(w0+radius/2,  h0+radius), (w2+radius/2, h0)]
-		Rshape1 = [(w1+radius/2 , h1+radius), (w3+radius/2, h3)] 
-        
-		# Ending Lines
-		Rshape4 = [(device.width*0.09 , device.height), (device.width*0.09+radius/2, 0)]
-		Rshape5 = [(w3 , device.height), (w3-radius/2, 0)]   
-		
-		# Bottom Line 10 Times 
-		Rshape6 = [(device.height*0.15 , device.height*0.7), (device.height*0.25, device.height*0.7+radius)] 
-		Rshape7 = [(device.height*0.28 , device.height*0.7), (device.height*0.38, device.height*0.7+radius)] 
-		Rshape8 = [(device.height*0.41 , device.height*0.7), (device.height*0.51, device.height*0.7+radius)]   
-		Rshape9 = [(device.height*0.54, device.height*0.7), (device.height*0.64, device.height*0.7+radius)] 
-		Rshape10 = [(device.height*0.67 , device.height*0.7), (device.height*0.77, device.height*0.7+radius)] 
-		Rshape11 = [(device.height*0.80 , device.height*0.7), (device.height*0.90, device.height*0.7+radius)] 
-		Rshape12 = [(device.height*0.93 , device.height*0.7), (device.height*1.03, device.height*0.7+radius)] 
-		Rshape13 = [(device.height*1.06 , device.height*0.7), (device.height*1.16, device.height*0.7+radius)]   
 	
-        
-		draw.ellipse(shape0, fill, outline = fill) 
-		draw.ellipse(shape1, fill, outline = fill) 
-		draw.ellipse(shape2, fill, outline = fill) 
-		draw.ellipse(shape3, fill, outline = fill) 
-        
-		draw.rectangle(Rshape0, fill)
-		draw.rectangle(Rshape1, fill)
-        
-		# Ending Lines
-		draw.rectangle(Rshape4, fill2)
-		draw.rectangle(Rshape5, fill2)
-			
+	
+		lcars_element_gibli(device, draw, device.width*0.15,device.height*0.7 ,3,lcars_colores[15]['value'])
+		lcars_element_gibli(device, draw, device.width*0.24,device.height*0.7 ,3,lcars_colores[15]['value'])
+		lcars_element_gibli(device, draw, device.width*0.33,device.height*0.7 ,3,lcars_colores[15]['value'])
+		lcars_element_gibli(device, draw, device.width*0.42,device.height*0.7 ,3,lcars_colores[15]['value'])
+		lcars_element_gibli(device, draw, device.width*0.51,device.height*0.7 ,3,lcars_colores[15]['value'])
+		lcars_element_gibli(device, draw, device.width*0.60,device.height*0.7 ,3,lcars_colores[15]['value'])
+		lcars_element_gibli(device, draw, device.width*0.69,device.height*0.7 ,3,lcars_colores[15]['value'])
+		lcars_element_gibli(device, draw, device.width*0.78,device.height*0.7 ,3,lcars_colores[15]['value'])	
+	
+		if animation_step == 0:
+			lcars_element_gibli(device, draw, device.width*0.15,device.height*0.7 ,3,lcars_colores[43]['value'])
+		elif  animation_step == 1:
+			lcars_element_gibli(device, draw, device.width*0.24,device.height*0.7 ,3,lcars_colores[43]['value'])
+		elif  animation_step == 2:
+			lcars_element_gibli(device, draw, device.width*0.33,device.height*0.7 ,3,lcars_colores[43]['value'])
+		elif  animation_step == 3:
+			lcars_element_gibli(device, draw, device.width*0.42,device.height*0.7 ,3,lcars_colores[43]['value'])
+		elif  animation_step == 4:
+			lcars_element_gibli(device, draw, device.width*0.51,device.height*0.7 ,3,lcars_colores[43]['value'])
+		elif  animation_step == 5:
+			lcars_element_gibli(device, draw, device.width*0.60,device.height*0.7 ,3,lcars_colores[43]['value'])
+		elif  animation_step == 6:
+			lcars_element_gibli(device, draw, device.width*0.69,device.height*0.7 ,3,lcars_colores[43]['value'])
+		elif  animation_step == 7:
+			lcars_element_gibli(device, draw, device.width*0.78,device.height*0.7 ,3,lcars_colores[43]['value'])
 		
+		lcars_element_end(device, draw, device.width*0.93,device.height*0.015,3,lcars_colore)
+		lcars_element_end(device, draw, device.width*0.93,device.height*0.93,3,lcars_colore)
 		
-		# Bottom Line 10 Times 
-		draw.rectangle(Rshape6, fill_g1)
-		draw.rectangle(Rshape7, fill_g2)
-		draw.rectangle(Rshape8, fill_g3)
-		draw.rectangle(Rshape9, fill_g4)
-		draw.rectangle(Rshape10, fill_g5)
-		draw.rectangle(Rshape11, fill_g6)
-		draw.rectangle(Rshape12, fill_g7)
-		draw.rectangle(Rshape13, fill_g8)
-
+		lcars_element_end(device, draw, device.width*0.015,device.height*0.015,1,lcars_colore)
+		lcars_element_end(device, draw, device.width*0.015,device.height*0.93,1,lcars_colore)
 		
+		radius = device.height*0.05
+          
+        #end locations
+		top_line = [(device.width*0.07 , device.height*0.01), (device.width*0.93, device.height*0.01+radius)] 
+		bottom_line = [(device.width*0.07 , device.height*0.93), (device.width*0.93, device.height*0.93+radius)] 
         
+		# the connecting from top to bottom
+		draw.rectangle(top_line, lcars_colore)
+		draw.rectangle(bottom_line, lcars_colore)
+    
 		if animation_step > 14:
 			if animation_step % 2 == 0:
 				draw.text((device.width*0.2, device.height*0.25), "Accessing",font=lcars_giantfont ,fill=lcars_colores[20]['value'])
@@ -494,225 +426,98 @@ def lcars_type1_build(lcars_colore):
 				draw.text((device.width*0.2, device.height*0.25), "Accessing",font=lcars_giantfont ,fill=lcars_colores[43]['value'])
 
 def lcars_type2_build(lcars_colore):
-    # Load default font.
-    lcars_microfont = ImageFont.truetype("assets/babs.otf",int(device.height * 0.055)) 
-    lcars_littlefont = ImageFont.truetype("assets/babs.otf",int(device.height * 0.079)) 
-    lcars_font = ImageFont.truetype("assets/babs.otf",int(device.height * 0.102)) 
-    lcars_titlefont = ImageFont.truetype("assets/babs.otf",int(device.height * 0.13)) 
-    lcars_bigfont = ImageFont.truetype("assets/babs.otf",int(device.height * 0.16)) 
-    lcars_giantfont = ImageFont.truetype("assets/babs.otf",int(device.height * 0.235))
 
-    with canvas(device, dither=True) as draw:
-    
-        fill = lcars_colore
-        fill2 = "black"
-        fill3 = "yellow"
-        
-        #thicknis of stripes 
-        radius = device.height*0.05
-        
-        
-        #end dot locations
-        w0, h0 = device.width*0.05, device.height*0.01
-        w1, h1 = device.width*0.05, device.height*0.9
-        w2, h2 = device.width*0.9, device.height*0.01
-        w3, h3 = device.width*0.9, device.height*0.9
-        
-        # masking dots
-        w4, h4 = device.width*0.1+radius, device.height*0.1-radius*0.75
-        w5, h5 = device.width*0.1+radius, device.height*0.8+radius*0.9
-        
-        # dot shapes
-        shape0 = [(w0,  h0), (w0+radius, h0+radius)]
-        shape1 = [(w1 , h1), (w1+radius, h1+radius)] 
-        shape2 = [(w2 , h2), (w2+radius, h2+radius)] 
-        shape3 = [(w3 , h3), (w3+radius, h3+radius)]
-        
-        shape4 = [(w4 , h4), (w4+radius, h4+radius)] 
-        shape5 = [(w5 , h5), (w5+radius, h5+radius)]
-        
-        
-        Rshape0 = [(w0+radius/2,  h0+radius), (w2+radius/2, h0)]
-        Rshape1 = [(w1+radius/2 , h1+radius), (w3+radius/2, h3)] 
-        Rshape6 = [(w3 , device.height), (w3-radius/2, 0)]   
-		
-        
-        
-        # Blinking Regtangels
-        Rshape2 = [(w1+radius/2 , h1+radius), (w3+radius/2, h3)] 
-        
-        
-        
-        # the connecting from top to bottom
-        Rshape2 = [(w1 , h1+radius/2), (device.width*0.15, h0+radius/2)] 
-        # masking line
-        Rshape3 = [(device.width*0.15-radius*0.4 , h1-radius*0.5), (device.width*0.15+radius*0.5, h0+radius*1.5)]         
-        
-        
-        
-        #drawing the dots 
-        draw.ellipse(shape0, fill, outline = fill) 
-        draw.ellipse(shape1, fill, outline = fill) 
-        draw.ellipse(shape2, fill, outline = fill) 
-        draw.ellipse(shape3, fill, outline = fill) 
-                
-        
-        # rectangle overdrawing
-        draw.rectangle(Rshape0, fill)
-        draw.rectangle(Rshape1, fill)
-        
-        # endline 
-        draw.rectangle(Rshape6, fill2)
-        
-        # the connecting from top to bottom
-        draw.rectangle(Rshape2, fill)
-        draw.rectangle(Rshape3, fill2)
-        
-        # masking dots
-        draw.ellipse(shape4, fill2, outline = fill2) 
-        draw.ellipse(shape5, fill2, outline = fill2) 
-
-def lcars_type3_build(lcars_colore):
-	global animation_step
-	global sensor_animation
-    # Load default font.
-
-	lcars_microfont = ImageFont.truetype("assets/babs.otf",int(device.height * 0.055)) 
-	lcars_littlefont = ImageFont.truetype("assets/babs.otf",int(device.height * 0.079)) 
-	lcars_font = ImageFont.truetype("assets/babs.otf",int(device.height * 0.102)) 
-	lcars_titlefont = ImageFont.truetype("assets/babs.otf",int(device.height * 0.13)) 
-	lcars_bigfont = ImageFont.truetype("assets/babs.otf",int(device.height * 0.16)) 
-	lcars_giantfont = ImageFont.truetype("assets/babs.otf",int(device.height * 0.235))
+	fill = lcars_colore
+	fill2 = "black"
+	fill3 = "yellow"
 
 	with canvas(device, dither=True) as draw:
 	
 		#draw.rectangle(device.bounding_box, outline="white", fill="grey")
-    
-		fill = lcars_colore
-		fill2 = "black"
-		fill3 = "yellow"
-        
-        #thicknis of stripes 
+
+		lcars_element_elbow(device, draw, device.width*0.01,device.height*0.01,2,lcars_colore)
+		
+		lcars_element_elbow(device, draw, device.width*0.01,device.height*0.86 ,3,lcars_colore)	
+           
 		radius = device.height*0.05
-		offset = device.width*0.35
-		offset2 = device.width*0.47
+          
+        #end locations
+		w0, h0 = device.width*0.015, device.height*0.41
+		w1, h1 = device.width*0.22/2, device.height*0.865
         
-        #end dot locations
-		w0, h0 = device.width*0.05, device.height*0.01
-		w1, h1 = device.width*0.05, device.height*0.9
-		w2, h2 = device.width*0.9, device.height*0.01
-		w3, h3 = device.width*0.9, device.height*0.9
-		
-		# inner dots locations
-		w6, h6 = device.width*0.52, device.height*0.01
-		w7, h7 = device.width*0.52, device.height*0.9
-		w8, h8 = device.width*0.46, device.height*0.01
-		w9, h9 = device.width*0.46, device.height*0.9
-        
-		# masking dots
-		w4, h4 = device.width*0.1+radius+offset2, device.height*0.1-radius*0.75
-		w5, h5 = device.width*0.1+radius+offset2, device.height*0.8+radius*0.9
-		
-		# masking dots
-		w42, h42 = device.width*0.1+radius, device.height*0.1-radius*0.75
-		w52, h52 = device.width*0.1+radius, device.height*0.8+radius*0.9
-        
-		# dot shapes
-		shape0 = [(w0,  h0), (w0+radius, h0+radius)]
-		shape1 = [(w1 , h1), (w1+radius, h1+radius)] 
-		shape2 = [(w2 , h2), (w2+radius, h2+radius)] 
-		shape3 = [(w3 , h3), (w3+radius, h3+radius)]
-		
-		# dot shapes inner dots
-		shape6 = [(w6,  h6), (w6+radius, h6+radius)]
-		shape7 = [(w7 , h7), (w7+radius, h7+radius)] 
-		shape8 = [(w8 , h8), (w8+radius, h8+radius)] 
-		shape9 = [(w9 , h9), (w9+radius, h9+radius)]
-        
-		shape4 = [(w4 , h4), (w4+radius, h4+radius)] 
-		shape5 = [(w5 , h5), (w5+radius, h5+radius)]
-		
-		shape10 = [(offset+radius/2 , h4), (radius*1.5+offset, h4+radius)] 
-		shape11 = [(offset+radius/2 , h5), (radius*1.5+offset, h5+radius)]
-        
-        
-		Rshape0 = [(w0+radius/2,  h0+radius), (offset2+radius/2, h0)]
-		Rshape1 = [(w1+radius/2 , h1+radius), (offset2+radius/2, h3)] 
-		Rshape6 = [(w3 , device.height), (w3-radius/2, 0)]   
-		
-		Rshape7 = [(offset2+radius*2,  h0+radius), (w2+radius/2, h0)]
-		Rshape8 = [(offset2+radius*2 , h1+radius), (w3+radius/2, h3)] 
-        
-        
-		# Blinking Regtangels
-		Rshape2 = [(w1+radius/2 , h1+radius), (w3+radius/2, h3)] 
-        
-        
+		Rshape0 = [(w0,  h0), (w1, h1)]
         
 		# the connecting from top to bottom
-		#Rshape2 = [(w1 , h1+radius/2), (device.width*0.15, h0+radius/2)] 
-		Rshape2 = [(w1+offset , h1+radius/2), (device.width*0.15+offset, h0+radius/2)] 
-		Rshape4 = [(w1+offset2 , h1+radius/2), (device.width*0.15+offset2, h0+radius/2)] 
-		# masking line
-		Rshape3 = [(device.width*0.15-radius*0.4+offset2 , h1-radius*0.5), (device.width*0.15+radius*0.5+offset2, h0+radius*1.5)]         
-		Rshape5 = [(device.width*0.09 , device.height), (device.width*0.09+radius/2, 0)]
-		Rshape12 = [(offset+radius*0.5 , h1-radius*0.5), (offset+radius*1.5, h0+radius*1.5)]     
-        
-        #drawing the dots 
-		draw.ellipse(shape0, fill, outline = fill) 
-		draw.ellipse(shape1, fill, outline = fill) 
-		draw.ellipse(shape2, fill, outline = fill) 
-		draw.ellipse(shape3, fill, outline = fill) 
-                
-        #drawing inner the dots 
-		draw.ellipse(shape6, fill, outline = fill) 
-		draw.ellipse(shape7, fill, outline = fill) 
-		draw.ellipse(shape8, fill, outline = fill) 
-		draw.ellipse(shape9, fill, outline = fill) 
-        
-        
-        
-        
-        # rectangle overdrawing
-		draw.rectangle(Rshape0, fill)
-		draw.rectangle(Rshape1, fill)
-		draw.rectangle(Rshape7, fill)
-		draw.rectangle(Rshape8, fill)
+		draw.rectangle(Rshape0, lcars_colore)
+
+		lcars_element_side_bar(device, draw, device.width*0.015,device.height*0.13 ,3,lcars_colore)
+		lcars_element_side_bar(device, draw, device.width*0.015,device.height*0.20 ,3,lcars_colore)
+		lcars_element_side_bar(device, draw, device.width*0.015,device.height*0.274 ,3,lcars_colore)
+		lcars_element_side_bar(device, draw, device.width*0.015,device.height*0.345 ,3,lcars_colore)
 		
+		lcars_element_end(device, draw, device.width*0.93,device.height*0.015,3,lcars_colore)
+		lcars_element_end(device, draw, device.width*0.93,device.height*0.93,3,lcars_colore)
+		
+		lcars_element_doublebar(device, draw, device.width*0.27 ,device.height*0.01, device.width*0.5, device.height*0.055,0,lcars_colore,lcars_colore)
+		lcars_element_doublebar(device, draw, device.width*0.51 ,device.height*0.01, device.width*0.60, device.height*0.055,0,lcars_colore,lcars_colore)
+		
+		bottom_line = [(device.width*0.27 , device.height*0.93), (device.width*0.93, device.height*0.93+radius)] 
+		
+		draw.rectangle(bottom_line, lcars_colore)
+
+def lcars_type3_build(lcars_colore):
+	global animation_step
+	global sensor_animation
+
+	fill = lcars_colore
+	fill2 = "black"
+	fill3 = "yellow"
+
+	with canvas(device, dither=True) as draw:
+	
+		#draw.rectangle(device.bounding_box, outline="white", fill="grey")
+
+		lcars_element_elbow(device, draw, device.width*0.01,device.height*0.01,2,lcars_colore)
+		
+		lcars_element_elbow(device, draw, device.width*0.01,device.height*0.86 ,3,lcars_colore)	
+           
+		radius = device.height*0.05
+          
+        #end locations
+		w0, h0 = device.width*0.015, device.height*0.41
+		w1, h1 = device.width*0.22/2, device.height*0.865
         
-        # endline 
-		draw.rectangle(Rshape6, fill2)
+		Rshape0 = [(w0,  h0), (w1, h1)]
         
 		# the connecting from top to bottom
-		draw.rectangle(Rshape2, fill)
-		draw.rectangle(Rshape4, fill)
+		draw.rectangle(Rshape0, lcars_colore)
+
+		lcars_element_side_bar(device, draw, device.width*0.015,device.height*0.13 ,3,lcars_colore)
+		lcars_element_side_bar(device, draw, device.width*0.015,device.height*0.20 ,3,lcars_colore)
+		lcars_element_side_bar(device, draw, device.width*0.015,device.height*0.274 ,3,lcars_colore)
+		lcars_element_side_bar(device, draw, device.width*0.015,device.height*0.345 ,3,lcars_colore)
 		
-		# masking 
-		draw.rectangle(Rshape3, fill2)
-		draw.rectangle(Rshape12, fill2)
+		lcars_element_end(device, draw, device.width*0.93,device.height*0.015,3,lcars_colore)
+		lcars_element_end(device, draw, device.width*0.93,device.height*0.93,3,lcars_colore)
 		
-		draw.rectangle(Rshape5, fill2)
-        
-        # masking dots
-		draw.ellipse(shape4, fill2, outline = fill2) 
-		draw.ellipse(shape5, fill2, outline = fill2) 
+		lcars_element_doublebar(device, draw, device.width*0.27 ,device.height*0.01, device.width*0.5, device.height*0.055,0,lcars_colore,lcars_colore)
+		lcars_element_doublebar(device, draw, device.width*0.51 ,device.height*0.01, device.width*0.60, device.height*0.055,0,lcars_colore,lcars_colore)
 		
-		draw.ellipse(shape10, fill2, outline = fill2) 
-		draw.ellipse(shape11, fill2, outline = fill2) 
-                
-		#draw.textbbox((w3-radius*2.5, h3), str(animation_step))
-		#draw.text((w3-radius*2.5, h3),str(animation_step),font=lcars_microfont ,fill=lcars_colores[43]['value'])
+		bottom_line = [(device.width*0.27 , device.height*0.93), (device.width*0.93, device.height*0.93+radius)] 
 		
+		draw.rectangle(bottom_line, lcars_colore)
+	
 		## Looks like i found my overlapping box
 		text = str(animation_step)
 		left, top, right, bottom = draw.textbbox((0, 0), text)
 		w, h = right - left, bottom+2 - top
+		w3 = device.width*0.9
 
 		left = w3-radius*2.5
-		top = h3
+		top = device.height*0.93
 		draw.rectangle((left - 1, top, left + w + 1, top + h), fill="black", outline="black")
 		draw.text((left + 1, top), text=text, fill=lcars_colores[43]['value'])
-		
+			
 
 class LCARS_Struct(object):
 	global lcars_colore
@@ -731,18 +536,30 @@ class LCARS_Struct(object):
 		elif self == "type3":
 			lcars_type3_build(lcars_colore)              
 		elif self == "type4":
-			print(sensor_animation )
-			lcars_element_end(device.width*0.1+animation_step, device.height*0.1+animation_step, sensor_animation , lcars_colore)
+			lcars_type3_build(lcars_colore)
         
         
 
 
 
-def init():
+def init(device):
 	print("RUN")
 	global lcars_colore
-	lcars_type1_build("blue")
-  
+	global lcars_microfont
+	global lcars_littlefont 
+	global lcars_font
+	global lcars_titlefont 
+	global lcars_bigfont 
+	global lcars_giantfont 
+    
+	lcars_microfont = ImageFont.truetype("assets/babs.otf",int(device.height * 0.055)) 
+	lcars_littlefont = ImageFont.truetype("assets/babs.otf",int(device.height * 0.079)) 
+	lcars_font = ImageFont.truetype("assets/babs.otf",int(device.height * 0.102)) 
+	lcars_titlefont = ImageFont.truetype("assets/babs.otf",int(device.height * 0.13)) 
+	lcars_bigfont = ImageFont.truetype("assets/babs.otf",int(device.height * 0.16)) 
+	lcars_giantfont = ImageFont.truetype("assets/babs.otf",int(device.height * 0.235))
+	
+	lcars_type1_build("blue") 
 
              
 def callback(ch, method, properties, body):
@@ -807,7 +624,7 @@ if __name__ == "__main__":
 	
 	try:
 		device = get_device(['--interface', 'spi', '--display', 'st7789', '--spi-port', '0', '--spi-bus-speed', '52000000', '--width', '320', '--height', '240','--mode','RGB' ])
-		init()
+		init(device)
 		job.start()
 		channel.start_consuming()
 	except KeyboardInterrupt:
