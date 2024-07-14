@@ -30,7 +30,7 @@ i = 0
 i2 = 0
 
 # A Timer to as Frameratecontroller
-WAIT_TIME_SECONDS = 0.3
+WAIT_TIME_SECONDS = 0.1
 
 animation_step = 0
 sensor_animation = 0
@@ -191,7 +191,6 @@ lcars_theme = [
 {"ID": 2 ,"NAME": "LOWER DECKS THEME Copy", "colore0": lcars_colores[39]['value'], "colore1": lcars_colores[40]['value'], "colore2": lcars_colores[7]['value'] , "colore3": lcars_colores[29]['value'], "colore4": lcars_colores[41]['value'], "colore5":lcars_colores[41]['value'], "colore6": lcars_colores[41]['value'], "colore7": lcars_colores[49]['value'], "font0": lcars_colores[34]['value'] },
 ]
 
-lcars_colore = [0,1,2]
 
 def lcars_element_elbow(device, draw,pos_x,pos_y,rotation,colore):
 # element needs x,y position
@@ -378,37 +377,37 @@ def lcars_type1_build():
 	global animation_step
 	
 	with canvas(device, dither=True) as draw:	
-		lcars_element_gibli(device, draw, device.width*0.15,device.height*0.7 ,3,lcars_theme["ID" == lcars_theme_selection]["colore2"])
-		lcars_element_gibli(device, draw, device.width*0.24,device.height*0.7 ,3,lcars_theme["ID" == lcars_theme_selection]["colore2"])
-		lcars_element_gibli(device, draw, device.width*0.33,device.height*0.7 ,3,lcars_theme["ID" == lcars_theme_selection]["colore2"])
-		lcars_element_gibli(device, draw, device.width*0.42,device.height*0.7 ,3,lcars_theme["ID" == lcars_theme_selection]["colore2"])
-		lcars_element_gibli(device, draw, device.width*0.51,device.height*0.7 ,3,lcars_theme["ID" == lcars_theme_selection]["colore2"])
-		lcars_element_gibli(device, draw, device.width*0.60,device.height*0.7 ,3,lcars_theme["ID" == lcars_theme_selection]["colore2"])
-		lcars_element_gibli(device, draw, device.width*0.69,device.height*0.7 ,3,lcars_theme["ID" == lcars_theme_selection]["colore2"])
-		lcars_element_gibli(device, draw, device.width*0.78,device.height*0.7 ,3,lcars_theme["ID" == lcars_theme_selection]["colore2"])	
+		lcars_element_gibli(device, draw, device.width*0.15,device.height*0.7 ,3,lcars_theme[lcars_theme_selection]["colore2"])
+		lcars_element_gibli(device, draw, device.width*0.24,device.height*0.7 ,3,lcars_theme[lcars_theme_selection]["colore2"])
+		lcars_element_gibli(device, draw, device.width*0.33,device.height*0.7 ,3,lcars_theme[lcars_theme_selection]["colore2"])
+		lcars_element_gibli(device, draw, device.width*0.42,device.height*0.7 ,3,lcars_theme[lcars_theme_selection]["colore2"])
+		lcars_element_gibli(device, draw, device.width*0.51,device.height*0.7 ,3,lcars_theme[lcars_theme_selection]["colore2"])
+		lcars_element_gibli(device, draw, device.width*0.60,device.height*0.7 ,3,lcars_theme[lcars_theme_selection]["colore2"])
+		lcars_element_gibli(device, draw, device.width*0.69,device.height*0.7 ,3,lcars_theme[lcars_theme_selection]["colore2"])
+		lcars_element_gibli(device, draw, device.width*0.78,device.height*0.7 ,3,lcars_theme[lcars_theme_selection]["colore2"])	
 	
 		if animation_step == 0:
-			lcars_element_gibli(device, draw, device.width*0.15,device.height*0.7 ,3,lcars_theme["ID" == lcars_theme_selection]["colore1"])
+			lcars_element_gibli(device, draw, device.width*0.15,device.height*0.7 ,3,lcars_theme[lcars_theme_selection]["colore1"])
 		elif  animation_step == 1:
-			lcars_element_gibli(device, draw, device.width*0.24,device.height*0.7 ,3,lcars_theme["ID" == lcars_theme_selection]["colore1"])
+			lcars_element_gibli(device, draw, device.width*0.24,device.height*0.7 ,3,lcars_theme[lcars_theme_selection]["colore1"])
 		elif  animation_step == 2:
-			lcars_element_gibli(device, draw, device.width*0.33,device.height*0.7 ,3,lcars_theme["ID" == lcars_theme_selection]["colore1"])
+			lcars_element_gibli(device, draw, device.width*0.33,device.height*0.7 ,3,lcars_theme[lcars_theme_selection]["colore1"])
 		elif  animation_step == 3:
-			lcars_element_gibli(device, draw, device.width*0.42,device.height*0.7 ,3,lcars_theme["ID" == lcars_theme_selection]["colore1"])
+			lcars_element_gibli(device, draw, device.width*0.42,device.height*0.7 ,3,lcars_theme[lcars_theme_selection]["colore1"])
 		elif  animation_step == 4:
-			lcars_element_gibli(device, draw, device.width*0.51,device.height*0.7 ,3,lcars_theme["ID" == lcars_theme_selection]["colore1"])
+			lcars_element_gibli(device, draw, device.width*0.51,device.height*0.7 ,3,lcars_theme[lcars_theme_selection]["colore1"])
 		elif  animation_step == 5:
-			lcars_element_gibli(device, draw, device.width*0.60,device.height*0.7 ,3,lcars_theme["ID" == lcars_theme_selection]["colore1"])
+			lcars_element_gibli(device, draw, device.width*0.60,device.height*0.7 ,3,lcars_theme[lcars_theme_selection]["colore1"])
 		elif  animation_step == 6:
-			lcars_element_gibli(device, draw, device.width*0.69,device.height*0.7 ,3,lcars_theme["ID" == lcars_theme_selection]["colore1"])
+			lcars_element_gibli(device, draw, device.width*0.69,device.height*0.7 ,3,lcars_theme[lcars_theme_selection]["colore1"])
 		elif  animation_step == 7:
-			lcars_element_gibli(device, draw, device.width*0.78,device.height*0.7 ,3,lcars_theme["ID" == lcars_theme_selection]["colore1"])
+			lcars_element_gibli(device, draw, device.width*0.78,device.height*0.7 ,3,lcars_theme[lcars_theme_selection]["colore1"])
 		
-		lcars_element_end(device, draw, device.width*0.93,device.height*0.015,3,lcars_theme["ID" == lcars_theme_selection]["colore4"])
-		lcars_element_end(device, draw, device.width*0.93,device.height*0.93,3,lcars_theme["ID" == lcars_theme_selection]["colore4"])
+		lcars_element_end(device, draw, device.width*0.93,device.height*0.015,3,lcars_theme[lcars_theme_selection]["colore4"])
+		lcars_element_end(device, draw, device.width*0.93,device.height*0.93,3,lcars_theme[lcars_theme_selection]["colore4"])
 		
-		lcars_element_end(device, draw, device.width*0.015,device.height*0.015,1,lcars_theme["ID" == lcars_theme_selection]["colore4"])
-		lcars_element_end(device, draw, device.width*0.015,device.height*0.93,1,lcars_theme["ID" == lcars_theme_selection]["colore4"])
+		lcars_element_end(device, draw, device.width*0.015,device.height*0.015,1,lcars_theme[lcars_theme_selection]["colore4"])
+		lcars_element_end(device, draw, device.width*0.015,device.height*0.93,1,lcars_theme[lcars_theme_selection]["colore4"])
 		
 		radius = device.height*0.05
           
@@ -417,18 +416,17 @@ def lcars_type1_build():
 		bottom_line = [(device.width*0.07 , device.height*0.93), (device.width*0.93, device.height*0.93+radius)] 
         
 		# the connecting from top to bottom
-		draw.rectangle(top_line, lcars_theme["ID" == lcars_theme_selection]["colore4"])
-		draw.rectangle(bottom_line, lcars_theme["ID" == lcars_theme_selection]["colore4"])
+		draw.rectangle(top_line, lcars_theme[lcars_theme_selection]["colore4"])
+		draw.rectangle(bottom_line, lcars_theme[lcars_theme_selection]["colore4"])
     
 		if animation_step > 14:
 			if animation_step % 2 == 0:
-				draw.text((device.width*0.2, device.height*0.25), "Accessing",font=lcars_giantfont ,fill=lcars_theme["ID" == lcars_theme_selection]["colore1"])
+				draw.text((device.width*0.2, device.height*0.25), "Accessing",font=lcars_giantfont ,fill=lcars_theme[lcars_theme_selection]["colore1"])
 			else:
-				draw.text((device.width*0.2, device.height*0.25), "Accessing",font=lcars_giantfont ,fill=lcars_theme["ID" == lcars_theme_selection]["colore3"])
+				draw.text((device.width*0.2, device.height*0.25), "Accessing",font=lcars_giantfont ,fill=lcars_theme[lcars_theme_selection]["colore3"])
 
 def lcars_type2_build():
 
-	fill = lcars_colore
 	fill2 = "black"
 	fill3 = "yellow"
 
@@ -436,9 +434,9 @@ def lcars_type2_build():
 	
 		#draw.rectangle(device.bounding_box, outline="white", fill="grey")
 
-		lcars_element_elbow(device, draw, device.width*0.01,device.height*0.01,2,lcars_theme["ID" == lcars_theme_selection]["colore0"])
+		lcars_element_elbow(device, draw, device.width*0.01,device.height*0.01,2,lcars_theme[lcars_theme_selection]["colore0"])
 		
-		lcars_element_elbow(device, draw, device.width*0.01,device.height*0.86 ,3,lcars_theme["ID" == lcars_theme_selection]["colore0"])	
+		lcars_element_elbow(device, draw, device.width*0.01,device.height*0.86 ,3,lcars_theme[lcars_theme_selection]["colore0"])	
            
 		radius = device.height*0.05
           
@@ -449,28 +447,28 @@ def lcars_type2_build():
 		Rshape0 = [(w0,  h0), (w1, h1)]
         
 		# the connecting from top to bottom
-		draw.rectangle(Rshape0, lcars_theme["ID" == lcars_theme_selection]["colore0"])
+		draw.rectangle(Rshape0, lcars_theme[lcars_theme_selection]["colore0"])
 
-		lcars_element_side_bar(device, draw, device.width*0.015,device.height*0.13 ,3,lcars_theme["ID" == lcars_theme_selection]["colore0"])
-		lcars_element_side_bar(device, draw, device.width*0.015,device.height*0.20 ,3,lcars_theme["ID" == lcars_theme_selection]["colore0"])
-		lcars_element_side_bar(device, draw, device.width*0.015,device.height*0.274 ,3,lcars_theme["ID" == lcars_theme_selection]["colore0"])
-		lcars_element_side_bar(device, draw, device.width*0.015,device.height*0.345 ,3,lcars_theme["ID" == lcars_theme_selection]["colore0"])
+		lcars_element_side_bar(device, draw, device.width*0.015,device.height*0.13 ,3,lcars_theme[lcars_theme_selection]["colore0"])
+		lcars_element_side_bar(device, draw, device.width*0.015,device.height*0.20 ,3,lcars_theme[lcars_theme_selection]["colore0"])
+		lcars_element_side_bar(device, draw, device.width*0.015,device.height*0.274 ,3,lcars_theme[lcars_theme_selection]["colore0"])
+		lcars_element_side_bar(device, draw, device.width*0.015,device.height*0.345 ,3,lcars_theme[lcars_theme_selection]["colore0"])
 		
-		lcars_element_end(device, draw, device.width*0.93,device.height*0.015,3,lcars_theme["ID" == lcars_theme_selection]["colore0"])
-		lcars_element_end(device, draw, device.width*0.93,device.height*0.93,3,lcars_theme["ID" == lcars_theme_selection]["colore0"])
+		lcars_element_end(device, draw, device.width*0.93,device.height*0.015,3,lcars_theme[lcars_theme_selection]["colore0"])
+		lcars_element_end(device, draw, device.width*0.93,device.height*0.93,3,lcars_theme[lcars_theme_selection]["colore0"])
 		
-		lcars_element_doublebar(device, draw, device.width*0.27 ,device.height*0.01, device.width*0.5, device.height*0.055,0,lcars_theme["ID" == lcars_theme_selection]["colore0"],lcars_theme["ID" == lcars_theme_selection]["colore0"])
-		lcars_element_doublebar(device, draw, device.width*0.51 ,device.height*0.01, device.width*0.60, device.height*0.055,0,lcars_theme["ID" == lcars_theme_selection]["colore0"],lcars_theme["ID" == lcars_theme_selection]["colore0"])
+		lcars_element_doublebar(device, draw, device.width*0.27 ,device.height*0.01, device.width*0.5, device.height*0.055,0,lcars_theme[lcars_theme_selection]["colore0"],lcars_theme[lcars_theme_selection]["colore0"])
+		lcars_element_doublebar(device, draw, device.width*0.51 ,device.height*0.01, device.width*0.60, device.height*0.055,0,lcars_theme[lcars_theme_selection]["colore0"],lcars_theme[lcars_theme_selection]["colore0"])
 		
 		bottom_line = [(device.width*0.27 , device.height*0.93), (device.width*0.93, device.height*0.93+radius)] 
 		
-		draw.rectangle(bottom_line, lcars_theme["ID" == lcars_theme_selection]["colore0"])
+		draw.rectangle(bottom_line, lcars_theme[lcars_theme_selection]["colore0"])
 
 def lcars_type3_build():
 	global animation_step
 	global sensor_animation
+	global lcars_theme_selection
 
-	fill = lcars_colore
 	fill2 = "black"
 	fill3 = "yellow"
 
@@ -478,18 +476,24 @@ def lcars_type3_build():
 	
 		#draw.rectangle(device.bounding_box, outline="white", fill="grey")
 		
-		lcars_element_gibli(device, draw, device.width*0.15,device.height*0.7 ,3,lcars_theme["ID" == lcars_theme_selection]["colore0"])
-		lcars_element_gibli(device, draw, device.width*0.24,device.height*0.7 ,3,lcars_theme["ID" == lcars_theme_selection]["colore1"])
-		lcars_element_gibli(device, draw, device.width*0.33,device.height*0.7 ,3,lcars_theme["ID" == lcars_theme_selection]["colore2"])
-		lcars_element_gibli(device, draw, device.width*0.42,device.height*0.7 ,3,lcars_theme["ID" == lcars_theme_selection]["colore3"])
-		lcars_element_gibli(device, draw, device.width*0.51,device.height*0.7 ,3,lcars_theme["ID" == lcars_theme_selection]["colore4"])
-		lcars_element_gibli(device, draw, device.width*0.60,device.height*0.7 ,3,lcars_theme["ID" == lcars_theme_selection]["colore5"])
-		lcars_element_gibli(device, draw, device.width*0.69,device.height*0.7 ,3,lcars_theme["ID" == lcars_theme_selection]["colore6"])
+		print("lcars_theme:", lcars_theme_selection)
+		print(lcars_theme[lcars_theme_selection])
 		
-		lcars_element_elbow(device, draw, device.width*0.01,device.height*0.01,2,lcars_theme["ID" == lcars_theme_selection]["colore0"])
+		lcars_element_gibli(device, draw, device.width*0.15,device.height*0.7 ,3,lcars_theme[lcars_theme_selection]["colore0"])
+		lcars_element_gibli(device, draw, device.width*0.24,device.height*0.7 ,3,lcars_theme[lcars_theme_selection]["colore1"])
+		lcars_element_gibli(device, draw, device.width*0.33,device.height*0.7 ,3,lcars_theme[lcars_theme_selection]["colore2"])
+		lcars_element_gibli(device, draw, device.width*0.42,device.height*0.7 ,3,lcars_theme[lcars_theme_selection]["colore3"])
+		lcars_element_gibli(device, draw, device.width*0.51,device.height*0.7 ,3,lcars_theme[lcars_theme_selection]["colore4"])
+		lcars_element_gibli(device, draw, device.width*0.60,device.height*0.7 ,3,lcars_theme[lcars_theme_selection]["colore5"])
+		lcars_element_gibli(device, draw, device.width*0.69,device.height*0.7 ,3,lcars_theme[lcars_theme_selection]["colore6"])
+		lcars_element_gibli(device, draw, device.width*0.78,device.height*0.7 ,3,lcars_theme[lcars_theme_selection]["colore7"])
+		lcars_element_gibli(device, draw, device.width*0.87,device.height*0.7 ,3,lcars_theme[lcars_theme_selection]["font0"])
+		lcars_element_gibli(device, draw, device.width*0.87,device.height*0.8 ,3,lcars_colores[animation_step]['value'])
+		
+		lcars_element_elbow(device, draw, device.width*0.01,device.height*0.01,2,lcars_theme[lcars_theme_selection]["colore4"])
 
-		lcars_element_elbow(device, draw, device.width*0.01,device.height*0.86 ,3, lcars_colores[animation_step]['value'])	
-		print(animation_step, lcars_colores[animation_step]['value'])
+		lcars_element_elbow(device, draw, device.width*0.01,device.height*0.86 ,3, lcars_theme[lcars_theme_selection]["colore0"])	
+		#print(animation_step, lcars_colores[animation_step]['value'])
            
 		radius = device.height*0.05
           
@@ -500,22 +504,22 @@ def lcars_type3_build():
 		Rshape0 = [(w0,  h0), (w1, h1)]
         
 		# the connecting from top to bottom
-		draw.rectangle(Rshape0, lcars_theme["ID" == lcars_theme_selection]["colore0"])
+		draw.rectangle(Rshape0, lcars_theme[lcars_theme_selection]["colore5"])
 
-		lcars_element_side_bar(device, draw, device.width*0.015,device.height*0.13 ,3,"grey")
-		lcars_element_side_bar(device, draw, device.width*0.015,device.height*0.20 ,3,"grey")
-		lcars_element_side_bar(device, draw, device.width*0.015,device.height*0.274 ,3,"grey")
-		lcars_element_side_bar(device, draw, device.width*0.015,device.height*0.345 ,3,"grey")
+		lcars_element_side_bar(device, draw, device.width*0.015,device.height*0.13 ,3,lcars_theme[lcars_theme_selection]["colore2"])
+		lcars_element_side_bar(device, draw, device.width*0.015,device.height*0.20 ,3,lcars_theme[lcars_theme_selection]["colore2"])
+		lcars_element_side_bar(device, draw, device.width*0.015,device.height*0.274 ,3,lcars_theme[lcars_theme_selection]["colore2"])
+		lcars_element_side_bar(device, draw, device.width*0.015,device.height*0.345 ,3,lcars_theme[lcars_theme_selection]["colore2"])
 		
-		lcars_element_end(device, draw, device.width*0.93,device.height*0.015,3,lcars_theme["ID" == lcars_theme_selection]["colore0"])
-		lcars_element_end(device, draw, device.width*0.93,device.height*0.93,3,lcars_theme["ID" == lcars_theme_selection]["colore0"])
+		lcars_element_end(device, draw, device.width*0.93,device.height*0.015,3,lcars_theme[lcars_theme_selection]["colore0"])
+		lcars_element_end(device, draw, device.width*0.93,device.height*0.93,3,lcars_theme[lcars_theme_selection]["colore0"])
 		
-		lcars_element_doublebar(device, draw, device.width*0.27 ,device.height*0.01, device.width*0.5, device.height*0.055,0,lcars_theme["ID" == lcars_theme_selection]["colore0"],lcars_theme["ID" == lcars_theme_selection]["colore0"])
-		lcars_element_doublebar(device, draw, device.width*0.51 ,device.height*0.01, device.width*0.60, device.height*0.055,0,lcars_theme["ID" == lcars_theme_selection]["colore0"],lcars_theme["ID" == lcars_theme_selection]["colore0"])
+		lcars_element_doublebar(device, draw, device.width*0.27 ,device.height*0.01, device.width*0.5, device.height*0.055,0,lcars_theme[lcars_theme_selection]["colore0"],lcars_theme[lcars_theme_selection]["colore5"])
+		lcars_element_doublebar(device, draw, device.width*0.51 ,device.height*0.01, device.width*0.60, device.height*0.055,0,lcars_theme[lcars_theme_selection]["colore5"],lcars_theme[lcars_theme_selection]["colore0"])
 		
 		bottom_line = [(device.width*0.27 , device.height*0.93), (device.width*0.93, device.height*0.93+radius)] 
 		
-		draw.rectangle(bottom_line,lcars_theme["ID" == lcars_theme_selection]["colore0"])
+		draw.rectangle(bottom_line,lcars_theme[lcars_theme_selection]["colore0"])
 	
 		## Looks like i found my overlapping box
 		text = str(animation_step)
@@ -577,6 +581,7 @@ def callback(ch, method, properties, body):
 	global i2
 	global lcars_colore
 	global sensor_animation
+	global lcars_theme_selection
 	
 	if method.routing_key == 'bme680':
 		sensor_animation = sensor_animation + 1
@@ -596,9 +601,9 @@ def callback(ch, method, properties, body):
 		styles.insert(0, style)
 		
 	if DICT_CLEAN['met']:
-		lcars_colore_selection = lcars_colores.pop()
-		lcars_colore = lcars_colore_selection
-		lcars_colores.insert(0, lcars_colore)
+		lcars_theme_selection = lcars_theme_selection + 1
+		if lcars_theme_selection == 3: 
+			lcars_theme_selection = 0
 
 def animation_push():
 	global animation_step
