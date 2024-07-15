@@ -182,14 +182,20 @@ lcars_colores = [
 {"ID":68, "NAME": "c69", "value": '#cc0000'},
 {"ID":69, "NAME": "c70", "value": '#ee0000'},
 {"ID":70, "NAME": "c71", "value": '#dfdfdf'},
-{"ID":71, "NAME": "c72", "value": '#f7f7f7'}
+{"ID":71, "NAME": "c72", "value": '#f7f7f7'},
+{"ID":72, "NAME": "42", "value": '#ffeecc'}
 ]
 
 lcars_theme = [
-{"ID": 0 ,"NAME": "LOWER DECKS PADD THEME", "colore0": lcars_colores[42]['value'], "colore1": lcars_colores[43]['value'], "colore2": lcars_colores[44]['value'] , "colore3": lcars_colores[45]['value'], "colore4": lcars_colores[46]['value'], "colore5":lcars_colores[47]['value'], "colore6": lcars_colores[48]['value'], "colore7": lcars_colores[49]['value'], "font0": lcars_colores[34]['value'] },
-{"ID": 1 ,"NAME": "LOWER DECKS THEME", "colore0": lcars_colores[39]['value'], "colore1": lcars_colores[40]['value'], "colore2": lcars_colores[7]['value'] , "colore3": lcars_colores[29]['value'], "colore4": lcars_colores[41]['value'], "colore5":lcars_colores[41]['value'], "colore6": lcars_colores[41]['value'], "colore7": lcars_colores[49]['value'], "font0": lcars_colores[34]['value'] },
-{"ID": 2 ,"NAME": "LOWER DECKS THEME Copy", "colore0": lcars_colores[39]['value'], "colore1": lcars_colores[40]['value'], "colore2": lcars_colores[7]['value'] , "colore3": lcars_colores[29]['value'], "colore4": lcars_colores[41]['value'], "colore5":lcars_colores[41]['value'], "colore6": lcars_colores[41]['value'], "colore7": lcars_colores[49]['value'], "font0": lcars_colores[34]['value'] },
+{"ID": 0 ,"NAME": "LOWER DECKS PADD THEME", "colore0": lcars_colores[42]['value'], "colore1": lcars_colores[43]['value'], "colore2": lcars_colores[44]['value'] , "colore3": lcars_colores[45]['value'], "colore4": lcars_colores[46]['value'], "colore5":lcars_colores[47]['value'], "colore6": lcars_colores[48]['value'], "colore7": lcars_colores[49]['value'], "font0": lcars_colores[43]['value'] },
+{"ID": 1 ,"NAME": "LOWER DECKS THEME", "colore0": lcars_colores[39]['value'], "colore1": lcars_colores[40]['value'], "colore2": lcars_colores[7]['value'] , "colore3": lcars_colores[29]['value'], "colore4": lcars_colores[72]['value'], "colore5":lcars_colores[41]['value'], "colore6": lcars_colores[41]['value'], "colore7": lcars_colores[49]['value'], "font0":lcars_colores[43]['value'] },
+{"ID": 2 ,"NAME": "Red Alert ?", "colore0": lcars_colores[39]['value'], "colore1": lcars_colores[40]['value'], "colore2": lcars_colores[7]['value'] , "colore3": lcars_colores[29]['value'], "colore4": lcars_colores[41]['value'], "colore5":lcars_colores[41]['value'], "colore6": lcars_colores[41]['value'], "colore7": lcars_colores[49]['value'], "font0": lcars_colores[34]['value'] },
 ]
+
+def lcars_element_graph(device, draw,size_x,size_y, array)
+	print("Placeholder for my next project")
+
+
 
 
 def lcars_element_elbow(device, draw,pos_x,pos_y,rotation,colore):
@@ -426,17 +432,17 @@ def lcars_type1_build():
 				draw.text((device.width*0.2, device.height*0.25), "Accessing",font=lcars_giantfont ,fill=lcars_theme[lcars_theme_selection]["colore3"])
 
 def lcars_type2_build():
+	global animation_step
+	global sensor_animation
+	global lcars_theme_selection
 
 	fill2 = "black"
 	fill3 = "yellow"
 
 	with canvas(device, dither=True) as draw:
-	
-		#draw.rectangle(device.bounding_box, outline="white", fill="grey")
-
-		lcars_element_elbow(device, draw, device.width*0.01,device.height*0.01,2,lcars_theme[lcars_theme_selection]["colore0"])
-		
-		lcars_element_elbow(device, draw, device.width*0.01,device.height*0.86 ,3,lcars_theme[lcars_theme_selection]["colore0"])	
+					
+		lcars_element_elbow(device, draw, device.width*0.01,device.height*0.01,2,lcars_theme[lcars_theme_selection]["colore4"])
+		lcars_element_elbow(device, draw, device.width*0.01,device.height*0.86 ,3, lcars_theme[lcars_theme_selection]["colore0"])	
            
 		radius = device.height*0.05
           
@@ -447,22 +453,48 @@ def lcars_type2_build():
 		Rshape0 = [(w0,  h0), (w1, h1)]
         
 		# the connecting from top to bottom
-		draw.rectangle(Rshape0, lcars_theme[lcars_theme_selection]["colore0"])
+		draw.rectangle(Rshape0, lcars_theme[lcars_theme_selection]["colore5"])
 
-		lcars_element_side_bar(device, draw, device.width*0.015,device.height*0.13 ,3,lcars_theme[lcars_theme_selection]["colore0"])
-		lcars_element_side_bar(device, draw, device.width*0.015,device.height*0.20 ,3,lcars_theme[lcars_theme_selection]["colore0"])
-		lcars_element_side_bar(device, draw, device.width*0.015,device.height*0.274 ,3,lcars_theme[lcars_theme_selection]["colore0"])
-		lcars_element_side_bar(device, draw, device.width*0.015,device.height*0.345 ,3,lcars_theme[lcars_theme_selection]["colore0"])
+		if sensor_animation == 3:
+			lcars_element_side_bar(device, draw, device.width*0.015,device.height*0.13 ,3,lcars_theme[lcars_theme_selection]["colore1"])
+		else:
+			lcars_element_side_bar(device, draw, device.width*0.015,device.height*0.13 ,3,lcars_theme[lcars_theme_selection]["colore2"])
+		
+		if sensor_animation == 2:
+			lcars_element_side_bar(device, draw, device.width*0.015,device.height*0.20 ,3,lcars_theme[lcars_theme_selection]["colore1"])
+		else:
+			lcars_element_side_bar(device, draw, device.width*0.015,device.height*0.20 ,3,lcars_theme[lcars_theme_selection]["colore2"])
+		
+		if sensor_animation == 1:
+			lcars_element_side_bar(device, draw, device.width*0.015,device.height*0.274 ,3,lcars_theme[lcars_theme_selection]["colore1"])
+		else:
+			lcars_element_side_bar(device, draw, device.width*0.015,device.height*0.274 ,3,lcars_theme[lcars_theme_selection]["colore2"])
+		
+		if sensor_animation == 0:
+			lcars_element_side_bar(device, draw, device.width*0.015,device.height*0.345 ,3,lcars_theme[lcars_theme_selection]["colore1"])
+		else:
+			lcars_element_side_bar(device, draw, device.width*0.015,device.height*0.345 ,3,lcars_theme[lcars_theme_selection]["colore2"])
 		
 		lcars_element_end(device, draw, device.width*0.93,device.height*0.015,3,lcars_theme[lcars_theme_selection]["colore0"])
 		lcars_element_end(device, draw, device.width*0.93,device.height*0.93,3,lcars_theme[lcars_theme_selection]["colore0"])
 		
-		lcars_element_doublebar(device, draw, device.width*0.27 ,device.height*0.01, device.width*0.5, device.height*0.055,0,lcars_theme[lcars_theme_selection]["colore0"],lcars_theme[lcars_theme_selection]["colore0"])
-		lcars_element_doublebar(device, draw, device.width*0.51 ,device.height*0.01, device.width*0.60, device.height*0.055,0,lcars_theme[lcars_theme_selection]["colore0"],lcars_theme[lcars_theme_selection]["colore0"])
+		lcars_element_doublebar(device, draw, device.width*0.27 ,device.height*0.01, device.width*0.5, device.height*0.055,0,lcars_theme[lcars_theme_selection]["colore0"],lcars_theme[lcars_theme_selection]["colore5"])
+		lcars_element_doublebar(device, draw, device.width*0.51 ,device.height*0.01, device.width*0.60, device.height*0.055,0,lcars_theme[lcars_theme_selection]["colore5"],lcars_theme[lcars_theme_selection]["colore0"])
 		
 		bottom_line = [(device.width*0.27 , device.height*0.93), (device.width*0.93, device.height*0.93+radius)] 
 		
-		draw.rectangle(bottom_line, lcars_theme[lcars_theme_selection]["colore0"])
+		draw.rectangle(bottom_line,lcars_theme[lcars_theme_selection]["colore5"])
+	
+		## Looks like i found my overlapping box
+		text = str(animation_step)
+		left, top, right, bottom = draw.textbbox((0, 0), text)
+		w, h = right - left, bottom+2 - top
+		w3 = device.width*0.9
+
+		left = w3-radius*2.5
+		top = device.height*0.93
+		draw.rectangle((left - 1, top, left + w + 1, top + h), fill="black", outline="black")
+		draw.text((left + 1, top), text=text, fill=lcars_theme[lcars_theme_selection]["font0"])
 
 def lcars_type3_build():
 	global animation_step
@@ -506,10 +538,25 @@ def lcars_type3_build():
 		# the connecting from top to bottom
 		draw.rectangle(Rshape0, lcars_theme[lcars_theme_selection]["colore5"])
 
-		lcars_element_side_bar(device, draw, device.width*0.015,device.height*0.13 ,3,lcars_theme[lcars_theme_selection]["colore2"])
-		lcars_element_side_bar(device, draw, device.width*0.015,device.height*0.20 ,3,lcars_theme[lcars_theme_selection]["colore2"])
-		lcars_element_side_bar(device, draw, device.width*0.015,device.height*0.274 ,3,lcars_theme[lcars_theme_selection]["colore2"])
-		lcars_element_side_bar(device, draw, device.width*0.015,device.height*0.345 ,3,lcars_theme[lcars_theme_selection]["colore2"])
+		if sensor_animation == 3:
+			lcars_element_side_bar(device, draw, device.width*0.015,device.height*0.13 ,3,lcars_theme[lcars_theme_selection]["colore1"])
+		else:
+			lcars_element_side_bar(device, draw, device.width*0.015,device.height*0.13 ,3,lcars_theme[lcars_theme_selection]["colore2"])
+		
+		if sensor_animation == 2:
+			lcars_element_side_bar(device, draw, device.width*0.015,device.height*0.20 ,3,lcars_theme[lcars_theme_selection]["colore1"])
+		else:
+			lcars_element_side_bar(device, draw, device.width*0.015,device.height*0.20 ,3,lcars_theme[lcars_theme_selection]["colore2"])
+		
+		if sensor_animation == 1:
+			lcars_element_side_bar(device, draw, device.width*0.015,device.height*0.274 ,3,lcars_theme[lcars_theme_selection]["colore1"])
+		else:
+			lcars_element_side_bar(device, draw, device.width*0.015,device.height*0.274 ,3,lcars_theme[lcars_theme_selection]["colore2"])
+		
+		if sensor_animation == 0:
+			lcars_element_side_bar(device, draw, device.width*0.015,device.height*0.345 ,3,lcars_theme[lcars_theme_selection]["colore1"])
+		else:
+			lcars_element_side_bar(device, draw, device.width*0.015,device.height*0.345 ,3,lcars_theme[lcars_theme_selection]["colore2"])
 		
 		lcars_element_end(device, draw, device.width*0.93,device.height*0.015,3,lcars_theme[lcars_theme_selection]["colore0"])
 		lcars_element_end(device, draw, device.width*0.93,device.height*0.93,3,lcars_theme[lcars_theme_selection]["colore0"])
@@ -519,7 +566,7 @@ def lcars_type3_build():
 		
 		bottom_line = [(device.width*0.27 , device.height*0.93), (device.width*0.93, device.height*0.93+radius)] 
 		
-		draw.rectangle(bottom_line,lcars_theme[lcars_theme_selection]["colore0"])
+		draw.rectangle(bottom_line,lcars_theme[lcars_theme_selection]["colore5"])
 	
 		## Looks like i found my overlapping box
 		text = str(animation_step)
@@ -530,7 +577,7 @@ def lcars_type3_build():
 		left = w3-radius*2.5
 		top = device.height*0.93
 		draw.rectangle((left - 1, top, left + w + 1, top + h), fill="black", outline="black")
-		draw.text((left + 1, top), text=text, fill=lcars_colores[43]['value'])
+		draw.text((left + 1, top), text=text, fill=lcars_theme[lcars_theme_selection]["font0"])
 			
 
 class LCARS_Struct(object):
