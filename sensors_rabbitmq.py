@@ -145,7 +145,10 @@ def publish(IN_routing_key,data):
 	message = str(data)
 	time_unix = time.time()
 	try:
-		channel.basic_publish(exchange=stack, routing_key=routing_key, body=message)
+		if message is not None:
+			channel.basic_publish(exchange=stack, routing_key=routing_key, body=message)
+		else:
+			print("Is that a buffer underflow?")
 	except Exception as e:
 		print("An error occurred:",e)
 		try:
