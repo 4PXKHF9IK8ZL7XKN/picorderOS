@@ -192,9 +192,16 @@ lcars_theme = [
 {"ID": 2 ,"NAME": "Red Alert ?", "colore0": lcars_colores[39]['value'], "colore1": lcars_colores[40]['value'], "colore2": lcars_colores[7]['value'] , "colore3": lcars_colores[29]['value'], "colore4": lcars_colores[41]['value'], "colore5":lcars_colores[41]['value'], "colore6": lcars_colores[41]['value'], "colore7": lcars_colores[49]['value'], "font0": lcars_colores[34]['value'] },
 ]
 
-def lcars_element_graph(device, draw,size_x,size_y, array)
-	print("Placeholder for my next project")
+def lcars_element_graph(device, draw,pos_ax,pos_ay,pos_bx,pos_by, array):
 
+	#bounding box
+	box_element_graph = [(pos_ax , pos_ay), (pos_bx, pos_by)] 
+	draw.rectangle(box_element_graph,fill="black", outline=lcars_theme[lcars_theme_selection]["colore5"])
+	
+	# center line
+	calc_center_of_graph = pos_ay+(pos_by - pos_ay)/2
+	centerline_element_graph = [(pos_ax,calc_center_of_graph),(pos_bx,calc_center_of_graph)] 
+	draw.line(centerline_element_graph,fill=lcars_theme[lcars_theme_selection]["colore5"])
 
 
 
@@ -438,11 +445,15 @@ def lcars_type2_build():
 
 	fill2 = "black"
 	fill3 = "yellow"
+	
+	dict_graph = []
 
 	with canvas(device, dither=True) as draw:
 					
 		lcars_element_elbow(device, draw, device.width*0.01,device.height*0.01,2,lcars_theme[lcars_theme_selection]["colore4"])
 		lcars_element_elbow(device, draw, device.width*0.01,device.height*0.86 ,3, lcars_theme[lcars_theme_selection]["colore0"])	
+		
+		lcars_element_graph(device, draw,device.width*0.15,device.height*0.12,device.width*0.95,device.height*0.85, dict_graph)
            
 		radius = device.height*0.05
           
