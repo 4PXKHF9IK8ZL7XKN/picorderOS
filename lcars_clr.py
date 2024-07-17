@@ -511,6 +511,13 @@ def lcars_type3_build():
 	global animation_step
 	global sensor_animation
 	global lcars_theme_selection
+	
+	global lcars_microfont
+	global lcars_littlefont 
+	global lcars_font
+	global lcars_titlefont 
+	global lcars_bigfont 
+	global lcars_giantfont
 
 	fill2 = "black"
 	fill3 = "yellow"
@@ -590,6 +597,23 @@ def lcars_type3_build():
 		draw.rectangle((left - 1, top, left + w + 1, top + h), fill="black", outline="black")
 		draw.text((left + 1, top), text=text, fill=lcars_theme[lcars_theme_selection]["font0"])
 			
+		text2 = "dev.height * 0.055"
+		text3 = "dev.height * 0.079"
+		text4 = "dev.height * 0.102"
+		text5 = "dev.height * 0.13"
+		text6 = "dev.height * 0.16"
+		text7 = "dev.height * 0.235"
+		top2 = device.height*0.0
+		left2 = device.width*0.0
+		
+		draw.text((left2 + 1, top2), text=text2, font=lcars_microfont, fill=lcars_theme[lcars_theme_selection]["font0"])	
+		draw.text((left2 + 1, top2+device.height * 0.079), text=text3, font=lcars_littlefont , fill=lcars_theme[lcars_theme_selection]["font0"])	
+		draw.text((left2 + 1, top2+device.height * 0.079+device.height * 0.102), text=text4, font=lcars_font, fill=lcars_theme[lcars_theme_selection]["font0"])	
+		draw.text((left2 + 1, top2+device.height * 0.079+device.height * 0.102+device.height * 0.13), text=text5, font= lcars_titlefont , fill=lcars_theme[lcars_theme_selection]["font0"])	
+		draw.text((left2 + 1, top2+device.height * 0.079+device.height * 0.102+device.height * 0.13+device.height * 0.16), text=text6, font=lcars_bigfont, fill=lcars_theme[lcars_theme_selection]["font0"])	
+		draw.text((left2 + 1, top2+device.height * 0.079+device.height * 0.102+device.height * 0.13+device.height * 0.16+device.height * 0.235), text=text7, font= lcars_giantfont, fill=lcars_theme[lcars_theme_selection]["font0"])	
+		
+		
 
 class LCARS_Struct(object):
 	global lcars_colore
