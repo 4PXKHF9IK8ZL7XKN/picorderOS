@@ -27,6 +27,9 @@ DEBUG = False
 BUTTON_GPIOA = 17
 BUTTON_GPIOB = 27
 
+interrupt_flagA = False
+interrupt_flagB = False
+
 # set the BUS Freq
 I2C_FRQ = 100000
 
@@ -171,19 +174,26 @@ def signal_handler(sig, frame):
      
     
 # Interrupt Callback functions for the Touch Sensors
-def button_callbackB(channel):
+def button_callbackB_action():
 	touchB_dict = {"DICT":"B",0:False,1:False,2:False,3:False,4:False,5:False,6:False,7:False,8:False,9:False,10:False,11:False}
 	for i in range(12):
 		touchB_dict[i] = mpr121B[i].value
 	publish("touch",touchB_dict)
     
 
-def button_callbackA(channel):
+def button_callbackA_action():
 	touchA_dict = {"DICT":"A",0:False,1:False,2:False,3:False,4:False,5:False,6:False,7:False,8:False,9:False,10:False,11:False}
 	for i in range(12):
 		touchA_dict[i] = mpr121A[i].value
 	publish("touch",touchA_dict)
+	
+def button_callbackA(channel):
+	global interrupt_flagA
+	interrupt_flagA = True
 
+def button_callbackB(channel):
+	global interrupt_flagB
+	interrupt_flagB = True
 
 def reset():
     if not GPIO.input(17) or not GPIO.input(27):
@@ -676,8 +686,22 @@ class MLX90614():
 		data = self.read_reg(self.MLX90614_TOBJ1)
 		return self.data_to_temp(data)
 
+def interrupt_checker():
+	global interrupt_flagA
+	global interrupt_flagB
+	
+	if interrupt_flagA:
+		interrupt_flagA = False
+		button_callbackA_action()
+			
+	if interrupt_flagB:
+		interrupt_flagB = False
+		button_callbackB_action()
+
+
 # function to use the sensor class as a process.
 def sensor_process():
+
 	sensors = sensor()
 	timed = timer()
 	wifitimer = timer()
@@ -691,65 +715,99 @@ def sensor_process():
 	while True:
 		#if timed.timelapsed() > configure.samplerate[0]:
 		#sensor_data = sensors.get()
+		
+		interrupt_checker()
+		
 		if configure.bme:
 			bme680 = sensors.get_bme680()
 			publish("bme680",bme680)
+			
+		interrupt_checker()
 			
 		if configure.bmp280:
 			bmp280 = sensors.get_bmp280()
 			publish("bmp280",bmp280)
 			
+		interrupt_checker()
+			
 		if configure.SHT30:
 			sht30 = sensors.get_sht30()
 			publish("sht30",sht30)
 			
+		interrupt_checker()		
+			
 		if configure.SCD4X:
 			scd4x = sensors.get_scd4x()
 			publish("scd4x",scd4x)
+		
+		interrupt_checker()
 			
 		if configure.LSM6DS3TR:
 			lsm6ds3 = sensors.get_lsm6ds3()
 			publish("lsm6ds3",lsm6ds3)
 			
+		interrupt_checker()
+			
 		if configure.LIS3MDL:
 			lis3mdl = sensors.get_lis3mdl()
 			publish("lis3mdl",lis3mdl)
 			
+		interrupt_checker()
+			
 		if configure.APDS9960:
 			apds9960 = sensors.get_apds9960()
 			publish("apds9960",apds9960)
+			
+		interrupt_checker()
 		
 		if configure.amg8833:
 			thermal_frame = sensors.get_thermal_frame()
 			publish("thermal_frame",thermal_frame)
 			
+		interrupt_checker()
+			
+			
 		if configure.system_vitals:
 			system_vitals = sensors.get_system_vitals()
 			publish("system_vitals",system_vitals)
+			
+		interrupt_checker()
 			
 		if configure.generators:
 			generatorsCurve = sensors.get_generators()
 			publish("generators",generatorsCurve)
 			
+		interrupt_checker()
+			
 		if configure.gps:
 			gps_parsed = sensors.get_gps()
 			publish("GPS_DATA",gps_parsed)
+			
+		interrupt_checker()
 			
 		if configure.sensehat:
 			sensehat_data = sensors.get_sensehat()
 			publish("sensehat",sensehat_data)
 			
+		interrupt_checker()
+		
 		if configure.envirophat:
 			envirophat_data = sensors.get_envirophat()
 			publish("envirophat",envirophat_data)
+			
+		interrupt_checker()
 						
 		if configure.pocket_geiger:
 			pocket_geigert_data = sensors.get_pocket_geiger()
 			publish("pocket_geiger",pocket_geiger_data)
+			
+		interrupt_checker()
 
 		if configure.ir_thermo:
 			ir_thermo_data = sensors.get_ir_thermo()
 			publish("ir_thermo",ir_thermo_data)
+			
+		interrupt_checker()
 			
 		if counter == 10:
 			meta_massage = str(sensors.get_index())
