@@ -24,6 +24,9 @@ from luma.core.render import canvas
 from PIL import ImageFont
 from datetime import timedelta
 
+bme680_temp = [0]
+
+
 styles = ["type1", "type2", "type3", "type4"]
 style = "type1"
 i = 0
@@ -669,6 +672,10 @@ def callback(ch, method, properties, body):
 		sensor_animation = sensor_animation + 1
 		if sensor_animation == 4:
 			sensor_animation = 0
+			
+		bme_satz = body.decode()	
+			
+		
 		return
     
     
