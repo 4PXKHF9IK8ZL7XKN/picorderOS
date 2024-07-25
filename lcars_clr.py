@@ -15,7 +15,9 @@ import time
 import colorsys
 import threading
 import pika
+import pandas as pd
 import ast
+from objects import *
 from pathlib import Path
 from luma.core.virtual import viewport, snapshot, range_overlap
 from luma.core.sprite_system import framerate_regulator
@@ -23,6 +25,7 @@ from luma.core import cmdline, error
 from luma.core.render import canvas
 from PIL import ImageFont
 from datetime import timedelta
+
 
 bme680_temp = [0]
 
@@ -37,8 +40,10 @@ WAIT_TIME_SECONDS = 0.1
 
 animation_step = 0
 sensor_animation = 0
-
 lcars_theme_selection = 0
+
+mapping_book_byname = {}
+mapping_book = {}
 
 lcars_microfont = None
 lcars_littlefont = None
@@ -47,69 +52,15 @@ lcars_titlefont = None
 lcars_bigfont = None
 lcars_giantfont = None
 
-# Init rabbitmq connection
-connection = pika.BlockingConnection(
-    pika.ConnectionParameters(host='localhost'))
-channel = connection.channel()
 
-channel.exchange_declare(exchange='sensor_data', exchange_type='topic')
+GPS_DATA = [4747.0000,4747.0000]
+BUFFER_GLOBAL = pd.DataFrame(columns=['value','min','max','dsc','sym','dev','timestamp','latitude','longitude'])
+BUFFER_GLOBAL_EM = pd.DataFrame(columns=['ssid','signal','quality','frequency','encrypted','channel','dev','mode','dsc','timestamp','latitude','longitude'])
 
-result = channel.queue_declare('', exclusive=True)
-queue_name = result.method.queue
-
-channel.queue_bind(
-    exchange='sensor_data', queue='', routing_key='EVENT')
-    
-# A Trigger for Blinking on sensor event
-channel.queue_bind(
-    exchange='sensor_data', queue='', routing_key='bme680')
-
-def display_settings(device, args):
-    """
-    Display a short summary of the settings.
-
-    :rtype: str
-    """
-    iface = ''
-    display_types = cmdline.get_display_types()
-    if args.display not in display_types['emulator']:
-        iface = f'Interface: {args.interface}\n'
-
-    lib_name = cmdline.get_library_for_display_type(args.display)
-    if lib_name is not None:
-        lib_version = cmdline.get_library_version(lib_name)
-    else:
-        lib_name = lib_version = 'unknown'
-
-    import luma.core
-    version = f'luma.{lib_name} {lib_version} (luma.core {luma.core.__version__})'
-
-    return f'Version: {version}\nDisplay: {args.display}\n{iface}Dimensions: {device.width} x {device.height}\n{"-" * 60}'
-
-
-def get_device(actual_args=None):
-    """
-    Create device from command-line arguments and return it.
-    """
-    if actual_args is None:
-        actual_args = sys.argv[1:]
-    parser = cmdline.create_parser(description='luma.examples arguments')
-    args = parser.parse_args(actual_args)
-
-    if args.config:
-        # load config from file
-        config = cmdline.load_config(args.config)
-        args = parser.parse_args(config + actual_args)
-
-    # create device
-    try:
-        device = cmdline.create_device(args)
-        print(display_settings(device, args))
-        return device
-
-    except error.Error as e:
-        parser.error(e)
-        return None
+BME680 = [[0,-40,85,'Thermometer','\xB0','BME680','timestamp','latitude','longitude'],[0,0,100,'Hygrometer','%','BME680','timestamp','latitude','longitude'],[0,300,1100,'Barometer','hPa','BME680','timestamp','latitude','longitude'],[0,0,500,'VOC','ppm','BME680','timestamp','latitude','longitude'],[0,0,1100,'ALT','m','BME680','timestamp','latitude','longitude']]
+SYSTEMVITALES = [[0,0,'inf','Timer','t','RaspberryPi','timestamp','latitude','longitude'],[0,0,4,'INDICATOR','IND','RaspberryPi','timestamp','latitude','longitude'],[0,-25,100,'CpuTemp','\xB0','RaspberryPi','timestamp','latitude','longitude'],[0,0,400,'CpuPercent','%','RaspberryPi','timestamp','latitude','longitude'],[0,0,4800000,'VirtualMemory','b','RaspberryPi','timestamp','latitude','longitude'],[0,0,100,'disk_usage','%','RaspberryPi','timestamp','latitude','longitude'],[0,0,100000,'BytesSent','b','RaspberryPi','timestamp','latitude','longitude'],[0,0,100000,'BytesReceived','b','RaspberryPi','timestamp','latitude','longitude']]
+GENERATORS = [[0,-100,100,'SineWave','','RaspberryPi','timestamp','latitude','longitude'],[0,-500,500,'TangentWave','','RaspberryPi','timestamp','latitude','longitude'],[0,-100,100,'CosWave','','RaspberryPi','timestamp','latitude','longitude'],[0,-100,100,'SineWave2','','RaspberryPi','timestamp','latitude','longitude']]
+SENSEHAT = [[0,-40,120,'Thermometer','\xB0','sensehat','timestamp','latitude','longitude'],[0,0,100,'Hygrometer','%','sensehat','timestamp','latitude','longitude'],[0,260,1260,'Barometer','hPa','sensehat','timestamp','latitude','longitude'],[0,-500,500,'MagnetX','G','sensehat','timestamp','latitude','longitude'],[0,-500,500,'MagnetY','G','sensehat','timestamp','latitude','longitude'],[0,-500,500,'MagnetZ','G','sensehat','timestamp','latitude','longitude'],[0,-500,500,'"AccelX','g','sensehat','timestamp','latitude','longitude'],[0,-500,500,'"AccelY','g','sensehat','timestamp','latitude','longitude'],[0,-500,500,'"AccelZ','g','sensehat','timestamp','latitude','longitude']]
 
 # Standard LCARS colours
 # LCARS CLASSIC THEME, 24# NEMESIS BLUE THEME, 39#LOWER DECKS THEME 42#LOWER DECKS PADD THEME
@@ -195,16 +146,143 @@ lcars_theme = [
 {"ID": 2 ,"NAME": "Red Alert ?", "colore0": lcars_colores[39]['value'], "colore1": lcars_colores[40]['value'], "colore2": lcars_colores[7]['value'] , "colore3": lcars_colores[29]['value'], "colore4": lcars_colores[41]['value'], "colore5":lcars_colores[41]['value'], "colore6": lcars_colores[41]['value'], "colore7": lcars_colores[49]['value'], "font0": lcars_colores[34]['value'] },
 ]
 
-def lcars_element_graph(device, draw,pos_ax,pos_ay,pos_bx,pos_by, array):
+
+# Init rabbitmq connection
+connection = pika.BlockingConnection(
+    pika.ConnectionParameters(host='localhost'))
+channel = connection.channel()
+
+channel.exchange_declare(exchange='sensor_data', exchange_type='topic')
+
+result = channel.queue_declare('', exclusive=True)
+queue_name = result.method.queue
+
+# We request now all Sensor data and Rabbitmq values to make the graph drawing realy valuable 
+channel.queue_bind(
+    exchange='sensor_data', queue='', routing_key='#')
+
+def display_settings(device, args):
+    """
+    Display a short summary of the settings.
+
+    :rtype: str
+    """
+    iface = ''
+    display_types = cmdline.get_display_types()
+    if args.display not in display_types['emulator']:
+        iface = f'Interface: {args.interface}\n'
+
+    lib_name = cmdline.get_library_for_display_type(args.display)
+    if lib_name is not None:
+        lib_version = cmdline.get_library_version(lib_name)
+    else:
+        lib_name = lib_version = 'unknown'
+
+    import luma.core
+    version = f'luma.{lib_name} {lib_version} (luma.core {luma.core.__version__})'
+
+    return f'Version: {version}\nDisplay: {args.display}\n{iface}Dimensions: {device.width} x {device.height}\n{"-" * 60}'
+
+
+def get_device(actual_args=None):
+    """
+    Create device from command-line arguments and return it.
+    """
+    if actual_args is None:
+        actual_args = sys.argv[1:]
+    parser = cmdline.create_parser(description='luma.examples arguments')
+    args = parser.parse_args(actual_args)
+
+    if args.config:
+        # load config from file
+        config = cmdline.load_config(args.config)
+        args = parser.parse_args(config + actual_args)
+
+    # create device
+    try:
+        device = cmdline.create_device(args)
+        print(display_settings(device, args))
+        return device
+
+    except error.Error as e:
+        parser.error(e)
+        return None
+
+
+def lcars_element_graph(device, draw,pos_ax,pos_ay,pos_bx,pos_by, sensors_dict,mode):
+	fill = "yellow"
+	fill2 = "red"
+
+	global lcars_microfont
+
+	if configure.samples:
+		samples = configure.samples
+	else:
+		samples = 64
+		
+	# (calulation the graph lengh absulut) deviding through tha samples to get the steps of drawing 
+	graph_resulutio_X_multi = ( pos_bx - pos_ax ) / samples
 
 	#bounding box
 	box_element_graph = [(pos_ax , pos_ay), (pos_bx, pos_by)] 
 	draw.rectangle(box_element_graph,fill="black", outline=lcars_theme[lcars_theme_selection]["colore5"])
 	
 	# center line
-	calc_center_of_graph = pos_ay+(pos_by - pos_ay)/2
-	centerline_element_graph = [(pos_ax,calc_center_of_graph),(pos_bx,calc_center_of_graph)] 
-	draw.line(centerline_element_graph,fill=lcars_theme[lcars_theme_selection]["colore5"])
+	#calc_center_of_graph = pos_ay+(pos_by - pos_ay)/2
+	#centerline_element_graph = [(pos_ax,calc_center_of_graph),(pos_bx,calc_center_of_graph)] 
+	#draw.line(centerline_element_graph,fill=lcars_theme[lcars_theme_selection]["colore5"])
+		
+	#sensors_legende = str(sensors_dict)
+		
+	#draw.text((pos_ax, pos_by), text=sensors_legende, font=lcars_microfont, fill=lcars_theme[lcars_theme_selection]["font0"])
+	
+	# Unpacking the array with dicts
+	for index_a, sensors_to_read in enumerate(sensors_dict):
+		# dev is the Pi dsc the cpu 
+		
+		for sensor_dev,sensor_dsc in sensors_to_read.items():
+			#print(get_recent(sensor_dsc, sensor_dev, samples, timeing=True))
+			recent, timelength = get_recent(sensor_dsc, sensor_dev, samples, timeing=True)
+				
+			# This Block checks for the global variable that defines the sensor end selects the array inside so that i can get the min max values 
+			my_global_vars = globals()
+			#print("!sensor_legende2",my_global_vars[sensor_dev])
+			for index_b, array_tosearch in enumerate(my_global_vars[sensor_dev]):
+				if array_tosearch[3] == sensor_dsc:
+					mysensor_array = my_global_vars[sensor_dev][index_b]
+			print("index of array", mysensor_array)
+				
+			range_of_graph = mysensor_array[2] - mysensor_array[1]
+			graph_hight = pos_by - pos_ay
+			grap_y_multi = graph_hight / range_of_graph
+			
+			# This draws my dots
+			for index, data_point in enumerate(recent):
+				#print("index ", index, index*graph_resulutio_X_multi,)
+				#draw.line([pos_bx*0.99-index*graph_resulutio_X_multi,pos_by-grap_y_multi * data_point,pos_bx*0.99+2-index*graph_resulutio_X_multi,pos_by-grap_y_multi * data_point,pos_bx*0.99-index*graph_resulutio_X_multi,pos_by-grap_y_multi * older_datapoint,pos_bx*0.99+2-index*graph_resulutio_X_multi,pos_by-grap_y_multi * older_datapoint  ],fill=lcars_theme[lcars_theme_selection]["colore5"])
+				
+				draw.ellipse([pos_bx*0.99-index*graph_resulutio_X_multi,pos_by-grap_y_multi * data_point,pos_bx*0.99+2-index*graph_resulutio_X_multi,pos_by-grap_y_multi * data_point+2],fill2, outline = fill2)
+				
+				if len(recent) > 1:
+					print("index", index)
+					#older_datapoint = reversed(recent)		
+					#draw.ellipse([pos_bx*0.99-index*graph_resulutio_X_multi,pos_by-grap_y_multi * older_datapoint,pos_bx*0.99+2-index*graph_resulutio_X_multi,pos_by-grap_y_multi * older_datapoint+2],fill, outline = fill)
+				
+			# This Displays the Sensor Naming on the Left
+			draw.text((pos_ax, pos_ay+index_a*(device.height * 0.055)), text=str(sensor_dsc), font=lcars_microfont, fill=lcars_theme[lcars_theme_selection]["font0"])
+			
+			# This Displays the Sensor Legende on the Right Top
+			draw.text((pos_bx*0.95-index_a*(device.height * 0.1), pos_ay), text=str(mysensor_array[2]), font=lcars_microfont, fill=lcars_theme[lcars_theme_selection]["font0"])
+			
+			# This Displays the Sensor Legende on the Right Bottom
+			draw.text((pos_bx*0.95-index_a*(device.height * 0.1), pos_by*0.92), text=str(mysensor_array[1]), font=lcars_microfont, fill=lcars_theme[lcars_theme_selection]["font0"])
+			
+
+			sensor_legende = round(mysensor_array[0]),mysensor_array[4]
+			# This Displays the Sensor Legende Bottom
+			draw.text((pos_ax+index_a*(device.height * 0.25), pos_by), text=str(sensor_legende), font=lcars_microfont, fill=lcars_theme[lcars_theme_selection]["font0"])
+			
+			print("bufferinframe", len(recent))
 
 
 
@@ -445,6 +523,13 @@ def lcars_type2_build():
 	global animation_step
 	global sensor_animation
 	global lcars_theme_selection
+	
+	global lcars_microfont
+	global lcars_littlefont 
+	global lcars_font
+	global lcars_titlefont 
+	global lcars_bigfont 
+	global lcars_giantfont
 
 	fill2 = "black"
 	fill3 = "yellow"
@@ -456,7 +541,9 @@ def lcars_type2_build():
 		lcars_element_elbow(device, draw, device.width*0.01,device.height*0.01,2,lcars_theme[lcars_theme_selection]["colore4"])
 		lcars_element_elbow(device, draw, device.width*0.01,device.height*0.86 ,3, lcars_theme[lcars_theme_selection]["colore0"])	
 		
-		lcars_element_graph(device, draw,device.width*0.15,device.height*0.12,device.width*0.95,device.height*0.85, dict_graph)
+		# selecting Values in Pandas DB via dev & dsc
+		sensors_array_with_dict = [{"BME680":"Thermometer"},{"BME680":"Hygrometer"},{"BME680":"Barometer"},{"BME680":"VOC"},{"BME680":"ALT"}]
+		lcars_element_graph(device, draw,device.width*0.15,device.height*0.12,device.width*0.95,device.height*0.85, sensors_array_with_dict, 1)
            
 		radius = device.height*0.05
           
@@ -635,10 +722,249 @@ class LCARS_Struct(object):
 			lcars_type3_build()              
 		elif self == "type4":
 			lcars_type3_build()
-        
-        
+  
+  
+# return a list of n most recent data from specific sensor defined by keys
+# gets Called from pilgraph
+def get_recent(dsc, dev, num, timeing):	
+	# Filters the pd Dataframe to a Device like dsc="Thermometer" 
+	
+	#print("Sensor_count:",configure.max_sensors[0])
+	
+	currentsize = len(BUFFER_GLOBAL)
+	
+	#print("currentsize ",currentsize )
+	
+	result = BUFFER_GLOBAL[BUFFER_GLOBAL["dsc"] == dsc]
+	#print("result")
+	#print(result)
+	
+	#print("Buffer")
+	#print(BUFFER_GLOBAL[BUFFER_GLOBAL["dsc"] == 'CpuTemp')
+	#print(BUFFER_GLOBAL)
+	
+	untrimmed_data = result.loc[result['dev'] == dev]
+
+	# trim it to length (num).
+	trimmed_data = untrimmed_data.tail(num)
 
 
+	# return a list of the values
+	data_line = trimmed_data['value'].tolist()		
+	times = trimmed_data['timestamp'].tolist()
+
+
+	timelength = num
+
+	return data_line, timelength      
+
+def update(ch, method, properties, body):
+	global BUFFER_GLOBAL
+	global GPS_DATA
+	global BME680
+	global SYSTEMVITALES
+	global GENERATORS
+	global SENSEHAT
+	#print('book=', mapping_book_byname)
+	#print('populating=', method.routing_key)
+	
+	timestamp = time.time()
+	value = random.randint(1, 100) 
+	#sensors = Sensor()
+	fragdata = []
+	sensor_values = []
+	trimmbuffer_flag = False
+	
+
+		
+	# configure buffersize
+	if configure.buffer_size[0] == 0:
+		targetsize = 128
+	else:
+		targetsize = configure.buffer_size[0]
+		
+	if method.routing_key == 'GPS_DATA':
+		GPS_DATA[0],GPS_DATA[1]  = body.decode().strip("[]").split(",")	
+	elif method.routing_key == 'bme680':	
+		# decodes data byte stream and splits the values by comma
+		sensor_values = body.decode().strip("()").split(",")		
+		index = 0
+		for value in sensor_values:
+			#print("BME680:", float(value))
+			BME680[index][0] = float(value)					
+			BME680[index][6] = timestamp
+			BME680[index][7] = GPS_DATA[0]
+			BME680[index][8] = GPS_DATA[1]
+			#print("MATRIX", BME680[index])
+			fragdata.append(BME680[index])		
+			# creates a new dataframe to add new data 	
+			newdata = pd.DataFrame(fragdata, columns=['value','min','max','dsc','sym','dev','timestamp','latitude','longitude'])
+			BUFFER_GLOBAL = pd.concat([BUFFER_GLOBAL,newdata]).drop_duplicates().reset_index(drop=True)
+			#BUFFER_GLOBAL = pd.concat([BUFFER_GLOBAL,newdata]).reset_index(drop=True)	
+			# we get len of one sensor
+			currentsize_persensor = len(BUFFER_GLOBAL[BUFFER_GLOBAL["dsc"] == BME680[index][3]])
+			if currentsize_persensor > targetsize:
+				trimmbuffer_flag = True		
+			index = index + 1			
+
+	elif method.routing_key == 'system_vitals':
+		sensor_array_unclean = []
+		sensor_values = [0,1,2,3,4,5,6,7]
+		#decodes data byte stream and splits the values by comma
+		sensor_array_unclean = body.decode().strip("()").split(",")
+		cleanup_index = 0
+		for value4555 in sensor_array_unclean:
+			if cleanup_index == 0:
+				# uptime
+				sensor_values[0] = value4555.strip("'")
+			elif cleanup_index == 1:
+				# CPU Load Overall last min
+				sensor_values[1] = float(value4555.strip('( '))
+			elif cleanup_index == 5:
+				# CPU Temperatur
+				array2541 = value4555.rsplit('=')
+				sensor_values[2] = float(array2541[1])
+			elif cleanup_index == 8:
+				# CPU Load in Percentage
+				sensor_values[3] = float(value4555)
+			elif cleanup_index == 9:
+				# virtual mem
+				sensor_values[4] = float(value4555)
+			elif cleanup_index == 13:
+				# diskussage in percentage i skipped bytes
+				array56461 = value4555.rsplit('=')			
+				sensor_values[5] = float(array56461[1].strip(' )'))
+			elif cleanup_index == 14:
+				# bytes send bytes
+				sensor_values[6] = float(value4555)
+			elif cleanup_index == 15:
+				# bytes rec 
+				sensor_values[7] = float(value4555)
+			cleanup_index = cleanup_index + 1
+
+		index = 0
+		for value in sensor_values:
+			#print("SYSTEMVITALES:", value)
+			SYSTEMVITALES[index][0] = float(value)					
+			SYSTEMVITALES[index][6] = timestamp
+			SYSTEMVITALES[index][7] = GPS_DATA[0]
+			SYSTEMVITALES[index][8] = GPS_DATA[1]
+			#print("MATRIX", SYSTEMVITALES[index])
+			fragdata.append(SYSTEMVITALES[index])		
+			# creates a new dataframe to add new data 	
+			newdata = pd.DataFrame(fragdata, columns=['value','min','max','dsc','sym','dev','timestamp','latitude','longitude'])
+			BUFFER_GLOBAL = pd.concat([BUFFER_GLOBAL,newdata]).drop_duplicates().reset_index(drop=True)
+			#BUFFER_GLOBAL = pd.concat([BUFFER_GLOBAL,newdata]).reset_index(drop=True)										
+			# we get len of one sensor
+			#print("dsc", SYSTEMVITALES[index][3])
+			currentsize_persensor = len(BUFFER_GLOBAL[BUFFER_GLOBAL["dsc"] == SYSTEMVITALES[index][3]])
+			if currentsize_persensor > targetsize:
+				trimmbuffer_flag = True		
+			index = index + 1	
+			
+	elif method.routing_key == 'generators':
+	    # decodes data byte stream and splits the values by comma
+		sensor_values = body.decode().strip("()").split(",")		
+		index = 0
+		for value in sensor_values:
+			#print("GENERATORS:", float(value))
+			GENERATORS[index][0] = float(value)					
+			GENERATORS[index][6] = timestamp
+			GENERATORS[index][7] = GPS_DATA[0]
+			GENERATORS[index][8] = GPS_DATA[1]
+			#print("MATRIX", GENERATORS[index])
+			fragdata.append(GENERATORS[index])		
+			# creates a new dataframe to add new data 	
+			newdata = pd.DataFrame(fragdata, columns=['value','min','max','dsc','sym','dev','timestamp','latitude','longitude'])
+			BUFFER_GLOBAL = pd.concat([BUFFER_GLOBAL,newdata]).drop_duplicates().reset_index(drop=True)
+			#BUFFER_GLOBAL = pd.concat([BUFFER_GLOBAL,newdata]).reset_index(drop=True)	
+			# we get len of one sensor
+			currentsize_persensor = len(BUFFER_GLOBAL[BUFFER_GLOBAL["dsc"] == GENERATORS[index][3]])
+			if currentsize_persensor > targetsize:
+				trimmbuffer_flag = True	
+			index = index + 1	
+				
+	elif method.routing_key == 'sensehat':
+	    # decodes data byte stream and splits the values by comma
+		sensor_values = body.decode().strip("()").split(",")		
+		index = 0
+		for value in sensor_values:
+			#print("SENSEHAT:", float(value))
+			SENSEHAT[index][0] = float(value)					
+			SENSEHAT[index][6] = timestamp
+			SENSEHAT[index][7] = GPS_DATA[0]
+			SENSEHAT[index][8] = GPS_DATA[1]
+			#print("MATRIX", SENSEHAT[index])
+			fragdata.append(SENSEHAT[index])		
+			# creates a new dataframe to add new data 	
+			newdata = pd.DataFrame(fragdata, columns=['value','min','max','dsc','sym','dev','timestamp','latitude','longitude'])
+			BUFFER_GLOBAL = pd.concat([BUFFER_GLOBAL,newdata]).drop_duplicates().reset_index(drop=True)
+			#BUFFER_GLOBAL = pd.concat([BUFFER_GLOBAL,newdata]).reset_index(drop=True)
+			# we get len of one sensor
+			currentsize_persensor = len(BUFFER_GLOBAL[BUFFER_GLOBAL["dsc"] == GENERATORS[index][3]])
+			if currentsize_persensor > targetsize:
+				trimmbuffer_flag = True		
+			index = index + 1	
+			
+						
+	elif method.routing_key == 'envirophat':
+	    # decodes data byte stream and splits the values by comma
+		sensor_values = body.decode().strip("()").split(",")		
+		index = 0
+
+	elif method.routing_key == 'pocket_geiger':
+	    # decodes data byte stream and splits the values by comma
+		sensor_values = body.decode().strip("()").split(",")		
+		index = 0
+		
+	elif method.routing_key == 'ir_thermo':
+	    # decodes data byte stream and splits the values by comma
+		sensor_values = body.decode().strip("()").split(",")		
+		index = 0
+	
+	elif method.routing_key == 'thermal_frame':
+	    # decodes data byte stream and splits the values by comma
+		sensor_values = body.decode().strip("()").split(",")		
+		index = 0
+
+	# PD Fails to handel over 1650 rows so we trim the buffer when 64 rows on any sensor gets reached
+	if trimmbuffer_flag:
+			BUFFER_GLOBAL = trimbuffer(targetsize)
+			
+	return
+
+
+def trimbuffer( targetsize):
+	# should take the buffer in memory and trim some of it
+	targetsize_all_sensors = targetsize * configure.max_sensors[0]
+	
+	#print("Target Size",targetsize )
+	
+	#print("targetsize_all_sensors ",targetsize_all_sensors )
+	
+	# get buffer size to determine how many rows to remove from the end
+	currentsize = len(BUFFER_GLOBAL) 
+
+	#print("currentsize", currentsize)
+
+	# determine difference between buffer and target size
+	length = currentsize - targetsize_all_sensors
+	
+	#print("length", length)
+
+
+	# make a new dataframe of the most recent data to keep using
+	newbuffer = BUFFER_GLOBAL.tail(targetsize_all_sensors)
+
+	# slice off the rows outside the buffer and backup to disk
+	tocore = BUFFER_GLOBAL.head(length)
+
+	if configure.datalog[0]:
+			append_to_core(tocore)
+
+
+	# replace existing buffer with new trimmed buffer
+	return newbuffer
 
 def init(device):
 	print("RUN")
@@ -659,6 +985,19 @@ def init(device):
 	
 	lcars_type1_build() 
 
+def callback_rabbitmq_meta(ch, method, properties, body):
+	global mapping_book_byname
+	global mapping_book
+	if body == None:
+		time.sleep(0.2)
+	else:
+		sensor_index_dict = ast.literal_eval(body.decode())	
+		configure.max_sensors[0] = sensor_index_dict['sensor_index']
+		ret_index = sensor_index_dict.pop('sensor_index')
+		mapping_book_byname = sensor_index_dict
+		for i in sensor_index_dict:
+			mapping_book.update({sensor_index_dict[i]: i})
+		channel.basic_cancel('sensor_metadata')
              
 def callback(ch, method, properties, body):
 	global style
@@ -668,31 +1007,27 @@ def callback(ch, method, properties, body):
 	global sensor_animation
 	global lcars_theme_selection
 	
-	if method.routing_key == 'bme680':
-		sensor_animation = sensor_animation + 1
+	update(ch, method, properties, body)
+	
+	if method.routing_key != 'EVENT':
+		sensor_animation = sensor_animation + 0.5
 		if sensor_animation == 4:
 			sensor_animation = 0
 			
-		bme_satz = body.decode()	
+	else:
+    
+		DICT = body.decode()
+		DICT_CLEAN = ast.literal_eval(DICT)
+		print(DICT_CLEAN)		
+		
+		if DICT_CLEAN['geo']:
+			style = styles.pop()
+			styles.insert(0, style)
 			
-		
-		return
-    
-    
-	DICT = body.decode()
-	DICT_CLEAN = ast.literal_eval(DICT)
-	print(DICT_CLEAN)
-	   
-    
-    
-	if DICT_CLEAN['geo']:
-		style = styles.pop()
-		styles.insert(0, style)
-		
-	if DICT_CLEAN['met']:
-		lcars_theme_selection = lcars_theme_selection + 1
-		if lcars_theme_selection == 3: 
-			lcars_theme_selection = 0
+		if DICT_CLEAN['met']:
+			lcars_theme_selection = lcars_theme_selection + 1
+			if lcars_theme_selection == 3: 
+				lcars_theme_selection = 0
 
 def animation_push():
 	global animation_step
@@ -701,7 +1036,7 @@ def animation_push():
 	if animation_step == 72:
 		animation_step = 0
 
-# This Class helps to start a thread that runs a timer non blocking to reset the IRQ signal on the mpr121
+# This Class helps to start a thread that runs a timer non blocking to animate details
 class Job(threading.Thread):
     def __init__(self, interval, execute, *args, **kwargs):
         threading.Thread.__init__(self)
@@ -721,6 +1056,10 @@ class Job(threading.Thread):
 
 
 if __name__ == "__main__":
+	channel.basic_consume(consumer_tag='sensor_metadata',queue='sensor_metadata',on_message_callback=callback_rabbitmq_meta, auto_ack=True)
+	# Waiting for the Metadata message ca 10 sec
+	channel.start_consuming()
+
 	channel.basic_consume(queue='',on_message_callback=callback, auto_ack=True)
 	# setup the thread with timer and start the IRQ reset function
 	job = Job(interval=timedelta(seconds=WAIT_TIME_SECONDS), execute=animation_push)
