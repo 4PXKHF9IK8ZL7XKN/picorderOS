@@ -30,7 +30,7 @@ from datetime import timedelta
 bme680_temp = [0]
 
 
-styles = ["type1", "type2", "type3", "type4"]
+styles = ["type1", "multi_graph", "type3", "type4"]
 style = "type1"
 i = 0
 i2 = 0
@@ -59,7 +59,7 @@ BUFFER_GLOBAL_EM = pd.DataFrame(columns=['ssid','signal','quality','frequency','
 
 BME680 = [[0,-40,85,'Thermometer','\xB0','BME680','timestamp','latitude','longitude'],[0,0,100,'Hygrometer','%','BME680','timestamp','latitude','longitude'],[0,300,1100,'Barometer','hPa','BME680','timestamp','latitude','longitude'],[0,0,500,'VOC','ppm','BME680','timestamp','latitude','longitude'],[0,0,1100,'ALT','m','BME680','timestamp','latitude','longitude']]
 SYSTEMVITALES = [[0,0,'inf','Timer','t','RaspberryPi','timestamp','latitude','longitude'],[0,0,4,'INDICATOR','IND','RaspberryPi','timestamp','latitude','longitude'],[0,-25,100,'CpuTemp','\xB0','RaspberryPi','timestamp','latitude','longitude'],[0,0,400,'CpuPercent','%','RaspberryPi','timestamp','latitude','longitude'],[0,0,4800000,'VirtualMemory','b','RaspberryPi','timestamp','latitude','longitude'],[0,0,100,'disk_usage','%','RaspberryPi','timestamp','latitude','longitude'],[0,0,100000,'BytesSent','b','RaspberryPi','timestamp','latitude','longitude'],[0,0,100000,'BytesReceived','b','RaspberryPi','timestamp','latitude','longitude']]
-GENERATORS = [[0,-100,100,'SineWave','','RaspberryPi','timestamp','latitude','longitude'],[0,-500,500,'TangentWave','','RaspberryPi','timestamp','latitude','longitude'],[0,-100,100,'CosWave','','RaspberryPi','timestamp','latitude','longitude'],[0,-100,100,'SineWave2','','RaspberryPi','timestamp','latitude','longitude']]
+GENERATORS = [[0,-100,100,'SineWave','','GENERATORS','timestamp','latitude','longitude'],[0,-500,500,'TangentWave','','GENERATORS','timestamp','latitude','longitude'],[0,-100,100,'CosWave','','GENERATORS','timestamp','latitude','longitude'],[0,-100,100,'SineWave2','','GENERATORS','timestamp','latitude','longitude']]
 SENSEHAT = [[0,-40,120,'Thermometer','\xB0','sensehat','timestamp','latitude','longitude'],[0,0,100,'Hygrometer','%','sensehat','timestamp','latitude','longitude'],[0,260,1260,'Barometer','hPa','sensehat','timestamp','latitude','longitude'],[0,-500,500,'MagnetX','G','sensehat','timestamp','latitude','longitude'],[0,-500,500,'MagnetY','G','sensehat','timestamp','latitude','longitude'],[0,-500,500,'MagnetZ','G','sensehat','timestamp','latitude','longitude'],[0,-500,500,'"AccelX','g','sensehat','timestamp','latitude','longitude'],[0,-500,500,'"AccelY','g','sensehat','timestamp','latitude','longitude'],[0,-500,500,'"AccelZ','g','sensehat','timestamp','latitude','longitude']]
 
 # Standard LCARS colours
@@ -212,6 +212,7 @@ def get_device(actual_args=None):
 def lcars_element_graph(device, draw,pos_ax,pos_ay,pos_bx,pos_by, sensors_dict,mode):
 	fill = "yellow"
 	fill2 = "red"
+	offset = 0
 
 	global lcars_microfont
 
@@ -254,7 +255,14 @@ def lcars_element_graph(device, draw,pos_ax,pos_ay,pos_bx,pos_by, sensors_dict,m
 				
 			range_of_graph = mysensor_array[2] - mysensor_array[1]
 			graph_hight = pos_by - pos_ay
+			# this happens for exampe in the Generrators with +-100 min max vaules
 			grap_y_multi = graph_hight / range_of_graph
+			
+			print("graph;", range_of_graph,graph_hight,grap_y_multi )
+
+			if mysensor_array[1] < 0:
+				print("is negativ")
+				offset = pos_ay*0.4 + mysensor_array[1] 
 			
 			# This draws my dots
 			for index, data_point in enumerate(recent):
@@ -264,7 +272,7 @@ def lcars_element_graph(device, draw,pos_ax,pos_ay,pos_bx,pos_by, sensors_dict,m
 				if len(recent) > 1:
 					older_data_point = recent[index - 2]
 					
-					draw.line([pos_bx*0.99-(index - 2)*graph_resulutio_X_multi,pos_by-grap_y_multi * older_data_point,pos_bx*0.99-(index - 2)*graph_resulutio_X_multi,pos_by-grap_y_multi * older_data_point,pos_bx*0.99-index*graph_resulutio_X_multi,pos_by-grap_y_multi * data_point,pos_bx*0.99-index*graph_resulutio_X_multi,pos_by-grap_y_multi * data_point],fill=lcars_colores[index_a]['value'])
+					draw.line([pos_bx*0.99-(index - 2)*graph_resulutio_X_multi,offset+pos_by-grap_y_multi * older_data_point,pos_bx*0.99-(index - 2)*graph_resulutio_X_multi,offset+pos_by-grap_y_multi * older_data_point,pos_bx*0.99-index*graph_resulutio_X_multi,offset+pos_by-grap_y_multi * data_point,pos_bx*0.99-index*graph_resulutio_X_multi,offset+pos_by-grap_y_multi * data_point],fill=lcars_colores[index_a]['value'])
 					
 					
 					
@@ -520,7 +528,7 @@ def lcars_type1_build():
 			else:
 				draw.text((device.width*0.2, device.height*0.25), "Accessing",font=lcars_giantfont ,fill=lcars_theme[lcars_theme_selection]["colore3"])
 
-def lcars_type2_build():
+def lcars_multi_graph_build():
 	global animation_step
 	global sensor_animation
 	global lcars_theme_selection
@@ -544,6 +552,7 @@ def lcars_type2_build():
 		
 		# selecting Values in Pandas DB via dev & dsc
 		sensors_array_with_dict = [{"BME680":"Thermometer"},{"BME680":"Hygrometer"},{"BME680":"Barometer"},{"BME680":"VOC"},{"BME680":"ALT"}]
+		#sensors_array_with_dict = [{"GENERATORS":"SineWave"},{"GENERATORS":"CosWave"},{"GENERATORS":"SineWave2"}]
 		lcars_element_graph(device, draw,device.width*0.15,device.height*0.12,device.width*0.95,device.height*0.85, sensors_array_with_dict, 1)
            
 		radius = device.height*0.05
@@ -717,8 +726,8 @@ class LCARS_Struct(object):
 			lcars_type0_build()
 		elif self == "type1":
 			lcars_type1_build()
-		elif self == "type2":
-			lcars_type2_build()    
+		elif self == "multi_graph":
+			lcars_multi_graph_build()    
 		elif self == "type3":
 			lcars_type3_build()              
 		elif self == "type4":
