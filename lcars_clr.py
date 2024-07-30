@@ -242,8 +242,8 @@ def lcars_element_graph(device, draw,pos_ax,pos_ay,pos_bx,pos_by, sensors_dict,m
 		
 		for sensor_dev,sensor_dsc in sensors_to_read.items():
 			#print(get_recent(sensor_dsc, sensor_dev, samples, timeing=True))
-			recent, timelength = get_recent(sensor_dsc, sensor_dev, samples, timeing=True)
-				
+			recent, timelength = get_recent(sensor_dsc, sensor_dev, samples, timeing=True)		
+			
 			# This Block checks for the global variable that defines the sensor end selects the array inside so that i can get the min max values 
 			my_global_vars = globals()
 			#print("!sensor_legende2",my_global_vars[sensor_dev])
@@ -258,29 +258,30 @@ def lcars_element_graph(device, draw,pos_ax,pos_ay,pos_bx,pos_by, sensors_dict,m
 			
 			# This draws my dots
 			for index, data_point in enumerate(recent):
-				#print("index ", index, index*graph_resulutio_X_multi,)
-				#draw.line([pos_bx*0.99-index*graph_resulutio_X_multi,pos_by-grap_y_multi * data_point,pos_bx*0.99+2-index*graph_resulutio_X_multi,pos_by-grap_y_multi * data_point,pos_bx*0.99-index*graph_resulutio_X_multi,pos_by-grap_y_multi * older_datapoint,pos_bx*0.99+2-index*graph_resulutio_X_multi,pos_by-grap_y_multi * older_datapoint  ],fill=lcars_theme[lcars_theme_selection]["colore5"])
 				
-				draw.ellipse([pos_bx*0.99-index*graph_resulutio_X_multi,pos_by-grap_y_multi * data_point,pos_bx*0.99+2-index*graph_resulutio_X_multi,pos_by-grap_y_multi * data_point+2],fill2, outline = fill2)
+				#draw.ellipse([pos_bx*0.99-index*graph_resulutio_X_multi,pos_by-grap_y_multi * data_point,pos_bx*0.99+2-index*graph_resulutio_X_multi,pos_by-grap_y_multi * data_point+2],lcars_colores[index_a]['value'], outline = lcars_colores[index_a]['value'])
 				
 				if len(recent) > 1:
-					print("index", index)
-					#older_datapoint = reversed(recent)		
-					#draw.ellipse([pos_bx*0.99-index*graph_resulutio_X_multi,pos_by-grap_y_multi * older_datapoint,pos_bx*0.99+2-index*graph_resulutio_X_multi,pos_by-grap_y_multi * older_datapoint+2],fill, outline = fill)
+					older_data_point = recent[index - 2]
+					
+					draw.line([pos_bx*0.99-(index - 2)*graph_resulutio_X_multi,pos_by-grap_y_multi * older_data_point,pos_bx*0.99-(index - 2)*graph_resulutio_X_multi,pos_by-grap_y_multi * older_data_point,pos_bx*0.99-index*graph_resulutio_X_multi,pos_by-grap_y_multi * data_point,pos_bx*0.99-index*graph_resulutio_X_multi,pos_by-grap_y_multi * data_point],fill=lcars_colores[index_a]['value'])
+					
+					
+					
 				
 			# This Displays the Sensor Naming on the Left
-			draw.text((pos_ax, pos_ay+index_a*(device.height * 0.055)), text=str(sensor_dsc), font=lcars_microfont, fill=lcars_theme[lcars_theme_selection]["font0"])
+			draw.text((pos_ax, pos_ay+index_a*(device.height * 0.055)), text=str(sensor_dsc), font=lcars_microfont, fill=lcars_colores[index_a]['value'])
 			
 			# This Displays the Sensor Legende on the Right Top
-			draw.text((pos_bx*0.95-index_a*(device.height * 0.1), pos_ay), text=str(mysensor_array[2]), font=lcars_microfont, fill=lcars_theme[lcars_theme_selection]["font0"])
+			draw.text((pos_bx*0.95-index_a*(device.height * 0.1), pos_ay), text=str(mysensor_array[2]), font=lcars_microfont, fill=lcars_colores[index_a]['value'])
 			
 			# This Displays the Sensor Legende on the Right Bottom
-			draw.text((pos_bx*0.95-index_a*(device.height * 0.1), pos_by*0.92), text=str(mysensor_array[1]), font=lcars_microfont, fill=lcars_theme[lcars_theme_selection]["font0"])
+			draw.text((pos_bx*0.95-index_a*(device.height * 0.1), pos_by*0.92), text=str(mysensor_array[1]), font=lcars_microfont, fill=lcars_colores[index_a]['value'])
 			
 
 			sensor_legende = round(mysensor_array[0]),mysensor_array[4]
 			# This Displays the Sensor Legende Bottom
-			draw.text((pos_ax+index_a*(device.height * 0.25), pos_by), text=str(sensor_legende), font=lcars_microfont, fill=lcars_theme[lcars_theme_selection]["font0"])
+			draw.text((pos_ax+index_a*(device.height * 0.25), pos_by), text=str(sensor_legende), font=lcars_microfont, fill=lcars_colores[index_a]['value'])
 			
 			print("bufferinframe", len(recent))
 
@@ -752,11 +753,13 @@ def get_recent(dsc, dev, num, timeing):
 	# return a list of the values
 	data_line = trimmed_data['value'].tolist()		
 	times = trimmed_data['timestamp'].tolist()
-
+	
+	# Reversing the datapoints to change graph scrolling later reversed
+	slices = data_line[::-1]
 
 	timelength = num
 
-	return data_line, timelength      
+	return slices, timelength      
 
 def update(ch, method, properties, body):
 	global BUFFER_GLOBAL
