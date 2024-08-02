@@ -213,6 +213,7 @@ def lcars_element_graph(device, draw,pos_ax,pos_ay,pos_bx,pos_by, sensors_dict,m
 	fill = "yellow"
 	fill2 = "red"
 	offset = 0
+	sensor_legende = ""
 
 	global lcars_microfont
 
@@ -251,28 +252,35 @@ def lcars_element_graph(device, draw,pos_ax,pos_ay,pos_bx,pos_by, sensors_dict,m
 			for index_b, array_tosearch in enumerate(my_global_vars[sensor_dev]):
 				if array_tosearch[3] == sensor_dsc:
 					mysensor_array = my_global_vars[sensor_dev][index_b]
-			print("index of array", mysensor_array)
+			#print("index of array", mysensor_array)
 				
 			range_of_graph = mysensor_array[2] - mysensor_array[1]
-			graph_hight = pos_by - pos_ay
-			# this happens for exampe in the Generrators with +-100 min max vaules
-			grap_y_multi = graph_hight / range_of_graph
-			
-			print("graph;", range_of_graph,graph_hight,grap_y_multi )
-
-			if mysensor_array[1] < 0:
-				print("is negativ")
-				offset = pos_ay*0.4 + mysensor_array[1] 
+			graph_hight = pos_by - pos_ay				
+				
+			if mode == 1:
+				grap_y_multi = graph_hight / range_of_graph
+			else:
+				grap_y_multi = graph_hight / range_of_graph
+				
+				#print("graph;", range_of_graph,graph_hight,grap_y_multi )
+				# this happens for exampe in the Generrators with +-100 min max vaules
+				if mysensor_array[1] < 0:
+					#print("is negativ")
+					offset = pos_ay*0.05 + mysensor_array[1] * grap_y_multi
 			
 			# This draws my dots
 			for index, data_point in enumerate(recent):
 				
 				#draw.ellipse([pos_bx*0.99-index*graph_resulutio_X_multi,pos_by-grap_y_multi * data_point,pos_bx*0.99+2-index*graph_resulutio_X_multi,pos_by-grap_y_multi * data_point+2],lcars_colores[index_a]['value'], outline = lcars_colores[index_a]['value'])
 				
+				
 				if len(recent) > 1:
-					older_data_point = recent[index - 2]
+					older_data_point = recent[index - 1]
 					
-					draw.line([pos_bx*0.99-(index - 2)*graph_resulutio_X_multi,offset+pos_by-grap_y_multi * older_data_point,pos_bx*0.99-(index - 2)*graph_resulutio_X_multi,offset+pos_by-grap_y_multi * older_data_point,pos_bx*0.99-index*graph_resulutio_X_multi,offset+pos_by-grap_y_multi * data_point,pos_bx*0.99-index*graph_resulutio_X_multi,offset+pos_by-grap_y_multi * data_point],fill=lcars_colores[index_a]['value'])
+					if mode == 1:
+						draw.line([pos_bx*0.99-(index - 1)*graph_resulutio_X_multi,pos_by-older_data_point,pos_bx*0.99-(index - 1)*graph_resulutio_X_multi,pos_by-older_data_point,pos_bx*0.99-index*graph_resulutio_X_multi,pos_by-data_point,pos_bx*0.99-index*graph_resulutio_X_multi,pos_by+-data_point],fill=lcars_colores[index_a]['value'])
+					else:
+						draw.line([pos_bx*0.99-(index - 1)*graph_resulutio_X_multi,offset+pos_by-grap_y_multi * older_data_point,pos_bx*0.99-(index - 1)*graph_resulutio_X_multi,offset+pos_by-grap_y_multi * older_data_point,pos_bx*0.99-index*graph_resulutio_X_multi,offset+pos_by-grap_y_multi * data_point,pos_bx*0.99-index*graph_resulutio_X_multi,offset+pos_by-grap_y_multi * data_point],fill=lcars_colores[index_a]['value'])
 					
 					
 					
@@ -287,11 +295,12 @@ def lcars_element_graph(device, draw,pos_ax,pos_ay,pos_bx,pos_by, sensors_dict,m
 			draw.text((pos_bx*0.95-index_a*(device.height * 0.1), pos_by*0.92), text=str(mysensor_array[1]), font=lcars_microfont, fill=lcars_colores[index_a]['value'])
 			
 
-			sensor_legende = round(mysensor_array[0]),mysensor_array[4]
+			sensor_legende = '{0}{1}'.format(round(mysensor_array[0]),mysensor_array[4])
+
 			# This Displays the Sensor Legende Bottom
 			draw.text((pos_ax+index_a*(device.height * 0.25), pos_by), text=str(sensor_legende), font=lcars_microfont, fill=lcars_colores[index_a]['value'])
 			
-			print("bufferinframe", len(recent))
+			#print("bufferinframe", len(recent))
 
 
 
@@ -592,20 +601,22 @@ def lcars_multi_graph_build():
 		lcars_element_doublebar(device, draw, device.width*0.27 ,device.height*0.01, device.width*0.5, device.height*0.055,0,lcars_theme[lcars_theme_selection]["colore0"],lcars_theme[lcars_theme_selection]["colore5"])
 		lcars_element_doublebar(device, draw, device.width*0.51 ,device.height*0.01, device.width*0.60, device.height*0.055,0,lcars_theme[lcars_theme_selection]["colore5"],lcars_theme[lcars_theme_selection]["colore0"])
 		
+		draw.rectangle((device.width*0.7 ,device.height*0.01, device.width*0.93, device.height*0.06), fill=lcars_theme[lcars_theme_selection]["colore5"], outline=lcars_theme[lcars_theme_selection]["colore5"])
+		
 		bottom_line = [(device.width*0.27 , device.height*0.93), (device.width*0.93, device.height*0.93+radius)] 
 		
 		draw.rectangle(bottom_line,lcars_theme[lcars_theme_selection]["colore5"])
 	
 		## Looks like i found my overlapping box
-		text = str(animation_step)
+		text = "Multi   Graph"
 		left, top, right, bottom = draw.textbbox((0, 0), text)
-		w, h = right - left, bottom+2 - top
-		w3 = device.width*0.9
+		w, h = right - left, bottom+5 - top
+		w3 = device.width*0.7
 
 		left = w3-radius*2.5
-		top = device.height*0.93
+		top = -2
 		draw.rectangle((left - 1, top, left + w + 1, top + h), fill="black", outline="black")
-		draw.text((left + 1, top), text=text, fill=lcars_theme[lcars_theme_selection]["font0"])
+		draw.text((left + 1, top), text=text, font=lcars_littlefont, fill=lcars_theme[lcars_theme_selection]["font0"])
 
 def lcars_type3_build():
 	global animation_step
