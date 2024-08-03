@@ -17,6 +17,7 @@ import threading
 import pika
 import pandas as pd
 import ast
+import statistics
 from objects import *
 from pathlib import Path
 from luma.core.virtual import viewport, snapshot, range_overlap
@@ -30,7 +31,7 @@ from datetime import timedelta
 bme680_temp = [0]
 
 
-styles = ["type1", "multi_graph", "type3", "type4"]
+styles = ["type1", "multi_graph", "termal_view", "type3", "type4"]
 style = "type1"
 i = 0
 i2 = 0
@@ -55,12 +56,14 @@ lcars_giantfont = None
 
 GPS_DATA = [4747.0000,4747.0000]
 BUFFER_GLOBAL = pd.DataFrame(columns=['value','min','max','dsc','sym','dev','timestamp','latitude','longitude'])
+BUFFER_GLOBAL_TERMALFRAME = pd.DataFrame(columns=['Value0','Value1','Value2','Value3','Value4','Value5','Value6','Value7','Value8','Value9','Value10','Value11','Value12','Value13','Value14','Value15','Value16','Value17','Value18','Value19','Value20','Value21','Value22','Value23','Value24','Value25','Value26','Value27','Value28','Value29','Value30','Value31','Value32','Value33','Value34','Value35','Value36','Value37','Value38','Value39','Value40','Value41','Value42','Value43','Value44','Value45','Value46','Value47','Value48','Value49','Value50','Value51','Value52','Value53','Value54','Value55','Value56','Value57','Value58','Value59','Value60','Value61','Value62','Value63','timestamp','latitude','longitude'])
 BUFFER_GLOBAL_EM = pd.DataFrame(columns=['ssid','signal','quality','frequency','encrypted','channel','dev','mode','dsc','timestamp','latitude','longitude'])
 
-BME680 = [[0,-40,85,'Thermometer','\xB0','BME680','timestamp','latitude','longitude'],[0,0,100,'Hygrometer','%','BME680','timestamp','latitude','longitude'],[0,300,1100,'Barometer','hPa','BME680','timestamp','latitude','longitude'],[0,0,500,'VOC','ppm','BME680','timestamp','latitude','longitude'],[0,0,1100,'ALT','m','BME680','timestamp','latitude','longitude']]
+BME680 = [[0,-40,85,'Thermometer','\xB0','BME680','timestamp','latitude','longitude'],[0,0,100,'Hygrometer','%','BME680','timestamp','latitude','longitude'],[0,300,1100,'Barometer','hPa','BME680','timestamp','latitude','longitude'],[0,0,500,'VOC','ppm','BME680','timestamp','latitude','longitude'],[0,-50,1100,'ALT','m','BME680','timestamp','latitude','longitude']]
 SYSTEMVITALES = [[0,0,'inf','Timer','t','RaspberryPi','timestamp','latitude','longitude'],[0,0,4,'INDICATOR','IND','RaspberryPi','timestamp','latitude','longitude'],[0,-25,100,'CpuTemp','\xB0','RaspberryPi','timestamp','latitude','longitude'],[0,0,400,'CpuPercent','%','RaspberryPi','timestamp','latitude','longitude'],[0,0,4800000,'VirtualMemory','b','RaspberryPi','timestamp','latitude','longitude'],[0,0,100,'disk_usage','%','RaspberryPi','timestamp','latitude','longitude'],[0,0,100000,'BytesSent','b','RaspberryPi','timestamp','latitude','longitude'],[0,0,100000,'BytesReceived','b','RaspberryPi','timestamp','latitude','longitude']]
 GENERATORS = [[0,-100,100,'SineWave','','GENERATORS','timestamp','latitude','longitude'],[0,-500,500,'TangentWave','','GENERATORS','timestamp','latitude','longitude'],[0,-100,100,'CosWave','','GENERATORS','timestamp','latitude','longitude'],[0,-100,100,'SineWave2','','GENERATORS','timestamp','latitude','longitude']]
 SENSEHAT = [[0,-40,120,'Thermometer','\xB0','sensehat','timestamp','latitude','longitude'],[0,0,100,'Hygrometer','%','sensehat','timestamp','latitude','longitude'],[0,260,1260,'Barometer','hPa','sensehat','timestamp','latitude','longitude'],[0,-500,500,'MagnetX','G','sensehat','timestamp','latitude','longitude'],[0,-500,500,'MagnetY','G','sensehat','timestamp','latitude','longitude'],[0,-500,500,'MagnetZ','G','sensehat','timestamp','latitude','longitude'],[0,-500,500,'"AccelX','g','sensehat','timestamp','latitude','longitude'],[0,-500,500,'"AccelY','g','sensehat','timestamp','latitude','longitude'],[0,-500,500,'"AccelZ','g','sensehat','timestamp','latitude','longitude']]
+TERMALFRAME = [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,'timestamp','latitude','longitude']
 
 # Standard LCARS colours
 # LCARS CLASSIC THEME, 24# NEMESIS BLUE THEME, 39#LOWER DECKS THEME 42#LOWER DECKS PADD THEME
@@ -254,22 +257,24 @@ def lcars_element_graph(device, draw,pos_ax,pos_ay,pos_bx,pos_by, sensors_dict,m
 					mysensor_array = my_global_vars[sensor_dev][index_b]
 			#print("index of array", mysensor_array)
 				
-			range_of_graph = mysensor_array[2] - mysensor_array[1]
-			graph_hight = pos_by - pos_ay				
-				
-			if mode == 1:
-				grap_y_multi = graph_hight / range_of_graph
-			else:
-				grap_y_multi = graph_hight / range_of_graph
-				
-				#print("graph;", range_of_graph,graph_hight,grap_y_multi )
-				# this happens for exampe in the Generrators with +-100 min max vaules
-				if mysensor_array[1] < 0:
-					#print("is negativ")
-					offset = pos_ay*0.05 + mysensor_array[1] * grap_y_multi
-			
 			# This draws my dots
 			for index, data_point in enumerate(recent):
+			
+				range_of_graph = mysensor_array[2] - mysensor_array[1]
+				graph_hight = pos_by - pos_ay				
+					
+				if mode == 1:
+					grap_y_multi = graph_hight / range_of_graph
+				else:
+					grap_y_multi = graph_hight / range_of_graph
+					
+					print("graph;", range_of_graph,graph_hight,grap_y_multi, sensor_dsc )
+					# this happens for exampe in the Generrators with +-100 min max vaules
+					if mysensor_array[1] < -1:
+						#print("is negativ", mysensor_array[1], sensor_dsc)
+						offset = pos_ay*0.05 + mysensor_array[1] * grap_y_multi
+			
+
 				
 				#draw.ellipse([pos_bx*0.99-index*graph_resulutio_X_multi,pos_by-grap_y_multi * data_point,pos_bx*0.99+2-index*graph_resulutio_X_multi,pos_by-grap_y_multi * data_point+2],lcars_colores[index_a]['value'], outline = lcars_colores[index_a]['value'])
 				
@@ -303,6 +308,101 @@ def lcars_element_graph(device, draw,pos_ax,pos_ay,pos_bx,pos_by, sensors_dict,m
 			#print("bufferinframe", len(recent))
 
 
+
+
+def lcars_element_termal_array(device, draw,pos_ax,pos_ay,pos_bx,pos_by):
+	fill = "yellow"
+	fill2 = "red"
+	offset = 0
+	sensor_legende = ""
+
+	global lcars_microfont
+		
+	# Cacluate the element lengh we interpolate a frame in between
+	array_resulutio_X = ( pos_bx - pos_ax ) / 17
+	array_resulutio_Y = ( pos_by - pos_ay ) / 17
+
+	#bounding box
+	box_element_graph = [(pos_ax , pos_ay), (pos_bx, pos_by)] 
+	draw.rectangle(box_element_graph,fill="black", outline=lcars_theme[lcars_theme_selection]["colore5"])
+	
+	result = BUFFER_GLOBAL_TERMALFRAME
+
+	# trim it to length (num).
+	trimmed_data = result.tail(1)	
+	data_line = trimmed_data.values.tolist()
+	pure_dataline = data_line[0][:63]
+	avarage_temp = math.ceil(statistics.mean(pure_dataline)*2)
+	interpolatet_array = [(0,avarage_temp,avarage_temp*2)]
+	
+	# building a full blue frame as rendering step 1
+	for fullarray in range(0,289,1):
+		interpolatet_array.append((0,avarage_temp,avarage_temp*2))
+		
+	mask_counter_A = 0
+	mask_counter_B = 0
+	mask_counter_C = 0
+	mask_on = False
+	data_line_index = 0
+	# this is a range for to sensor value 
+	stepping = 255 / 80
+	# setting now the pixels from the sensor values translatet to colores with red more and blue less 
+	# trying to center my pixels here to get it not to mutch washed out 
+	for array_index ,pixel_off_pic in enumerate(interpolatet_array):
+		# Masking Top and Bottom
+		# carefull this values a pixel counter and i calculatet so that i get a centert array of 64 pixels with a space in between
+		if array_index >= 0 and array_index < 272:
+			# Masking Left and Right and defining my rows again
+			if mask_counter_A <= 16 and  mask_counter_A >= 0:	
+				#interpolatet_array[array_index] = '#00ff00'								
+				if mask_on:				
+					if mask_counter_B % 2 != 0:	
+						interpolatet_array[array_index] = '#ff0000'			
+						#print("my real pixels",math.ceil(data_line[0][data_line_index]))
+						colore_builder_part1 = data_line[0][data_line_index] *2 * stepping
+						# this is more or less percentage of temp to value
+						colore_builder_part1 = math.ceil(colore_builder_part1 )
+						colore_builder_part2 = 255 - math.ceil(colore_builder_part1 / 4)
+						colore_builder = (200,colore_builder_part1,colore_builder_part2)
+						#print("colore_int", colore_builder  )
+						# this section sets the colore of the pixels around the main sensor value
+						interpolatet_array[array_index+1] = (0,math.ceil(colore_builder_part1*1),math.ceil(colore_builder_part2*1))
+						interpolatet_array[array_index-1] = (0,math.ceil(colore_builder_part1*1),math.ceil(colore_builder_part2*1))
+						interpolatet_array[array_index+17] = (0,math.ceil(colore_builder_part1*1),math.ceil(colore_builder_part2*1))
+						interpolatet_array[array_index-17] = (0,math.ceil(colore_builder_part1*1),math.ceil(colore_builder_part2*1))
+						interpolatet_array[array_index+16] = (0,math.ceil(colore_builder_part1*1),math.ceil(colore_builder_part2*1))
+						interpolatet_array[array_index-16] = (0,math.ceil(colore_builder_part1*1),math.ceil(colore_builder_part2*1))
+						interpolatet_array[array_index+18] = (0,math.ceil(colore_builder_part1*1),math.ceil(colore_builder_part2*1))
+						interpolatet_array[array_index-18] = (0,math.ceil(colore_builder_part1*1),math.ceil(colore_builder_part2*1))
+						interpolatet_array[array_index] = colore_builder
+						#interpolatet_array[array_index] = '#ff0000'
+						data_line_index = data_line_index + 1				
+				mask_counter_B = mask_counter_B + 1			
+			mask_counter_A = mask_counter_A + 1
+			if mask_counter_A == 17:
+				mask_counter_A = 0
+				mask_counter_B = 0
+				
+				mask_counter_C = mask_counter_C + 1
+				if mask_counter_C == 1:
+					if mask_on == False:
+						mask_on = True
+					elif mask_on == True:
+						mask_on = False
+					mask_counter_C = 0
+					
+	
+	
+	# Drawing the Array
+	pixel_counter = 0
+	for index1_X , columns in enumerate(range(0,17,1)):	
+		for index2_Y, rows in enumerate(range(0,17,1)):
+			draw.rectangle((pos_ax+index1_X*array_resulutio_X , pos_ay+index2_Y*array_resulutio_Y,pos_ax+index1_X*array_resulutio_X+array_resulutio_X ,pos_ay+index2_Y*array_resulutio_Y+array_resulutio_Y),fill=interpolatet_array[pixel_counter], outline=interpolatet_array[pixel_counter])
+			pixel_counter = pixel_counter + 1
+			
+			
+	
+	
 
 def lcars_element_elbow(device, draw,pos_x,pos_y,rotation,colore):
 # element needs x,y position
@@ -560,9 +660,10 @@ def lcars_multi_graph_build():
 		lcars_element_elbow(device, draw, device.width*0.01,device.height*0.86 ,3, lcars_theme[lcars_theme_selection]["colore0"])	
 		
 		# selecting Values in Pandas DB via dev & dsc
-		sensors_array_with_dict = [{"BME680":"Thermometer"},{"BME680":"Hygrometer"},{"BME680":"Barometer"},{"BME680":"VOC"},{"BME680":"ALT"}]
+		#sensors_array_with_dict = [{"BME680":"Thermometer"},{"BME680":"Hygrometer"},{"BME680":"Barometer"},{"BME680":"VOC"},{"BME680":"ALT"}]
+		sensors_array_with_dict = [{"BME680":"Barometer"},{"GENERATORS":"SineWave"}]
 		#sensors_array_with_dict = [{"GENERATORS":"SineWave"},{"GENERATORS":"CosWave"},{"GENERATORS":"SineWave2"}]
-		lcars_element_graph(device, draw,device.width*0.15,device.height*0.12,device.width*0.95,device.height*0.85, sensors_array_with_dict, 1)
+		lcars_element_graph(device, draw,device.width*0.15,device.height*0.12,device.width*0.95,device.height*0.85, sensors_array_with_dict, 0)
            
 		radius = device.height*0.05
           
@@ -617,6 +718,89 @@ def lcars_multi_graph_build():
 		top = -2
 		draw.rectangle((left - 1, top, left + w + 1, top + h), fill="black", outline="black")
 		draw.text((left + 1, top), text=text, font=lcars_littlefont, fill=lcars_theme[lcars_theme_selection]["font0"])
+		
+def lcars_termal_view_build():
+	global animation_step
+	global sensor_animation
+	global lcars_theme_selection
+	
+	global lcars_microfont
+	global lcars_littlefont 
+	global lcars_font
+	global lcars_titlefont 
+	global lcars_bigfont 
+	global lcars_giantfont
+
+	fill2 = "black"
+	fill3 = "yellow"
+	
+	dict_graph = []
+
+	with canvas(device, dither=True) as draw:
+					
+		lcars_element_elbow(device, draw, device.width*0.01,device.height*0.01,2,lcars_theme[lcars_theme_selection]["colore4"])
+		lcars_element_elbow(device, draw, device.width*0.01,device.height*0.86 ,3, lcars_theme[lcars_theme_selection]["colore0"])	
+		
+		# selecting Values in Pandas DB via dev & dsc
+		#sensors_array_with_dict = [{"BME680":"Thermometer"},{"BME680":"Hygrometer"},{"BME680":"Barometer"},{"BME680":"VOC"},{"BME680":"ALT"}]
+		#sensors_array_with_dict = [{"BME680":"Barometer"},{"GENERATORS":"SineWave"}]
+		#sensors_array_with_dict = [{"GENERATORS":"SineWave"},{"GENERATORS":"CosWave"},{"GENERATORS":"SineWave2"}]
+		lcars_element_termal_array(device, draw,device.width*0.15,device.height*0.12,device.width*0.95,device.height*0.85)
+           
+		radius = device.height*0.05
+          
+        #end locations
+		w0, h0 = device.width*0.015, device.height*0.41
+		w1, h1 = device.width*0.22/2, device.height*0.865
+        
+		Rshape0 = [(w0,  h0), (w1, h1)]
+        
+		# the connecting from top to bottom
+		draw.rectangle(Rshape0, lcars_theme[lcars_theme_selection]["colore5"])
+
+		if sensor_animation == 3:
+			lcars_element_side_bar(device, draw, device.width*0.015,device.height*0.13 ,3,lcars_theme[lcars_theme_selection]["colore1"])
+		else:
+			lcars_element_side_bar(device, draw, device.width*0.015,device.height*0.13 ,3,lcars_theme[lcars_theme_selection]["colore2"])
+		
+		if sensor_animation == 2:
+			lcars_element_side_bar(device, draw, device.width*0.015,device.height*0.20 ,3,lcars_theme[lcars_theme_selection]["colore1"])
+		else:
+			lcars_element_side_bar(device, draw, device.width*0.015,device.height*0.20 ,3,lcars_theme[lcars_theme_selection]["colore2"])
+		
+		if sensor_animation == 1:
+			lcars_element_side_bar(device, draw, device.width*0.015,device.height*0.274 ,3,lcars_theme[lcars_theme_selection]["colore1"])
+		else:
+			lcars_element_side_bar(device, draw, device.width*0.015,device.height*0.274 ,3,lcars_theme[lcars_theme_selection]["colore2"])
+		
+		if sensor_animation == 0:
+			lcars_element_side_bar(device, draw, device.width*0.015,device.height*0.345 ,3,lcars_theme[lcars_theme_selection]["colore1"])
+		else:
+			lcars_element_side_bar(device, draw, device.width*0.015,device.height*0.345 ,3,lcars_theme[lcars_theme_selection]["colore2"])
+		
+		lcars_element_end(device, draw, device.width*0.93,device.height*0.015,3,lcars_theme[lcars_theme_selection]["colore0"])
+		lcars_element_end(device, draw, device.width*0.93,device.height*0.93,3,lcars_theme[lcars_theme_selection]["colore0"])
+		
+		lcars_element_doublebar(device, draw, device.width*0.27 ,device.height*0.01, device.width*0.5, device.height*0.055,0,lcars_theme[lcars_theme_selection]["colore0"],lcars_theme[lcars_theme_selection]["colore5"])
+		lcars_element_doublebar(device, draw, device.width*0.51 ,device.height*0.01, device.width*0.60, device.height*0.055,0,lcars_theme[lcars_theme_selection]["colore5"],lcars_theme[lcars_theme_selection]["colore0"])
+		
+		draw.rectangle((device.width*0.7 ,device.height*0.01, device.width*0.94, device.height*0.06), fill=lcars_theme[lcars_theme_selection]["colore5"], outline=lcars_theme[lcars_theme_selection]["colore5"])
+		
+		bottom_line = [(device.width*0.27 , device.height*0.93), (device.width*0.93, device.height*0.93+radius)] 
+		
+		draw.rectangle(bottom_line,lcars_theme[lcars_theme_selection]["colore5"])
+	
+		## Looks like i found my overlapping box
+		text = "Termal  View"
+		left, top, right, bottom = draw.textbbox((0, 0), text)
+		w, h = right - left, bottom+5 - top
+		w3 = device.width*0.7
+
+		left = w3-radius*2.5
+		top = -2
+		draw.rectangle((left - 1, top, left + w + 6, top + h), fill="black", outline="black")
+		draw.text((left + 1, top), text=text, font=lcars_littlefont, fill=lcars_theme[lcars_theme_selection]["font0"])		
+		
 
 def lcars_type3_build():
 	global animation_step
@@ -738,12 +922,14 @@ class LCARS_Struct(object):
 		elif self == "type1":
 			lcars_type1_build()
 		elif self == "multi_graph":
-			lcars_multi_graph_build()    
+			lcars_multi_graph_build()    		
+		elif self == "termal_view":
+			lcars_termal_view_build()    
 		elif self == "type3":
 			lcars_type3_build()              
 		elif self == "type4":
 			lcars_type3_build()
-  
+
   
 # return a list of n most recent data from specific sensor defined by keys
 # gets Called from pilgraph
@@ -783,11 +969,14 @@ def get_recent(dsc, dev, num, timeing):
 
 def update(ch, method, properties, body):
 	global BUFFER_GLOBAL
+	global BUFFER_GLOBAL_TERMALFRAME
 	global GPS_DATA
 	global BME680
 	global SYSTEMVITALES
 	global GENERATORS
 	global SENSEHAT
+	global TERMALFRAME
+	
 	#print('book=', mapping_book_byname)
 	#print('populating=', method.routing_key)
 	
@@ -795,10 +984,11 @@ def update(ch, method, properties, body):
 	value = random.randint(1, 100) 
 	#sensors = Sensor()
 	fragdata = []
+	fragdata_termal = []
 	sensor_values = []
 	trimmbuffer_flag = False
+	trimmbuffer_flag_termal = False
 	
-
 		
 	# configure buffersize
 	if configure.buffer_size[0] == 0:
@@ -947,27 +1137,57 @@ def update(ch, method, properties, body):
 	
 	elif method.routing_key == 'thermal_frame':
 	    # decodes data byte stream and splits the values by comma
-		sensor_values = body.decode().strip("()").split(",")		
+		sensor_values = body.decode()	
+		sensor_frame = ast.literal_eval(sensor_values)
+		#print("TERMALFRAME:", sensor_frame)
 		index = 0
+		
+		for sensor_array_line in sensor_frame:
+			for datapoint in sensor_array_line:
+				TERMALFRAME[index] = float(datapoint)
+				index = index + 1
+	
+		TERMALFRAME[64] = timestamp
+		TERMALFRAME[65] = GPS_DATA[0]
+		TERMALFRAME[66] = GPS_DATA[1]
+
+		#print("MATRIX", TERMALFRAME)
+		fragdata_termal.append(TERMALFRAME)		
+		# creates a new dataframe to add new data 	
+		newdata = pd.DataFrame(fragdata_termal, columns=['Value0','Value1','Value2','Value3','Value4','Value5','Value6','Value7','Value8','Value9','Value10','Value11','Value12','Value13','Value14','Value15','Value16','Value17','Value18','Value19','Value20','Value21','Value22','Value23','Value24','Value25','Value26','Value27','Value28','Value29','Value30','Value31','Value32','Value33','Value34','Value35','Value36','Value37','Value38','Value39','Value40','Value41','Value42','Value43','Value44','Value45','Value46','Value47','Value48','Value49','Value50','Value51','Value52','Value53','Value54','Value55','Value56','Value57','Value58','Value59','Value60','Value61','Value62','Value63','timestamp','latitude','longitude'])
+		BUFFER_GLOBAL_TERMALFRAME = pd.concat([BUFFER_GLOBAL_TERMALFRAME,newdata]).drop_duplicates().reset_index(drop=True)
+		# we get len of one sensor					
+		currentsize_termalframe = len(BUFFER_GLOBAL_TERMALFRAME)
+		if currentsize_termalframe > targetsize:
+			trimmbuffer_flag_termal = True		
+
 
 	# PD Fails to handel over 1650 rows so we trim the buffer when 64 rows on any sensor gets reached
 	if trimmbuffer_flag:
-			BUFFER_GLOBAL = trimbuffer(targetsize)
+			BUFFER_GLOBAL = trimbuffer(targetsize,'global')
+			
+	if trimmbuffer_flag_termal:
+			BUFFER_GLOBAL_TERMALFRAME = trimbuffer(targetsize,'termal')		
 			
 	return
 
 
-def trimbuffer( targetsize):
+def trimbuffer(targetsize,buffername):
 	# should take the buffer in memory and trim some of it
-	targetsize_all_sensors = targetsize * configure.max_sensors[0]
-	
+	if buffername == 'global':
+		targetsize_all_sensors = targetsize * configure.max_sensors[0]
+	elif buffername == 'termal':
+		targetsize_all_sensors = targetsize * 1
+		
 	#print("Target Size",targetsize )
 	
 	#print("targetsize_all_sensors ",targetsize_all_sensors )
 	
 	# get buffer size to determine how many rows to remove from the end
-	currentsize = len(BUFFER_GLOBAL) 
-
+	if buffername == 'global':
+		currentsize = len(BUFFER_GLOBAL) 
+	elif buffername == 'termal':
+		currentsize = len(BUFFER_GLOBAL_TERMALFRAME) 
 	#print("currentsize", currentsize)
 
 	# determine difference between buffer and target size
@@ -977,14 +1197,23 @@ def trimbuffer( targetsize):
 
 
 	# make a new dataframe of the most recent data to keep using
-	newbuffer = BUFFER_GLOBAL.tail(targetsize_all_sensors)
+	if buffername == 'global':
+		newbuffer = BUFFER_GLOBAL.tail(targetsize_all_sensors)
+	elif buffername == 'termal':
+		newbuffer = BUFFER_GLOBAL_TERMALFRAME.tail(targetsize_all_sensors)
 
 	# slice off the rows outside the buffer and backup to disk
-	tocore = BUFFER_GLOBAL.head(length)
+	if buffername == 'global':
+		tocore = BUFFER_GLOBAL.head(length)
+	elif buffername == 'termal':
+		tocore_termal = BUFFER_GLOBAL_TERMALFRAME.head(length)
 
-	if configure.datalog[0]:
-			append_to_core(tocore)
-
+	if buffername == 'global':
+		if configure.datalog[0]:
+				append_to_core(tocore)
+	elif buffername == 'termal':
+		if configure.datalog[0]:
+				append_to_core(tocore_termal)
 
 	# replace existing buffer with new trimmed buffer
 	return newbuffer
