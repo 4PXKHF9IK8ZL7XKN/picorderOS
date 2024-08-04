@@ -75,7 +75,6 @@ def lcars_element_videoframe(device, draw,pos_ax,pos_ay,pos_bx,pos_by,file,optio
 	
 	if vlc_instance is None:		
 		vlc_instance = vlc.Instance('--no-xlib --quiet')
-		print("pass")
 		player = vlc_instance.media_player_new()
 		media = vlc_instance.media_new("./assets/ekmd.m4v")
 		player.set_media(media)
