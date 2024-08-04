@@ -6,6 +6,7 @@
 
 This Repro is a Fork / Rewrite of the famous [PicorderOS](https://github.com/directive0/picorderOS/tree/dev) from [Directive0](https://github.com/directive0)
 
+
 The Projekt targets a "Modern Solution" for Performance optimisation. The Core Component is a local [Rabbitmq Service](https://www.rabbitmq.com/tutorials) to transmit Sensordata from Process to Process instead of Pipes.  
 
 A set of python components provides functionality for a Raspberry Pi based [Tricorder](https://en.wikipedia.org/wiki/Tricorder) replica called a "picorder". A picorder is made of a Raspberry Pi, one or more sensor packages, a battery, a display, and supplemental components. The purpose of this project is to provide a simple, extensible method for quickly getting a Raspberry Pi to be a handheld sensor data collection and display device like the fictional device it is inspired by.
