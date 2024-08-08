@@ -23,6 +23,8 @@ print("Loading Unified Sensor Module")
 generators = True
 DEBUG = False
 
+gps_update = {"lat" : 47.00, "lon" : 47.00, "speed" : 0.00,"altitude":0.00, "track" : 0.00, "sats":0}
+
 # Delcares the IRQ Pins for Cap Touch 
 BUTTON_GPIOA = 17
 BUTTON_GPIOB = 27
@@ -221,8 +223,7 @@ class Job(threading.Thread):
 
 
 def GPS_function():
-
-		gps_update = {"lat" : 47.00, "lon" : 47.00, "speed" : 0.00,"altitude":0.00, "track" : 0.00, "sats":0}
+		global gps_update
 
 		stream = serial.Serial(port, baud, timeout=3)
 		nmr = NMEAReader(stream)
