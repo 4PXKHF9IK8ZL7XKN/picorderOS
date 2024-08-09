@@ -24,6 +24,7 @@ generators = True
 DEBUG = False
 
 gps_update = {"lat" : 47.00, "lon" : 47.00, "speed" : 0.00,"altitude":0.00, "track" : 0.00, "sats":0}
+meta_massage = ""
 
 # Delcares the IRQ Pins for Cap Touch 
 BUTTON_GPIOA = 17
@@ -703,6 +704,8 @@ def interrupt_checker():
 # function to use the sensor class as a process.
 def sensor_process():
 
+	global meta_massage
+
 	sensors = sensor()
 	timed = timer()
 	wifitimer = timer()
@@ -811,8 +814,6 @@ def sensor_process():
 		interrupt_checker()
 			
 		if counter == 10:
-			meta_massage = str(sensors.get_index())
-			print(meta_massage)
 			publish('sensor_metadata',meta_massage)
 			counter = 0
 
