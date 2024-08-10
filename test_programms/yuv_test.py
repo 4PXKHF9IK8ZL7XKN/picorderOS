@@ -16,21 +16,20 @@ And the pyav package (might take a while):
   $ sudo -H pip install av
 """
 
-
 import sys
 import numpy as np
 from pathlib import Path
-import socket
+import cv2
+from PIL import Image
+import PIL
+
 from luma.core.virtual import viewport, snapshot, range_overlap
 from luma.core.sprite_system import framerate_regulator
 from luma.core import cmdline, error
 from luma.core.render import canvas
 
-HOST = "192.168.176.133"  # Standard loopback interface address (localhost)
-PORT = 1337  # Port to listen on (non-privileged ports are > 1023)
-
-sd = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-sd.bind((HOST, PORT))
+#filename = "/home/christian/projekt/picorderOS/assets/ekmd.m4v"
+filename = "/tmp/stream.yuv"
     
 def get_device(actual_args=None):
     """
@@ -79,102 +78,58 @@ def display_settings(device, args):
 
     return f'Version: {version}\nDisplay: {args.display}\n{iface}Dimensions: {device.width} x {device.height}\n{"-" * 60}'
     
+		   
+    
 def decode(s, encoding="ascii", errors="ignore"):
     return s.decode(encoding=encoding, errors=errors)
 
 def main(device):
-    r = 128
-    g = 128
-    b = 128
+    global filename 
+    # Create a video capture object, in this case we are reading the video from a file
+    vid_capture = cv2.VideoCapture(filename)
     
-    chunk_size = 3
+    if (vid_capture.isOpened() == False):
+        print("Error opening the video file")
+        # Read fps and frame count
+    else:
+        # Get frame rate information
+        # You can replace 5 with CAP_PROP_FPS as well, they are enumerations
+        fps = vid_capture.get(5)
+        print('Frames per second : ', fps,'FPS')
+ 
+        # Get frame count
+        # You can replace 7 with CAP_PROP_FRAME_COUNT as well, they are enumerations
+        frame_count = vid_capture.get(7)
+        print('Frame count : ', frame_count)
+ 
 
-    while True:
-        data, addr  = sd.recvfrom(1480)
-        #print("Data:",data)
-        ret = decode(data)
-        array = ret.splitlines()
-        X,Y = array[1].split(' ')
-        print("Size;",X," ",Y)
+    while(vid_capture.isOpened()):
+        # vid_capture.read() methods returns a tuple, first element is a bool 
+        # and the second is frame
+        ret, frame = vid_capture.read()
+        img = Image.fromarray(frame)
+        if ret == True:
+            #cv2.imshow('Frame',frame)
+            if img.width != device.width or img.height != device.height:
+                # resize video to fit device
+                size = device.width, device.height
+                img = img.resize(size, PIL.Image.LANCZOS)
 
-        picture_points = array[3]
-        picture_points_colores = list(picture_points)
-        
-        for number,point in enumerate(picture_points_colores):
-            try:
-                picture_points_colores[number] = int(point)
-            except:
-                picture_points_colores[number] = 255
-                 
-        chunked_list = list()
-        for i in range(0, len(picture_points_colores), chunk_size):
-            chunked_list.append(picture_points_colores[i:i+chunk_size])
-        
-        ##ret = np.array_split(picture_points, 3)
-        ##chunked_list = list(chunks(picture_points_colores,int(X)) )
-        
-        print("chop cop:", len(chunked_list))
-        
-        with canvas(device, dither=True) as draw:
-            if len(chunked_list) != 0:
-                count_symbols = 0
-                for point_X in range(0,int(X)):
-                     print("count:", count_symbols )
-                     if len(chunked_list) <= count_symbols:
-                            print("break by:", count_symbols )
-                            break
-                     if len(chunked_list[count_symbols]) == 3:
-                        r,g,b = chunked_list[count_symbols]
-                     for point_Y in range(0,int(Y)):
-                        draw.point((point_X, point_Y), fill=(r, g, b))
-                        count_symbols = count_symbols + 1
-                        #print("symbols",count_symbols)
-        
-        import cv2
-import numpy as np
-
-class VideoCaptureYUV:
-    def __init__(self, filename, size):
-        self.height, self.width = size
-        self.frame_len = self.width * self.height * 3 / 2
-        self.f = open(filename, 'rb')
-        self.shape = (int(self.height*1.5), self.width)
-
-    def read_raw(self):
-        try:
-            raw = self.f.read(self.frame_len)
-            yuv = np.frombuffer(raw, dtype=np.uint8)
-            yuv = yuv.reshape(self.shape)
-        except Exception as e:
-            print str(e)
-            return False, None
-        return True, yuv
-
-    def read(self):
-        ret, yuv = self.read_raw()
-        if not ret:
-            return ret, yuv
-        bgr = cv2.cvtColor(yuv, cv2.COLOR_YUV2BGR_NV21)
-        return ret, bgr
-
-
-if __name__ == "__main__":
-    #filename = "data/20171214180916RGB.yuv"
-    filename = "data/20171214180916IR.yuv"
-    size = (480, 640)
-    cap = VideoCaptureYUV(filename, size)
-
-    while 1:
-        ret, frame = cap.read()
-        if ret:
-            cv2.imshow("frame", frame)
-            cv2.waitKey(30)
+            device.display(img.convert(device.mode))
+            # 20 is in milliseconds, try to increase the value, say 50 and observe
+            key = cv2.waitKey(50)
+            
+             
+            #if key == ord('q'):
+              #break
         else:
             break
-        
-        
-        
+                
+    # Release the video capture object
+    vid_capture.release()
+    cv2.destroyAllWindows()
 
+  
 if __name__ == "__main__":
     try:
         device = get_device(['--interface', 'spi', '--display', 'st7789', '--spi-port', '0', '--spi-bus-speed', '52000000', '--width', '320', '--height', '240','--mode','RGB' ])
