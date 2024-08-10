@@ -50,6 +50,9 @@ lcars_theme_selection = 0
 
 mapping_book_byname = {}
 mapping_book = {}
+
+selected_sensor_values = [{"BME680":"Barometer"},{"GENERATORS":"SineWave"},{"BMP280":"Thermometer"}]
+
 vlc_instance = None
 
 lcars_microfont = None
@@ -586,6 +589,8 @@ def lcars_multi_graph_build():
 	global lcars_titlefont 
 	global lcars_bigfont 
 	global lcars_giantfont
+	
+	global selected_sensor_values
 
 	fill2 = "black"
 	fill3 = "yellow"
@@ -598,10 +603,10 @@ def lcars_multi_graph_build():
 		lcars_element_elbow(device, draw, device.width*0.01,device.height*0.86 ,3, lcars_theme[lcars_theme_selection]["colore0"])	
 		
 		# selecting Values in Pandas DB via dev & dsc
-		#sensors_array_with_dict = [{"BME680":"Thermometer"},{"BME680":"Hygrometer"},{"BME680":"Barometer"},{"BME680":"VOC"},{"BME680":"ALT"}]
-		sensors_array_with_dict = [{"BME680":"Barometer"},{"GENERATORS":"SineWave"},{"BMP280":"Thermometer"}]
-		#sensors_array_with_dict = [{"GENERATORS":"SineWave"},{"GENERATORS":"CosWave"},{"GENERATORS":"SineWave2"}]
-		lcars_element_graph(device, draw,device.width*0.15,device.height*0.12,device.width*0.95,device.height*0.85, sensors_array_with_dict, 0)
+		#selected_sensor_values = [{"BME680":"Thermometer"},{"BME680":"Hygrometer"},{"BME680":"Barometer"},{"BME680":"VOC"},{"BME680":"ALT"}]
+		#selected_sensor_values = [{"BME680":"Barometer"},{"GENERATORS":"SineWave"},{"BMP280":"Thermometer"}]
+		#selected_sensor_values = [{"GENERATORS":"SineWave"},{"GENERATORS":"CosWave"},{"GENERATORS":"SineWave2"}]
+		lcars_element_graph(device, draw,device.width*0.15,device.height*0.12,device.width*0.95,device.height*0.85, selected_sensor_values, 0)
            
 		radius = device.height*0.05
           
@@ -992,13 +997,13 @@ def update(ch, method, properties, body):
 	global GENERATORS
 	global SENSEHAT
 	global TERMALFRAME
+	global selected_sensor_values
 	
 	#print('book=', mapping_book_byname)
 	#print('populating=', method.routing_key)
 	
 	timestamp = time.time()
 	value = random.randint(1, 100) 
-	#sensors = Sensor()
 	fragdata = []
 	fragdata_termal = []
 	sensor_values = []
