@@ -717,108 +717,107 @@ def sensor_process():
 	publish('sensor_metadata',meta_massage)
 
 	while True:
-		#if timed.timelapsed() > configure.samplerate[0]:
-		#sensor_data = sensors.get()
-		
-		interrupt_checker()
-		
-		if configure.bme:
-			bme680 = sensors.get_bme680()
-			publish("bme680",bme680)
+		if timed.timelapsed() > configure.samplerate[0]:
 			
-		interrupt_checker()
+			interrupt_checker()
 			
-		if configure.bmp280:
-			bmp280 = sensors.get_bmp280()
-			publish("bmp280",bmp280)
+			if configure.bme:
+				bme680 = sensors.get_bme680()
+				publish("bme680",bme680)
+				
+			interrupt_checker()
+				
+			if configure.bmp280:
+				bmp280 = sensors.get_bmp280()
+				publish("bmp280",bmp280)
+				
+			interrupt_checker()
+				
+			if configure.SHT30:
+				sht30 = sensors.get_sht30()
+				publish("sht30",sht30)
+				
+			interrupt_checker()		
+				
+			if configure.SCD4X:
+				scd4x = sensors.get_scd4x()
+				publish("scd4x",scd4x)
 			
-		interrupt_checker()
+			interrupt_checker()
+				
+			if configure.LSM6DS3TR:
+				lsm6ds3 = sensors.get_lsm6ds3()
+				publish("lsm6ds3",lsm6ds3)
+				
+			interrupt_checker()
+				
+			if configure.LIS3MDL:
+				lis3mdl = sensors.get_lis3mdl()
+				publish("lis3mdl",lis3mdl)
+				
+			interrupt_checker()
+				
+			if configure.APDS9960:
+				apds9960 = sensors.get_apds9960()
+				publish("apds9960",apds9960)
+				
+			interrupt_checker()
 			
-		if configure.SHT30:
-			sht30 = sensors.get_sht30()
-			publish("sht30",sht30)
+			if configure.amg8833:
+				thermal_frame = sensors.get_thermal_frame()
+				publish("thermal_frame",thermal_frame)
+				
+			interrupt_checker()
+				
+				
+			if configure.system_vitals:
+				system_vitals = sensors.get_system_vitals()
+				publish("system_vitals",system_vitals)
+				
+			interrupt_checker()
+				
+			if configure.generators:
+				generatorsCurve = sensors.get_generators()
+				publish("generators",generatorsCurve)
+				
+			interrupt_checker()
+				
+			if configure.gps:
+				gps_parsed = sensors.get_gps()
+				publish("GPS_DATA",gps_parsed)
+				
+			interrupt_checker()
+				
+			if configure.sensehat:
+				sensehat_data = sensors.get_sensehat()
+				publish("sensehat",sensehat_data)
+				
+			interrupt_checker()
 			
-		interrupt_checker()		
-			
-		if configure.SCD4X:
-			scd4x = sensors.get_scd4x()
-			publish("scd4x",scd4x)
-		
-		interrupt_checker()
-			
-		if configure.LSM6DS3TR:
-			lsm6ds3 = sensors.get_lsm6ds3()
-			publish("lsm6ds3",lsm6ds3)
-			
-		interrupt_checker()
-			
-		if configure.LIS3MDL:
-			lis3mdl = sensors.get_lis3mdl()
-			publish("lis3mdl",lis3mdl)
-			
-		interrupt_checker()
-			
-		if configure.APDS9960:
-			apds9960 = sensors.get_apds9960()
-			publish("apds9960",apds9960)
-			
-		interrupt_checker()
-		
-		if configure.amg8833:
-			thermal_frame = sensors.get_thermal_frame()
-			publish("thermal_frame",thermal_frame)
-			
-		interrupt_checker()
-			
-			
-		if configure.system_vitals:
-			system_vitals = sensors.get_system_vitals()
-			publish("system_vitals",system_vitals)
-			
-		interrupt_checker()
-			
-		if configure.generators:
-			generatorsCurve = sensors.get_generators()
-			publish("generators",generatorsCurve)
-			
-		interrupt_checker()
-			
-		if configure.gps:
-			gps_parsed = sensors.get_gps()
-			publish("GPS_DATA",gps_parsed)
-			
-		interrupt_checker()
-			
-		if configure.sensehat:
-			sensehat_data = sensors.get_sensehat()
-			publish("sensehat",sensehat_data)
-			
-		interrupt_checker()
-		
-		if configure.envirophat:
-			envirophat_data = sensors.get_envirophat()
-			publish("envirophat",envirophat_data)
-			
-		interrupt_checker()
-						
-		if configure.pocket_geiger:
-			pocket_geigert_data = sensors.get_pocket_geiger()
-			publish("pocket_geiger",pocket_geiger_data)
-			
-		interrupt_checker()
+			if configure.envirophat:
+				envirophat_data = sensors.get_envirophat()
+				publish("envirophat",envirophat_data)
+				
+			interrupt_checker()
+							
+			if configure.pocket_geiger:
+				pocket_geigert_data = sensors.get_pocket_geiger()
+				publish("pocket_geiger",pocket_geiger_data)
+				
+			interrupt_checker()
 
-		if configure.ir_thermo:
-			ir_thermo_data = sensors.get_ir_thermo()
-			publish("ir_thermo",ir_thermo_data)
-			
-		interrupt_checker()
-			
-		if counter == 10:
-			publish('sensor_metadata',meta_massage)
-			counter = 0
+			if configure.ir_thermo:
+				ir_thermo_data = sensors.get_ir_thermo()
+				publish("ir_thermo",ir_thermo_data)
+				
+			interrupt_checker()
+				
+			if counter == 10:
+				publish('sensor_metadata',meta_massage)
+				counter = 0
 
-		counter += 1
-		timed.logtime()
+			counter += 1
+			timed.logtime()
         
 def main():
 	declare_channel()
