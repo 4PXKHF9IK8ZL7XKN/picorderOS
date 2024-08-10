@@ -35,7 +35,8 @@ BUFFER_GLOBAL_EM = pd.DataFrame(columns=['ssid','signal','quality','frequency','
 
 bme680_temp = [0]
 
-styles = ["type1", "multi_graph", "termal_view", "video_playback","type3", "type4"]
+styles = ["type1", "multi_graph", "termal_view","type3", "type4"]
+#styles = ["type1", "multi_graph", "termal_view", "video_playback","type3", "type4"]
 style = "type1"
 i = 0
 i2 = 0
@@ -136,7 +137,7 @@ def lcars_element_graph(device, draw,pos_ax,pos_ay,pos_bx,pos_by, sensors_dict,m
 				else:
 					grap_y_multi = graph_hight / range_of_graph
 					
-					print("graph;", range_of_graph,graph_hight,grap_y_multi, sensor_dsc )
+					######print("graph;", range_of_graph,graph_hight,grap_y_multi, sensor_dsc )
 					# this happens for exampe in the Generrators with +-100 min max vaules
 					if mysensor_array[1] < -1:
 						#print("is negativ", mysensor_array[1], sensor_dsc)
@@ -598,7 +599,7 @@ def lcars_multi_graph_build():
 		
 		# selecting Values in Pandas DB via dev & dsc
 		#sensors_array_with_dict = [{"BME680":"Thermometer"},{"BME680":"Hygrometer"},{"BME680":"Barometer"},{"BME680":"VOC"},{"BME680":"ALT"}]
-		sensors_array_with_dict = [{"BME680":"Barometer"},{"GENERATORS":"SineWave"}]
+		sensors_array_with_dict = [{"BME680":"Barometer"},{"GENERATORS":"SineWave"},{"BMP280":"Thermometer"}]
 		#sensors_array_with_dict = [{"GENERATORS":"SineWave"},{"GENERATORS":"CosWave"},{"GENERATORS":"SineWave2"}]
 		lcars_element_graph(device, draw,device.width*0.15,device.height*0.12,device.width*0.95,device.height*0.85, sensors_array_with_dict, 0)
            
@@ -678,10 +679,6 @@ def lcars_termal_view_build():
 		lcars_element_elbow(device, draw, device.width*0.01,device.height*0.01,2,lcars_theme[lcars_theme_selection]["colore4"])
 		lcars_element_elbow(device, draw, device.width*0.01,device.height*0.86 ,3, lcars_theme[lcars_theme_selection]["colore0"])	
 		
-		# selecting Values in Pandas DB via dev & dsc
-		#sensors_array_with_dict = [{"BME680":"Thermometer"},{"BME680":"Hygrometer"},{"BME680":"Barometer"},{"BME680":"VOC"},{"BME680":"ALT"}]
-		#sensors_array_with_dict = [{"BME680":"Barometer"},{"GENERATORS":"SineWave"}]
-		#sensors_array_with_dict = [{"GENERATORS":"SineWave"},{"GENERATORS":"CosWave"},{"GENERATORS":"SineWave2"}]
 		lcars_element_termal_array(device, draw,device.width*0.15,device.height*0.12,device.width*0.95,device.height*0.85)
            
 		radius = device.height*0.05
@@ -760,10 +757,6 @@ def lcars_videoplayer_build():
 		lcars_element_elbow(device, draw, device.width*0.01,device.height*0.01,2,lcars_theme[lcars_theme_selection]["colore4"])
 		lcars_element_elbow(device, draw, device.width*0.01,device.height*0.86 ,3, lcars_theme[lcars_theme_selection]["colore0"])	
 		
-		# selecting Values in Pandas DB via dev & dsc
-		#sensors_array_with_dict = [{"BME680":"Thermometer"},{"BME680":"Hygrometer"},{"BME680":"Barometer"},{"BME680":"VOC"},{"BME680":"ALT"}]
-		#sensors_array_with_dict = [{"BME680":"Barometer"},{"GENERATORS":"SineWave"}]
-		#sensors_array_with_dict = [{"GENERATORS":"SineWave"},{"GENERATORS":"CosWave"},{"GENERATORS":"SineWave2"}]
 		file = '/home/christian/video/file.mkv'
 		option = 'play'
 		lcars_element_videoframe(device, draw,device.width*0.15,device.height*0.12,device.width*0.95,device.height*0.85,file,option)
@@ -1021,6 +1014,7 @@ def update(ch, method, properties, body):
 		
 	if method.routing_key == 'GPS_DATA':
 		GPS_DATA[0],GPS_DATA[1]  = body.decode().strip("[]").split(",")	
+		
 	elif method.routing_key == 'bme680':	
 		# decodes data byte stream and splits the values by comma
 		sensor_values = body.decode().strip("()").split(",")		
@@ -1039,7 +1033,7 @@ def update(ch, method, properties, body):
 			#BUFFER_GLOBAL = pd.concat([BUFFER_GLOBAL,newdata]).reset_index(drop=True)	
 			# we get len of one sensor
 			currentsize_persensor = len(BUFFER_GLOBAL[BUFFER_GLOBAL["dsc"] == BME680[index][3]])
-			if currentsize_persensor > targetsize:
+			if currentsize_persensor > targetsize * 5:
 				trimmbuffer_flag = True		
 			index = index + 1			
 
@@ -1094,7 +1088,7 @@ def update(ch, method, properties, body):
 			# we get len of one sensor
 			#print("dsc", SYSTEMVITALES[index][3])
 			currentsize_persensor = len(BUFFER_GLOBAL[BUFFER_GLOBAL["dsc"] == SYSTEMVITALES[index][3]])
-			if currentsize_persensor > targetsize:
+			if currentsize_persensor > targetsize * 12:
 				trimmbuffer_flag = True		
 			index = index + 1	
 			
@@ -1116,7 +1110,7 @@ def update(ch, method, properties, body):
 			#BUFFER_GLOBAL = pd.concat([BUFFER_GLOBAL,newdata]).reset_index(drop=True)	
 			# we get len of one sensor
 			currentsize_persensor = len(BUFFER_GLOBAL[BUFFER_GLOBAL["dsc"] == GENERATORS[index][3]])
-			if currentsize_persensor > targetsize:
+			if currentsize_persensor > targetsize * 4:
 				trimmbuffer_flag = True	
 			index = index + 1	
 				
@@ -1137,26 +1131,143 @@ def update(ch, method, properties, body):
 			BUFFER_GLOBAL = pd.concat([BUFFER_GLOBAL,newdata]).drop_duplicates().reset_index(drop=True)
 			#BUFFER_GLOBAL = pd.concat([BUFFER_GLOBAL,newdata]).reset_index(drop=True)
 			# we get len of one sensor
-			currentsize_persensor = len(BUFFER_GLOBAL[BUFFER_GLOBAL["dsc"] == GENERATORS[index][3]])
-			if currentsize_persensor > targetsize:
+			currentsize_persensor = len(BUFFER_GLOBAL[BUFFER_GLOBAL["dsc"] == SENSEHAT[index][3]])
+			if currentsize_persensor > targetsize * 9:
+				trimmbuffer_flag = True		
+			index = index + 1
+			
+	elif method.routing_key == 'apds9960':
+		# decodes data byte stream and splits the values by comma
+		sensor_values = body.decode().strip(" () ").split(",")		
+		index = 0	
+		for value in sensor_values:
+			#print("APDS9960:", float(value))
+			APDS9960[index][0] = int(value)					
+			APDS9960[index][6] = timestamp
+			APDS9960[index][7] = GPS_DATA[0]
+			APDS9960[index][8] = GPS_DATA[1]
+			#print("MATRIX", APDS9960[index])
+			fragdata.append(APDS9960[index])		
+			# creates a new dataframe to add new data 	
+			newdata = pd.DataFrame(fragdata, columns=['value','min','max','dsc','sym','dev','timestamp','latitude','longitude'])
+			BUFFER_GLOBAL = pd.concat([BUFFER_GLOBAL,newdata]).drop_duplicates().reset_index(drop=True)
+			#BUFFER_GLOBAL = pd.concat([BUFFER_GLOBAL,newdata]).reset_index(drop=True)
+			# we get len of one sensor
+			currentsize_persensor = len(BUFFER_GLOBAL[BUFFER_GLOBAL["dsc"] == APDS9960[index][3]])
+			if currentsize_persensor > targetsize * 6:
+				trimmbuffer_flag = True		
+			index = index + 1
+		
+			
+	elif method.routing_key == 'lis3mdl':
+		# decodes data byte stream and splits the values by comma
+		sensor_values = body.decode().strip("()").split(",")		
+		index = 0			
+		for value in sensor_values:
+			#print("LIS3MDL:", float(value))
+			LIS3MDL[index][0] = float(value)					
+			LIS3MDL[index][6] = timestamp
+			LIS3MDL[index][7] = GPS_DATA[0]
+			LIS3MDL[index][8] = GPS_DATA[1]
+			#print("MATRIX", LIS3MDL[index])
+			fragdata.append(LIS3MDL[index])		
+			# creates a new dataframe to add new data 	
+			newdata = pd.DataFrame(fragdata, columns=['value','min','max','dsc','sym','dev','timestamp','latitude','longitude'])
+			BUFFER_GLOBAL = pd.concat([BUFFER_GLOBAL,newdata]).drop_duplicates().reset_index(drop=True)
+			#BUFFER_GLOBAL = pd.concat([BUFFER_GLOBAL,newdata]).reset_index(drop=True)
+			# we get len of one sensor
+			currentsize_persensor = len(BUFFER_GLOBAL[BUFFER_GLOBAL["dsc"] == LIS3MDL[index][3]])
+			if currentsize_persensor > targetsize * 3:
+				trimmbuffer_flag = True		
+			index = index + 1			
+
+	elif method.routing_key == 'lsm6ds3':
+		# decodes data byte stream and splits the values by comma
+		sensor_values = body.decode().strip("()").split(",")		
+		index = 0	
+		for value in sensor_values:
+			#print("LSM6DS3:", float(value))
+			LSM6DS3[index][0] = float(value)					
+			LSM6DS3[index][6] = timestamp
+			LSM6DS3[index][7] = GPS_DATA[0]
+			LSM6DS3[index][8] = GPS_DATA[1]
+			#print("MATRIX", LSM6DS3[index])
+			fragdata.append(LSM6DS3[index])		
+			# creates a new dataframe to add new data 	
+			newdata = pd.DataFrame(fragdata, columns=['value','min','max','dsc','sym','dev','timestamp','latitude','longitude'])
+			BUFFER_GLOBAL = pd.concat([BUFFER_GLOBAL,newdata]).drop_duplicates().reset_index(drop=True)
+			#BUFFER_GLOBAL = pd.concat([BUFFER_GLOBAL,newdata]).reset_index(drop=True)
+			# we get len of one sensor
+			currentsize_persensor = len(BUFFER_GLOBAL[BUFFER_GLOBAL["dsc"] == LSM6DS3[index][3]])
+			if currentsize_persensor > targetsize * 6:
 				trimmbuffer_flag = True		
 			index = index + 1	
-			
-						
-	elif method.routing_key == 'envirophat':
-	    # decodes data byte stream and splits the values by comma
-		sensor_values = body.decode().strip("()").split(",")		
-		index = 0
-
-	elif method.routing_key == 'pocket_geiger':
-	    # decodes data byte stream and splits the values by comma
-		sensor_values = body.decode().strip("()").split(",")		
-		index = 0
 		
-	elif method.routing_key == 'ir_thermo':
-	    # decodes data byte stream and splits the values by comma
+	elif method.routing_key == 'scd4x':
+		# decodes data byte stream and splits the values by comma
 		sensor_values = body.decode().strip("()").split(",")		
 		index = 0
+		for value in sensor_values:
+			#print("SCD4X:", float(value))
+			SCD4X[index][0] = float(value)					
+			SCD4X[index][6] = timestamp
+			SCD4X[index][7] = GPS_DATA[0]
+			SCD4X[index][8] = GPS_DATA[1]
+			#print("MATRIX", SCD4X[index])
+			fragdata.append(SCD4X[index])		
+			# creates a new dataframe to add new data 	
+			newdata = pd.DataFrame(fragdata, columns=['value','min','max','dsc','sym','dev','timestamp','latitude','longitude'])
+			BUFFER_GLOBAL = pd.concat([BUFFER_GLOBAL,newdata]).drop_duplicates().reset_index(drop=True)
+			#BUFFER_GLOBAL = pd.concat([BUFFER_GLOBAL,newdata]).reset_index(drop=True)
+			# we get len of one sensor
+			currentsize_persensor = len(BUFFER_GLOBAL[BUFFER_GLOBAL["dsc"] == SCD4X[index][3]])
+			if currentsize_persensor > targetsize * 3:
+				trimmbuffer_flag = True		
+			index = index + 1			
+		
+	elif method.routing_key == 'sht30':
+		# decodes data byte stream and splits the values by comma
+		sensor_values = body.decode().strip("()").split(",")		
+		index = 0		
+		for value in sensor_values:
+			#print("SHT30:", float(value))
+			SHT30[index][0] = float(value)					
+			SHT30[index][6] = timestamp
+			SHT30[index][7] = GPS_DATA[0]
+			SHT30[index][8] = GPS_DATA[1]
+			#print("SHT30", SHT30[index])
+			fragdata.append(SHT30[index])		
+			# creates a new dataframe to add new data 	
+			newdata = pd.DataFrame(fragdata, columns=['value','min','max','dsc','sym','dev','timestamp','latitude','longitude'])
+			BUFFER_GLOBAL = pd.concat([BUFFER_GLOBAL,newdata]).drop_duplicates().reset_index(drop=True)
+			#BUFFER_GLOBAL = pd.concat([BUFFER_GLOBAL,newdata]).reset_index(drop=True)
+			# we get len of one sensor
+			currentsize_persensor = len(BUFFER_GLOBAL[BUFFER_GLOBAL["dsc"] == SHT30[index][3]])
+			if currentsize_persensor > targetsize * 3:
+				trimmbuffer_flag = True		
+			index = index + 1
+		
+	elif method.routing_key == 'bmp280':
+		# decodes data byte stream and splits the values by comma
+		sensor_values = body.decode().strip("()").split(",")		
+		index = 0	
+		for value in sensor_values:
+			#print("BMP280:", float(value))
+			BMP280[index][0] = float(value)					
+			BMP280[index][6] = timestamp
+			BMP280[index][7] = GPS_DATA[0]
+			BMP280[index][8] = GPS_DATA[1]
+			#print("MATRIX", BMP280[index])
+			fragdata.append(BMP280[index])		
+			# creates a new dataframe to add new data 	
+			newdata = pd.DataFrame(fragdata, columns=['value','min','max','dsc','sym','dev','timestamp','latitude','longitude'])
+			BUFFER_GLOBAL = pd.concat([BUFFER_GLOBAL,newdata]).drop_duplicates().reset_index(drop=True)
+			#BUFFER_GLOBAL = pd.concat([BUFFER_GLOBAL,newdata]).reset_index(drop=True)	
+			# we get len of one sensor
+			currentsize_persensor = len(BUFFER_GLOBAL[BUFFER_GLOBAL["dsc"] == BMP280[index][3]])
+			if currentsize_persensor > targetsize * 3:
+				trimmbuffer_flag = True		
+			index = index + 1	
 	
 	elif method.routing_key == 'thermal_frame':
 	    # decodes data byte stream and splits the values by comma
@@ -1181,7 +1292,7 @@ def update(ch, method, properties, body):
 		BUFFER_GLOBAL_TERMALFRAME = pd.concat([BUFFER_GLOBAL_TERMALFRAME,newdata]).drop_duplicates().reset_index(drop=True)
 		# we get len of one sensor					
 		currentsize_termalframe = len(BUFFER_GLOBAL_TERMALFRAME)
-		if currentsize_termalframe > targetsize:
+		if currentsize_termalframe > 10:
 			trimmbuffer_flag_termal = True		
 
 
@@ -1198,10 +1309,15 @@ def update(ch, method, properties, body):
 def trimbuffer(targetsize,buffername):
 	# should take the buffer in memory and trim some of it
 	if buffername == 'global':
-		targetsize_all_sensors = targetsize * configure.max_sensors[0]
+		# we need to address that each sensor has sub value too
+		targetsize_all_sensors = targetsize * (configure.max_sensors[0] * 2)
 	elif buffername == 'termal':
 		targetsize_all_sensors = targetsize * 1
 		
+	#print("buffername:", buffername)
+	
+	#print("Sensors",configure.max_sensors[0])
+	
 	#print("Target Size",targetsize )
 	
 	#print("targetsize_all_sensors ",targetsize_all_sensors )
