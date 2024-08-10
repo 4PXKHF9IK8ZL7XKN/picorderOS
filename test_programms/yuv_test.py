@@ -127,7 +127,6 @@ def main(device):
                 
     # Release the video capture object
     vid_capture.release()
-    cv2.destroyAllWindows()
 
   
 if __name__ == "__main__":
