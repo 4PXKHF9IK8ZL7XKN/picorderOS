@@ -6,6 +6,8 @@
 Unicode font rendering & scrolling.
 """
 import os
+import os.path
+import tempfile
 import sys
 import math
 import random
@@ -20,6 +22,7 @@ import vlc
 
 from picoscolores import *
 from picosglobals import *
+from picosvideoplayer import *
 from objects import *
 from pathlib import Path
 from luma.core.virtual import viewport, snapshot, range_overlap
@@ -35,8 +38,8 @@ BUFFER_GLOBAL_EM = pd.DataFrame(columns=['ssid','signal','quality','frequency','
 
 bme680_temp = [0]
 
-styles = ["type1", "multi_graph", "termal_view","type3", "type4"]
-#styles = ["type1", "multi_graph", "termal_view", "video_playback","type3", "type4"]
+#styles = ["type1", "multi_graph", "termal_view","type3", "type4"]
+styles = ["type1", "multi_graph", "termal_view", "video_playback","type3", "type4"]
 style = "type1"
 i = 0
 i2 = 0
@@ -51,6 +54,9 @@ lcars_theme_selection = 0
 mapping_book_byname = {}
 mapping_book = {}
 
+tmp_dirpath = tempfile.mkdtemp()
+os.chmod(tmp_dirpath , 0o777)
+
 selected_sensor_values = [{"BME680":"Barometer"},{"GENERATORS":"SineWave"},{"BMP280":"Thermometer"}]
 
 vlc_instance = None
@@ -62,27 +68,30 @@ lcars_titlefont = None
 lcars_bigfont = None
 lcars_giantfont = None
 
-def lcars_element_videoframe(device, draw,pos_ax,pos_ay,pos_bx,pos_by,file,option):
+def lcars_element_videoframe(device, pos_ax,pos_ay,pos_bx,pos_by,file,option):
+	# this element needs to be on top so no canvase can be used here
+
 	fill = "yellow"
 	fill2 = "red"
 	offset = 0
 	sensor_legende = ""
 	global vlc_instance
-
+	global tmp_dirpath
 	global lcars_microfont
-		
-	#bounding box
-	box_element_graph = [(pos_ax , pos_ay), (pos_bx, pos_by)] 
-	draw.rectangle(box_element_graph,fill="black", outline=lcars_theme[lcars_theme_selection]["colore5"])
 	
-	print("VLC",type(vlc_instance))
+	#print("VLC",type(vlc_instance))
 	
 	if vlc_instance is None:		
-		vlc_instance = vlc.Instance('--no-xlib --quiet')
+		#vlc_instance = vlc.Instance('--no-xlib --vout=yuv --yuv-yuv4mpeg2 --yuv-file="{}/stream.yuv"'.format(tmp_dirpath)  )
+		vlc_instance = vlc.Instance('--no-xlib --no-video')
 		player = vlc_instance.media_player_new()
-		media = vlc_instance.media_new("./assets/ekmd.m4v")
+		#media = vlc_instance.media_new("./assets/ekmd.m4v")
+		media = vlc_instance.media_new("./assets/Firestorm Reveal Trailer.mp4")
 		player.set_media(media)
 		player.play()
+		
+		videoplayer_frame(device)
+		#player.release()
 
 def lcars_element_graph(device, draw,pos_ax,pos_ay,pos_bx,pos_by, sensors_dict,mode):
 	fill = "yellow"
@@ -756,15 +765,14 @@ def lcars_videoplayer_build():
 	fill3 = "yellow"
 	
 	dict_graph = []
+	
+	file = '/home/christian/video/file.mkv'
+	option = 'play'
 
 	with canvas(device, dither=True) as draw:
 					
 		lcars_element_elbow(device, draw, device.width*0.01,device.height*0.01,2,lcars_theme[lcars_theme_selection]["colore4"])
-		lcars_element_elbow(device, draw, device.width*0.01,device.height*0.86 ,3, lcars_theme[lcars_theme_selection]["colore0"])	
-		
-		file = '/home/christian/video/file.mkv'
-		option = 'play'
-		lcars_element_videoframe(device, draw,device.width*0.15,device.height*0.12,device.width*0.95,device.height*0.85,file,option)
+		lcars_element_elbow(device, draw, device.width*0.01,device.height*0.86 ,3, lcars_theme[lcars_theme_selection]["colore0"])			
            
 		radius = device.height*0.05
           
@@ -818,7 +826,12 @@ def lcars_videoplayer_build():
 		left = w3-radius*2.5
 		top = -2
 		draw.rectangle((left - 1, top, left + w + 6, top + h), fill="black", outline="black")
-		draw.text((left + 1, top), text=text, font=lcars_littlefont, fill=lcars_theme[lcars_theme_selection]["font0"])		
+		draw.text((left + 1, top), text=text, font=lcars_littlefont, fill=lcars_theme[lcars_theme_selection]["font0"])	
+		
+	####picosvideoplayer without canvis and overdrawing i hope
+	lcars_element_videoframe(device, device.width*0.15,device.height*0.12,device.width*0.95,device.height*0.85,file,option)
+	
+	
 
 
 def lcars_type3_build():
