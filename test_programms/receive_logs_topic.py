@@ -24,6 +24,13 @@ channel.queue_bind(
 channel.queue_bind(
     exchange='sensor_data', queue='', routing_key='GPS_DATA')
 
+channel.queue_bind(
+    exchange='sensor_data', queue='', routing_key='sensehat')
+
+channel.queue_bind(
+    exchange='sensor_data', queue='', routing_key='keyboard')
+
+
 
 print(' [*] Waiting for logs. To exit press CTRL+C')
 
