@@ -128,7 +128,8 @@ if configure.amg8833:
 if configure.EM:
 	from modulated_em import *
 
-connection = pika.BlockingConnection(pika.ConnectionParameters('localhost'))
+credentials = pika.PlainCredentials('picorder_remote','picorder_remotepass1')
+connection = pika.BlockingConnection(pika.ConnectionParameters('192.168.176.133',5672,'/',credentials))
 channel = connection.channel()
 
 
@@ -199,10 +200,11 @@ def button_callbackB(channel):
 	interrupt_flagB = True
 
 def reset():
-    if not GPIO.input(17) or not GPIO.input(27):
-        for i in range(12):
-            null = mpr121B[i].value
-            null = mpr121A[i].value
+    if configure.input_cap_mpr121:
+        if not GPIO.input(17) or not GPIO.input(27):
+            for i in range(12):
+                null = mpr121B[i].value
+                null = mpr121A[i].value
 
 # This Class helps to start a thread that runs a timer non blocking to reset the IRQ signal on the mpr121
 class Job(threading.Thread):
@@ -824,11 +826,12 @@ def main():
 	
 	# setup GPIO IRQ
 	GPIO.setmode(GPIO.BCM)
-	GPIO.setup(BUTTON_GPIOA, GPIO.IN)
-	GPIO.setup(BUTTON_GPIOB, GPIO.IN)
+	if configure.input_cap_mpr121:
+		GPIO.setup(BUTTON_GPIOA, GPIO.IN)
+		GPIO.setup(BUTTON_GPIOB, GPIO.IN)
 
-	GPIO.add_event_detect(BUTTON_GPIOA, GPIO.BOTH, callback=button_callbackA, bouncetime=50)
-	GPIO.add_event_detect(BUTTON_GPIOB, GPIO.BOTH, callback=button_callbackB, bouncetime=50) 
+		GPIO.add_event_detect(BUTTON_GPIOA, GPIO.BOTH, callback=button_callbackA, bouncetime=50)
+		GPIO.add_event_detect(BUTTON_GPIOB, GPIO.BOTH, callback=button_callbackB, bouncetime=50) 
     
     # setup the thread with timer and start the IRQ reset function
 	job = Job(interval=timedelta(seconds=WAIT_TIME_SECONDS), execute=reset)
