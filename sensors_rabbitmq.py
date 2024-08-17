@@ -23,7 +23,7 @@ print("Loading Unified Sensor Module")
 generators = True
 DEBUG = False
 
-gps_update = {"lat" : 47.00, "lon" : 47.00, "speed" : 0.00,"altitude":0.00, "track" : 0.00, "sats":0}
+gps_update = {"lat" : None, "lon" : None, "speed" : 0.00,"altitude":0.00, "track" : 0.00, "sats":0}
 meta_massage = ""
 
 # Delcares the IRQ Pins for Cap Touch 
@@ -128,11 +128,14 @@ if configure.amg8833:
 if configure.EM:
 	from modulated_em import *
 
-connection = pika.BlockingConnection(pika.ConnectionParameters('localhost'))
-channel = connection.channel()
 
-
-
+if configure.rabbitmq_remote:
+	credentials = pika.PlainCredentials(configure.rabbitmq_user,configure.rabbitmq_password)
+	connection = pika.BlockingConnection(pika.ConnectionParameters(configure.rabbitmq_address,configure.rabbitmq_port,configure.rabbitmq_vhost,credentials))
+	channel = connection.channel()
+else:
+	connection = pika.BlockingConnection(pika.ConnectionParameters('localhost'))
+	channel = connection.channel()
     
 def declare_channel():
 	# Setup Channels for Sensors
@@ -199,10 +202,11 @@ def button_callbackB(channel):
 	interrupt_flagB = True
 
 def reset():
-    if not GPIO.input(17) or not GPIO.input(27):
-        for i in range(12):
-            null = mpr121B[i].value
-            null = mpr121A[i].value
+	if configure.input_cap_mpr121:
+		if not GPIO.input(17) or not GPIO.input(27):
+		    for i in range(12):
+		        null = mpr121B[i].value
+		        null = mpr121A[i].value
 
 # This Class helps to start a thread that runs a timer non blocking to reset the IRQ signal on the mpr121
 class Job(threading.Thread):
@@ -390,8 +394,7 @@ class sensor(object):
 			position = [gps_data["lat"],gps_data["lon"]]
 			
 		else:
-			position = [37.7820885,-122.3045112]
-			# USS Hornet - Sea, Air and Space Museum (Alameda) , Pavel Knows ;)
+			position = [None,None]
 		return position
 
 	def get_bme680(self):
@@ -531,9 +534,10 @@ class sensor(object):
 		#index holds a counter about sensors that reacts to the get functions 
 		index = {'sensor_index': 0}
 		
-		# we have a dummy GPS that sends at least static data
-		index['sensor_index'] += 1
-		index.update({ "GPS_DATA" : index['sensor_index']})
+		if configure.gps:
+			# if no data is availabile it stays silet
+			index['sensor_index'] += 1
+			index.update({ "GPS_DATA" : index['sensor_index']})
 
 		if configure.bme:
 			rety = self.get_bme680()
@@ -712,9 +716,9 @@ def sensor_process():
 	
 	counter = 0
 	
-	meta_massage = str(sensors.get_index())
-	print(meta_massage)
-	publish('sensor_metadata',meta_massage)
+	#meta_massage = str(sensors.get_index())
+	#print(meta_massage)
+	#publish('sensor_metadata',meta_massage)
 
 	while True:
 		if timed.timelapsed() > configure.samplerate[0]:
@@ -766,7 +770,7 @@ def sensor_process():
 			if configure.amg8833:
 				thermal_frame = sensors.get_thermal_frame()
 				publish("thermal_frame",thermal_frame)
-				
+			
 			interrupt_checker()
 				
 				
@@ -784,7 +788,8 @@ def sensor_process():
 				
 			if configure.gps:
 				gps_parsed = sensors.get_gps()
-				publish("GPS_DATA",gps_parsed)
+				if gps_parsed[0] is not None and gps_parsed[1] is not None:
+					publish("GPS_DATA",gps_parsed)
 				
 			interrupt_checker()
 				
@@ -812,9 +817,9 @@ def sensor_process():
 				
 			interrupt_checker()
 				
-			if counter == 10:
-				publish('sensor_metadata',meta_massage)
-				counter = 0
+			#if counter == 10:
+			#	publish('sensor_metadata',meta_massage)
+			#	counter = 0
 
 			counter += 1
 			timed.logtime()
@@ -824,11 +829,12 @@ def main():
 	
 	# setup GPIO IRQ
 	GPIO.setmode(GPIO.BCM)
-	GPIO.setup(BUTTON_GPIOA, GPIO.IN)
-	GPIO.setup(BUTTON_GPIOB, GPIO.IN)
+	if configure.input_cap_mpr121:
+		GPIO.setup(BUTTON_GPIOA, GPIO.IN)
+		GPIO.setup(BUTTON_GPIOB, GPIO.IN)
 
-	GPIO.add_event_detect(BUTTON_GPIOA, GPIO.BOTH, callback=button_callbackA, bouncetime=50)
-	GPIO.add_event_detect(BUTTON_GPIOB, GPIO.BOTH, callback=button_callbackB, bouncetime=50) 
+		GPIO.add_event_detect(BUTTON_GPIOA, GPIO.BOTH, callback=button_callbackA, bouncetime=50)
+		GPIO.add_event_detect(BUTTON_GPIOB, GPIO.BOTH, callback=button_callbackB, bouncetime=50) 
     
     # setup the thread with timer and start the IRQ reset function
 	job = Job(interval=timedelta(seconds=WAIT_TIME_SECONDS), execute=reset)
