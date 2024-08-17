@@ -33,9 +33,13 @@ DEBUG = False
 
 configure.eventlist[0] = [0,0,0,0,0,0,0,0]
 
-connection = pika.BlockingConnection(
-    pika.ConnectionParameters(host='localhost'))
-channel = connection.channel()
+if configure.rabbitmq_remote_server:
+	credentials = pika.PlainCredentials(configure.rabbitmq_user,configure.rabbitmq_password)
+	connection = pika.BlockingConnection(pika.ConnectionParameters(configure.rabbitmq_address,configure.rabbitmq_port,configure.rabbitmq_vhost,credentials))
+	channel = connection.channel()
+else:
+	connection = pika.BlockingConnection(pika.ConnectionParameters('localhost'))
+	channel = connection.channel()
 
 channel.exchange_declare(exchange='sensor_data', exchange_type='topic')
 
@@ -149,6 +153,16 @@ def callback(ch, method, properties, body):
 
 	# joystick can map 5 inputs
 	configure.input_joystick
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
 	# gpio door open close and 3 butten presses for TR-108
 	configure.input_gpio
 	# 3 inputs for kb
