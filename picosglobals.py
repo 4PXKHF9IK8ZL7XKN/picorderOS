@@ -2,7 +2,8 @@
 # -*- coding: utf-8 -*-
 # PYTHON_ARGCOMPLETE_OK
 
-GPS_DATA = [4747.0000,4747.0000]
+GPS_DATA = [37.7820885,-122.3045112]
+# USS Hornet - Sea, Air and Space Museum (Alameda) , Pavel Knows ;)
 
 BME680 = [[0,-40,85,'Thermometer','\xB0','BME680','timestamp','latitude','longitude'],[0,0,100,'Hygrometer','%','BME680','timestamp','latitude','longitude'],[0,300,1100,'Barometer','hPa','BME680','timestamp','latitude','longitude'],[0,0,500,'VOC','ppm','BME680','timestamp','latitude','longitude'],[0,-50,1100,'ALT','m','BME680','timestamp','latitude','longitude']]
 SYSTEMVITALES = [[0,0,'inf','Timer','t','RaspberryPi','timestamp','latitude','longitude'],[0,0,4,'INDICATOR','IND','RaspberryPi','timestamp','latitude','longitude'],[0,-25,100,'CpuTemp','\xB0','RaspberryPi','timestamp','latitude','longitude'],[0,0,400,'CpuPercent','%','RaspberryPi','timestamp','latitude','longitude'],[0,0,4800000,'VirtualMemory','b','RaspberryPi','timestamp','latitude','longitude'],[0,0,100,'disk_usage','%','RaspberryPi','timestamp','latitude','longitude'],[0,0,100000,'BytesSent','b','RaspberryPi','timestamp','latitude','longitude'],[0,0,100000,'BytesReceived','b','RaspberryPi','timestamp','latitude','longitude']]
