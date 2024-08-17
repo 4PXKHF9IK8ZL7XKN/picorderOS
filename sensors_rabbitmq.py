@@ -715,8 +715,8 @@ def sensor_process():
 	
 	counter = 0
 	
-	#meta_massage = str(sensors.get_index())
-	#print(meta_massage)
+	meta_massage = str(sensors.get_index())
+	print(meta_massage)
 	#publish('sensor_metadata',meta_massage)
 
 	while True:
