@@ -32,9 +32,9 @@ from luma.core.render import canvas
 from PIL import ImageFont
 from datetime import timedelta
 
-BUFFER_GLOBAL = pd.DataFrame(columns=['value','min','max','dsc','sym','dev','timestamp','latitude','longitude'])
-BUFFER_GLOBAL_TERMALFRAME = pd.DataFrame(columns=['Value0','Value1','Value2','Value3','Value4','Value5','Value6','Value7','Value8','Value9','Value10','Value11','Value12','Value13','Value14','Value15','Value16','Value17','Value18','Value19','Value20','Value21','Value22','Value23','Value24','Value25','Value26','Value27','Value28','Value29','Value30','Value31','Value32','Value33','Value34','Value35','Value36','Value37','Value38','Value39','Value40','Value41','Value42','Value43','Value44','Value45','Value46','Value47','Value48','Value49','Value50','Value51','Value52','Value53','Value54','Value55','Value56','Value57','Value58','Value59','Value60','Value61','Value62','Value63','timestamp','latitude','longitude'])
-BUFFER_GLOBAL_EM = pd.DataFrame(columns=['ssid','signal','quality','frequency','encrypted','channel','dev','mode','dsc','timestamp','latitude','longitude'])
+BUFFER_GLOBAL = pd.DataFrame(columns=['value','min','max','dsc','sym','dev','timestamp','latitude','longitude','rabbitmq_tag'])
+BUFFER_GLOBAL_TERMALFRAME = pd.DataFrame(columns=['Value0','Value1','Value2','Value3','Value4','Value5','Value6','Value7','Value8','Value9','Value10','Value11','Value12','Value13','Value14','Value15','Value16','Value17','Value18','Value19','Value20','Value21','Value22','Value23','Value24','Value25','Value26','Value27','Value28','Value29','Value30','Value31','Value32','Value33','Value34','Value35','Value36','Value37','Value38','Value39','Value40','Value41','Value42','Value43','Value44','Value45','Value46','Value47','Value48','Value49','Value50','Value51','Value52','Value53','Value54','Value55','Value56','Value57','Value58','Value59','Value60','Value61','Value62','Value63','timestamp','latitude','longitude','rabbitmq_tag'])
+BUFFER_GLOBAL_EM = pd.DataFrame(columns=['ssid','signal','quality','frequency','encrypted','channel','dev','mode','dsc','timestamp','latitude','longitude','rabbitmq_tag'])
 
 bme680_temp = [0]
 
@@ -1025,11 +1025,14 @@ def update(ch, method, properties, body):
 		targetsize = configure.buffer_size[0]
 		
 	if method.routing_key == 'GPS_DATA':
-		GPS_DATA[0],GPS_DATA[1]  = body.decode().strip("[]").split(",")	
+		# needs maybe refiment later, this can be mixed local and remote
+		GPS_DATA[0],GPS_DATA[1],GPS_DATA[2]  = body.decode().strip("[]").split(",")	
 		
 	elif method.routing_key == 'bme680':	
 		# decodes data byte stream and splits the values by comma
-		sensor_values = body.decode().strip("()").split(",")		
+		sensor_values = body.decode().strip("()").split(",")
+		origin_tag = sensor_values[-1:]
+		del sensor_values[-1]	
 		index = 0
 		for value in sensor_values:
 			#print("BME680:", float(value))
@@ -1037,10 +1040,11 @@ def update(ch, method, properties, body):
 			BME680[index][6] = timestamp
 			BME680[index][7] = GPS_DATA[0]
 			BME680[index][8] = GPS_DATA[1]
+			BME680[index][9] = origin_tag[0].strip("' '")
 			#print("MATRIX", BME680[index])
 			fragdata.append(BME680[index])		
 			# creates a new dataframe to add new data 	
-			newdata = pd.DataFrame(fragdata, columns=['value','min','max','dsc','sym','dev','timestamp','latitude','longitude'])
+			newdata = pd.DataFrame(fragdata, columns=['value','min','max','dsc','sym','dev','timestamp','latitude','longitude','rabbitmq_tag'])
 			BUFFER_GLOBAL = pd.concat([BUFFER_GLOBAL,newdata]).drop_duplicates().reset_index(drop=True)
 			#BUFFER_GLOBAL = pd.concat([BUFFER_GLOBAL,newdata]).reset_index(drop=True)	
 			# we get len of one sensor
@@ -1094,7 +1098,7 @@ def update(ch, method, properties, body):
 			#print("MATRIX", SYSTEMVITALES[index])
 			fragdata.append(SYSTEMVITALES[index])		
 			# creates a new dataframe to add new data 	
-			newdata = pd.DataFrame(fragdata, columns=['value','min','max','dsc','sym','dev','timestamp','latitude','longitude'])
+			newdata = pd.DataFrame(fragdata, columns=['value','min','max','dsc','sym','dev','timestamp','latitude','longitude','rabbitmq_tag'])
 			BUFFER_GLOBAL = pd.concat([BUFFER_GLOBAL,newdata]).drop_duplicates().reset_index(drop=True)
 			#BUFFER_GLOBAL = pd.concat([BUFFER_GLOBAL,newdata]).reset_index(drop=True)										
 			# we get len of one sensor
@@ -1117,7 +1121,7 @@ def update(ch, method, properties, body):
 			#print("MATRIX", GENERATORS[index])
 			fragdata.append(GENERATORS[index])		
 			# creates a new dataframe to add new data 	
-			newdata = pd.DataFrame(fragdata, columns=['value','min','max','dsc','sym','dev','timestamp','latitude','longitude'])
+			newdata = pd.DataFrame(fragdata, columns=['value','min','max','dsc','sym','dev','timestamp','latitude','longitude','rabbitmq_tag'])
 			BUFFER_GLOBAL = pd.concat([BUFFER_GLOBAL,newdata]).drop_duplicates().reset_index(drop=True)
 			#BUFFER_GLOBAL = pd.concat([BUFFER_GLOBAL,newdata]).reset_index(drop=True)	
 			# we get len of one sensor
@@ -1139,7 +1143,7 @@ def update(ch, method, properties, body):
 			#print("MATRIX", SENSEHAT[index])
 			fragdata.append(SENSEHAT[index])		
 			# creates a new dataframe to add new data 	
-			newdata = pd.DataFrame(fragdata, columns=['value','min','max','dsc','sym','dev','timestamp','latitude','longitude'])
+			newdata = pd.DataFrame(fragdata, columns=['value','min','max','dsc','sym','dev','timestamp','latitude','longitude','rabbitmq_tag'])
 			BUFFER_GLOBAL = pd.concat([BUFFER_GLOBAL,newdata]).drop_duplicates().reset_index(drop=True)
 			#BUFFER_GLOBAL = pd.concat([BUFFER_GLOBAL,newdata]).reset_index(drop=True)
 			# we get len of one sensor
@@ -1161,7 +1165,7 @@ def update(ch, method, properties, body):
 			#print("MATRIX", APDS9960[index])
 			fragdata.append(APDS9960[index])		
 			# creates a new dataframe to add new data 	
-			newdata = pd.DataFrame(fragdata, columns=['value','min','max','dsc','sym','dev','timestamp','latitude','longitude'])
+			newdata = pd.DataFrame(fragdata, columns=['value','min','max','dsc','sym','dev','timestamp','latitude','longitude','rabbitmq_tag'])
 			BUFFER_GLOBAL = pd.concat([BUFFER_GLOBAL,newdata]).drop_duplicates().reset_index(drop=True)
 			#BUFFER_GLOBAL = pd.concat([BUFFER_GLOBAL,newdata]).reset_index(drop=True)
 			# we get len of one sensor
@@ -1184,7 +1188,7 @@ def update(ch, method, properties, body):
 			#print("MATRIX", LIS3MDL[index])
 			fragdata.append(LIS3MDL[index])		
 			# creates a new dataframe to add new data 	
-			newdata = pd.DataFrame(fragdata, columns=['value','min','max','dsc','sym','dev','timestamp','latitude','longitude'])
+			newdata = pd.DataFrame(fragdata, columns=['value','min','max','dsc','sym','dev','timestamp','latitude','longitude','rabbitmq_tag'])
 			BUFFER_GLOBAL = pd.concat([BUFFER_GLOBAL,newdata]).drop_duplicates().reset_index(drop=True)
 			#BUFFER_GLOBAL = pd.concat([BUFFER_GLOBAL,newdata]).reset_index(drop=True)
 			# we get len of one sensor
@@ -1206,7 +1210,7 @@ def update(ch, method, properties, body):
 			#print("MATRIX", LSM6DS3[index])
 			fragdata.append(LSM6DS3[index])		
 			# creates a new dataframe to add new data 	
-			newdata = pd.DataFrame(fragdata, columns=['value','min','max','dsc','sym','dev','timestamp','latitude','longitude'])
+			newdata = pd.DataFrame(fragdata, columns=['value','min','max','dsc','sym','dev','timestamp','latitude','longitude','rabbitmq_tag'])
 			BUFFER_GLOBAL = pd.concat([BUFFER_GLOBAL,newdata]).drop_duplicates().reset_index(drop=True)
 			#BUFFER_GLOBAL = pd.concat([BUFFER_GLOBAL,newdata]).reset_index(drop=True)
 			# we get len of one sensor
@@ -1228,7 +1232,7 @@ def update(ch, method, properties, body):
 			#print("MATRIX", SCD4X[index])
 			fragdata.append(SCD4X[index])		
 			# creates a new dataframe to add new data 	
-			newdata = pd.DataFrame(fragdata, columns=['value','min','max','dsc','sym','dev','timestamp','latitude','longitude'])
+			newdata = pd.DataFrame(fragdata, columns=['value','min','max','dsc','sym','dev','timestamp','latitude','longitude','rabbitmq_tag'])
 			BUFFER_GLOBAL = pd.concat([BUFFER_GLOBAL,newdata]).drop_duplicates().reset_index(drop=True)
 			#BUFFER_GLOBAL = pd.concat([BUFFER_GLOBAL,newdata]).reset_index(drop=True)
 			# we get len of one sensor
@@ -1250,7 +1254,7 @@ def update(ch, method, properties, body):
 			#print("SHT30", SHT30[index])
 			fragdata.append(SHT30[index])		
 			# creates a new dataframe to add new data 	
-			newdata = pd.DataFrame(fragdata, columns=['value','min','max','dsc','sym','dev','timestamp','latitude','longitude'])
+			newdata = pd.DataFrame(fragdata, columns=['value','min','max','dsc','sym','dev','timestamp','latitude','longitude','rabbitmq_tag'])
 			BUFFER_GLOBAL = pd.concat([BUFFER_GLOBAL,newdata]).drop_duplicates().reset_index(drop=True)
 			#BUFFER_GLOBAL = pd.concat([BUFFER_GLOBAL,newdata]).reset_index(drop=True)
 			# we get len of one sensor
@@ -1261,7 +1265,9 @@ def update(ch, method, properties, body):
 		
 	elif method.routing_key == 'bmp280':
 		# decodes data byte stream and splits the values by comma
-		sensor_values = body.decode().strip("()").split(",")		
+		sensor_values = body.decode().strip("()").split(",")	
+		origin_tag = sensor_values[-1:]
+		del sensor_values[-1]		
 		index = 0	
 		for value in sensor_values:
 			#print("BMP280:", float(value))
@@ -1269,10 +1275,11 @@ def update(ch, method, properties, body):
 			BMP280[index][6] = timestamp
 			BMP280[index][7] = GPS_DATA[0]
 			BMP280[index][8] = GPS_DATA[1]
+			BMP280[index][9] = origin_tag[0].strip("' '")
 			#print("MATRIX", BMP280[index])
 			fragdata.append(BMP280[index])		
 			# creates a new dataframe to add new data 	
-			newdata = pd.DataFrame(fragdata, columns=['value','min','max','dsc','sym','dev','timestamp','latitude','longitude'])
+			newdata = pd.DataFrame(fragdata, columns=['value','min','max','dsc','sym','dev','timestamp','latitude','longitude','rabbitmq_tag'])
 			BUFFER_GLOBAL = pd.concat([BUFFER_GLOBAL,newdata]).drop_duplicates().reset_index(drop=True)
 			#BUFFER_GLOBAL = pd.concat([BUFFER_GLOBAL,newdata]).reset_index(drop=True)	
 			# we get len of one sensor
