@@ -127,7 +127,7 @@ if configure.amg8833:
 if configure.EM:
 	from modulated_em import *
 
-if configure.rabbitmq_remote_server:
+if configure.rabbitmq_remote:
 	credentials = pika.PlainCredentials(configure.rabbitmq_user,configure.rabbitmq_password)
 	connection = pika.BlockingConnection(pika.ConnectionParameters(configure.rabbitmq_address,configure.rabbitmq_port,configure.rabbitmq_vhost,credentials))
 	channel = connection.channel()

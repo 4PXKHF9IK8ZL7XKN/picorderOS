@@ -144,7 +144,7 @@ class preferences(object):
 							'# Enables video playback':None,
 							'video':'no',
 							'# Rabbitmq Remote':'None',
-							'rabbitmq_remote_server':'no',
+							'rabbitmq_remote':'no',
 							'rabbitmq_address':'127.0.0.1',
 							'rabbitmq_port':'5672',
 							'rabbitmq_vhost':'/',	
@@ -456,7 +456,7 @@ class preferences(object):
 		self.graph_y = int(config['GLOBALS']['graph_y'])
 		
 		# Settings for remote rabbitmq	
-		self.rabbitmq_remote_server = [self.str2bool(config['GLOBALS']['rabbitmq_remote_server'])]
+		self.rabbitmq_remote = self.str2bool(config['GLOBALS']['rabbitmq_remote'])
 		self.rabbitmq_address = str(config['GLOBALS']['rabbitmq_address'])
 		self.rabbitmq_port = int(config['GLOBALS']['rabbitmq_port'])
 		self.rabbitmq_vhost = str(config['GLOBALS']['rabbitmq_vhost'])
