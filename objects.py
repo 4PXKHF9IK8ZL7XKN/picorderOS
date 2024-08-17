@@ -446,7 +446,7 @@ class preferences(object):
 		self.graph_y = int(config['GLOBALS']['graph_y'])
 		
 		# Settings for remote rabbitmq	
-		self.rabbitmq_remote_server = bool(config['GLOBALS']['rabbitmq_remote_server'])
+		self.rabbitmq_remote_server = [self.str2bool(config['GLOBALS']['rabbitmq_remote_server'])]
 		self.rabbitmq_address = str(config['GLOBALS']['rabbitmq_address'])
 		self.rabbitmq_port = int(config['GLOBALS']['rabbitmq_port'])
 		self.rabbitmq_vhost = str(config['GLOBALS']['rabbitmq_vhost'])
