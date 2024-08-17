@@ -66,7 +66,7 @@ def main():
 	while event:
 		(tv_sec, tv_usec, type, code, value) = struct.unpack(FORMAT, event)
 		if type != 0 or code != 0 or value != 0:
-			keyboard_message = type,code,value,tv_sec,tv_usec
+			keyboard_message = type,code,value,tv_sec,tv_usec, configure.rabbitmq_tag
 			publish("keyboard",keyboard_message)
 			#print("Event type %u, code %u, value %u at %d.%d" % \
 			#(type, code, value, tv_sec, tv_usec))
