@@ -19,7 +19,7 @@ Stands for: long int, long int, unsigned short, unsigned short, unsigned int
 FORMAT = 'llHHI'
 EVENT_SIZE = struct.calcsize(FORMAT)
 
-if configure.rabbitmq_remote_server:
+if configure.rabbitmq_remote:
 	credentials = pika.PlainCredentials(configure.rabbitmq_user,configure.rabbitmq_password)
 	connection = pika.BlockingConnection(pika.ConnectionParameters(configure.rabbitmq_address,configure.rabbitmq_port,configure.rabbitmq_vhost,credentials))
 	channel = connection.channel()
