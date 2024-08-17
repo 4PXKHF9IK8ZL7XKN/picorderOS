@@ -793,7 +793,7 @@ def sensor_process():
 			interrupt_checker()
 				
 			if configure.sensehat:
-				sensehat_data = sensors.get_sensehat()
+				sensehat_data = sensors.get_sensehat(),.rabbitmq_tag
 				publish("sensehat",sensehat_data)
 				
 			interrupt_checker()
