@@ -25,6 +25,9 @@ channel.queue_bind(
     exchange='sensor_data', queue='', routing_key='GPS_DATA')
 
 channel.queue_bind(
+    exchange='sensor_data', queue='', routing_key='sensehat_joystick')
+
+channel.queue_bind(
     exchange='sensor_data', queue='', routing_key='sensehat')
 
 channel.queue_bind(
