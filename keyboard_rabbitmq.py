@@ -9,7 +9,7 @@ from objects import *
 
 DEBUG = False
 
-infile_path = "/dev/input/event" + (sys.argv[1] if len(sys.argv) > 1 else "3")
+infile_path = configure.keyboard_input_path
 
 """
 FORMAT represents the format used by linux kernel input event struct
@@ -78,11 +78,12 @@ def main():
 	in_file.close()
 
 if __name__ == "__main__":
-	try:
-		declare_channel()
-		main()
-		signal.signal(signal.SIGINT, signal_handler)
-	except KeyboardInterrupt or Exception:
-		disconnect()
-		exit()
+	if configure.keyboard_input:
+		try:
+			declare_channel()
+			main()
+			signal.signal(signal.SIGINT, signal_handler)
+		except KeyboardInterrupt or Exception:
+			disconnect()
+			exit()
 
