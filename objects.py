@@ -138,8 +138,8 @@ class preferences(object):
 							'moire':'no',
 							'# Enables video playback':None,
 							'video':'no',
-							'# Rabbitmq Remote':'no',
-							'rabbitmq_remote':'no',
+							'# Rabbitmq Remote':'None',
+							'rabbitmq_remote_server':'no',
 							'rabbitmq_address':'127.0.0.1',
 							'rabbitmq_port':'5672',
 							'rabbitmq_vhost':'/',	
@@ -444,6 +444,14 @@ class preferences(object):
 		self.graph_height = int(config['GLOBALS']['graph_height'])
 		self.graph_x = int(config['GLOBALS']['graph_x'])
 		self.graph_y = int(config['GLOBALS']['graph_y'])
+		
+		# Settings for remote rabbitmq	
+		self.rabbitmq_remote_server = bool(config['GLOBALS']['rabbitmq_remote_server'])
+		self.rabbitmq_address = str(config['GLOBALS']['rabbitmq_address'])
+		self.rabbitmq_port = int(config['GLOBALS']['rabbitmq_port'])
+		self.rabbitmq_vhost = str(config['GLOBALS']['rabbitmq_vhost'])
+		self.rabbitmq_user = str(config['GLOBALS']['rabbitmq_user'])
+		self.rabbitmq_password = str(config['GLOBALS']['rabbitmq_password'])
 
 		# Global holder for current position (lat,lon) as provided by GPS/etc. 
 		self.position = [47,47]
