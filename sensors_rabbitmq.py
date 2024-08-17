@@ -522,7 +522,7 @@ class sensor(object):
 	def get_MLX90614(self):
 		amb_temp = MLX90614.data_to_temp(MLX90614.get_amb_temp)
 		obj_temp = MLX90614.data_to_temp(MLX90614.get_obj_temp)
-		return amb_temp, obj_temp, ,configure.rabbitmq_tag
+		return amb_temp, obj_temp, configure.rabbitmq_tag
 
 
 
