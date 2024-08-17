@@ -725,19 +725,19 @@ def sensor_process():
 			interrupt_checker()
 			
 			if configure.bme:
-				bme680 = sensors.get_bme680(),config.rabbitmq_tag
+				bme680 = sensors.get_bme680(),configure.rabbitmq_tag
 				publish("bme680",bme680)
 				
 			interrupt_checker()
 				
 			if configure.bmp280:
-				bmp280 = sensors.get_bmp280(),config.rabbitmq_tag
+				bmp280 = sensors.get_bmp280(),configure.rabbitmq_tag
 				publish("bmp280",bmp280)
 				
 			interrupt_checker()
 				
 			if configure.SHT30:
-				sht30 = sensors.get_sht30(),config.rabbitmq_tag
+				sht30 = sensors.get_sht30(),configure.rabbitmq_tag
 				publish("sht30",sht30)
 				
 			interrupt_checker()		
@@ -786,7 +786,7 @@ def sensor_process():
 			interrupt_checker()
 				
 			if configure.gps:
-				gps_parsed = sensors.get_gps(),config.rabbitmq_tag
+				gps_parsed = sensors.get_gps(),configure.rabbitmq_tag
 				if gps_parsed[0] is not None and gps_parsed[1] is not None:
 					publish("GPS_DATA",gps_parsed)
 				
