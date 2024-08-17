@@ -67,7 +67,7 @@ def main():
 			print("The joystick was {} {}".format(event.action, event.direction))
 
 if __name__ == "__main__":
-	if configure.sensehat_joystick:
+	if configure.input_joystick:
 		try:
 			declare_channel()
 			main()
@@ -75,4 +75,7 @@ if __name__ == "__main__":
 		except KeyboardInterrupt or Exception:
 			disconnect()
 			exit()
+	else:
+		print("Service Disabled")
+		exit(1)
 
