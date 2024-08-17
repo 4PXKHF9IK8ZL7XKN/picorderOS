@@ -86,4 +86,7 @@ if __name__ == "__main__":
 		except KeyboardInterrupt or Exception:
 			disconnect()
 			exit()
+	else:
+		print("Service Disabled")
+		exit(1)
 
