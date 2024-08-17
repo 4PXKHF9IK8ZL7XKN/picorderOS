@@ -378,14 +378,14 @@ class sensor(object):
 	def cos_gen(self, offset = 0):
 		wavestep = math.cos(self.step)
 		self.step += .1
-		return wavestep
+		return wavestep 
 
 	def get_thermal_frame(self):
 		self.thermal_frame = amg.pixels
 		data = numpy.array(self.thermal_frame)
 		high = numpy.max(data)
 		low = numpy.min(data)
-		return self.thermal_frame
+		return self.thermal_frame ,configure.rabbitmq_tag
 
 	def get_gps(self):
 		if configure.gps:
@@ -394,7 +394,7 @@ class sensor(object):
 			
 		else:
 			position = [None,None]
-		return position
+		return position ,configure.rabbitmq_tag
 
 	def get_bme680(self):
 		self.bme680_temp = self.bme680.temperature
@@ -402,35 +402,35 @@ class sensor(object):
 		self.bme680_press = self.bme680.pressure
 		self.bme680_voc = self.bme680.gas / 1000
 		self.bme680_alt = self.bme680.altitude 
-		return self.bme680_temp,self.bme680_humi,self.bme680_press, self.bme680_voc, self.bme680_alt
+		return self.bme680_temp,self.bme680_humi,self.bme680_press, self.bme680_voc, self.bme680_alt ,configure.rabbitmq_tag
 		
 		
 	def get_bmp280(self):
 		self.bmp280_temp = self.bmp280.temperature
 		self.bmp280_press = self.bmp280.pressure
 		self.bmp280_alt = self.bmp280.altitude 
-		return self.bmp280_temp ,self.bmp280_press, self.bmp280_alt		
+		return self.bmp280_temp ,self.bmp280_press, self.bmp280_alt	,configure.rabbitmq_tag	
 		
 	def get_sht30(self):
 		self.sht30_temp = self.sht30.temperature
 		self.sht30_rel_humi = self.sht30.relative_humidity
-		return self.sht30_temp , self.sht30_rel_humi 
+		return self.sht30_temp , self.sht30_rel_humi ,configure.rabbitmq_tag
 		
 	def get_lsm6ds3(self):
 		self.lsm6ds3_accel_X, self.lsm6ds3_accel_Y, self.lsm6ds3_accel_Z = self.lsm6ds3.acceleration
 		self.lsm6ds3_gyro_X, self.lsm6ds3_gyro_Y, self.lsm6ds3_gyro_Z = self.lsm6ds3.gyro
-		return self.lsm6ds3_accel_X ,self.lsm6ds3_accel_Y, self.lsm6ds3_accel_Z, self.lsm6ds3_gyro_X, self.lsm6ds3_gyro_Y, self.lsm6ds3_gyro_Z
+		return self.lsm6ds3_accel_X ,self.lsm6ds3_accel_Y, self.lsm6ds3_accel_Z, self.lsm6ds3_gyro_X, self.lsm6ds3_gyro_Y, self.lsm6ds3_gyro_Z ,configure.rabbitmq_tag
 		
 
 	def get_lis3mdl(self):
 		self.lis3mdl_X, self.lis3mdl_Y, self.lis3mdl_Z = self.lis3mdl.magnetic
-		return self.lis3mdl_X, self.lis3mdl_Y, self.lis3mdl_Z
+		return self.lis3mdl_X, self.lis3mdl_Y, self.lis3mdl_Z ,configure.rabbitmq_tag
 		
 	def get_apds9960(self):
 		self.apds9960_proximity = self.apds9960.proximity
 		self.apds9960_gesture = self.apds9960.gesture()
 		self.apds9960_colore_r ,self.apds9960_colore_g ,self.apds9960_colore_b ,self.apds9960_colore_c = self.apds9960.color_data
-		return self.apds9960_proximity, self.apds9960_gesture, self.apds9960_colore_r ,self.apds9960_colore_g ,self.apds9960_colore_b ,self.apds9960_colore_c, 
+		return self.apds9960_proximity, self.apds9960_gesture, self.apds9960_colore_r ,self.apds9960_colore_g ,self.apds9960_colore_b ,self.apds9960_colore_c, configure.rabbitmq_tag
 		
 		
 	def get_scd4x(self):
@@ -442,7 +442,7 @@ class sensor(object):
 		except:
 			pass	
 		
-		return self.scd4x_CO2, self.scd4x_temp, self.scd4x_humi
+		return self.scd4x_CO2, self.scd4x_temp, self.scd4x_humi ,configure.rabbitmq_tag
 		
 
 	def get_sensehat(self):
@@ -459,7 +459,7 @@ class sensor(object):
 		self.sh_accy = acceldata['y']
 		self.sh_accz = acceldata['z']
 			
-		return self.sh_temp, self.sh_baro, self.sh_humi, self.sh_magx, self.sh_magy, self.sh_magz, self.sh_accx, self.sh_accy, self.sh_accz
+		return self.sh_temp, self.sh_baro, self.sh_humi, self.sh_magx, self.sh_magy, self.sh_magz, self.sh_accx, self.sh_accy, self.sh_accz ,configure.rabbitmq_tag
 		
 	def get_pocket_geiger(self):
 		data = self.radiation.status()
@@ -468,7 +468,7 @@ class sensor(object):
 		# times 100 to convert to urem/h
 		self.radiat.set(rad_data*100, timestamp, position)
 		
-		return self.radiat
+		return self.radiat ,configure.rabbitmq_tag
 		
 	# provides the basic definitions for the system vitals sensor readouts
 	def get_system_vitals(self):
@@ -492,7 +492,7 @@ class sensor(object):
 		self.bytsent = (float(psutil.net_io_counters().bytes_sent * 0.00001))
 		self.bytrece = (float(psutil.net_io_counters().bytes_recv * 0.00001))
 		
-		return self.uptime, self.cpuload ,self.cputemp, self.cpuperc, self.virtmem, self.diskuse, self.bytsent, self.bytrece
+		return self.uptime, self.cpuload ,self.cputemp, self.cpuperc, self.virtmem, self.diskuse, self.bytsent, self.bytrece ,configure.rabbitmq_tag
 		
 	def get_generators(self):
 		timestamp = time.time()
@@ -500,7 +500,7 @@ class sensor(object):
 		self.tanwave = float(self.tan_gen()*100)
 		self.coswave = float(self.cos_gen()*100)
 		self.sinwav2 = float(self.sin2_gen()*100)		
-		return self.sinewav, self.tanwave, self.coswave, self.sinwav2
+		return self.sinewav, self.tanwave, self.coswave, self.sinwav2 ,configure.rabbitmq_tag
 
 	def get_envirophat(self):
 		self.rgb = light.rgb()
@@ -517,12 +517,12 @@ class sensor(object):
 		self.ep_accx = self.acc_values[0]
 		self.ep_accy = self.acc_values[1]
 		self.ep_accz = self.acc_values[2]	
-		return self.ep_temp, self.ep_baro, self.ep_colo, self.ep_magx, self.ep_magy, self.ep_magz, self.ep_accx, self.ep_accy, self.ep_accz
+		return self.ep_temp, self.ep_baro, self.ep_colo, self.ep_magx, self.ep_magy, self.ep_magz, self.ep_accx, self.ep_accy, self.ep_accz, configure.rabbitmq_tag
 		
 	def get_MLX90614(self):
 		amb_temp = MLX90614.data_to_temp(MLX90614.get_amb_temp)
 		obj_temp = MLX90614.data_to_temp(MLX90614.get_obj_temp)
-		return amb_temp, obj_temp
+		return amb_temp, obj_temp, ,configure.rabbitmq_tag
 
 
 
@@ -725,19 +725,19 @@ def sensor_process():
 			interrupt_checker()
 			
 			if configure.bme:
-				bme680 = sensors.get_bme680(),configure.rabbitmq_tag
+				bme680 = sensors.get_bme680()
 				publish("bme680",bme680)
 				
 			interrupt_checker()
 				
 			if configure.bmp280:
-				bmp280 = sensors.get_bmp280(),configure.rabbitmq_tag
+				bmp280 = sensors.get_bmp280()
 				publish("bmp280",bmp280)
 				
 			interrupt_checker()
 				
 			if configure.SHT30:
-				sht30 = sensors.get_sht30(),configure.rabbitmq_tag
+				sht30 = sensors.get_sht30()
 				publish("sht30",sht30)
 				
 			interrupt_checker()		
@@ -786,14 +786,14 @@ def sensor_process():
 			interrupt_checker()
 				
 			if configure.gps:
-				gps_parsed = sensors.get_gps(),configure.rabbitmq_tag
+				gps_parsed = sensors.get_gps()
 				if gps_parsed[0] is not None and gps_parsed[1] is not None:
 					publish("GPS_DATA",gps_parsed)
 				
 			interrupt_checker()
 				
 			if configure.sensehat:
-				sensehat_data = sensors.get_sensehat(),configure.rabbitmq_tag
+				sensehat_data = sensors.get_sensehat()
 				publish("sensehat",sensehat_data)
 				
 			interrupt_checker()
