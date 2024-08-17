@@ -30,7 +30,9 @@ class preferences(object):
 							'# Select TR-108, or TR-109, or simply Command Line Interfact (CLI). You must choose only one.':None,
 							'tr108':'no',									# Running a TR-108 - mutually exclusive with tr109
 							'tr109':'no',									# Running a TR-109 - mutually exclusive with tr108
-							'CLI':'yes'										# Running in the Command Line, good for terminals/SSH
+							'CLI':'yes',										# Running in the Command Line, good for terminals/SSH
+							'# Rabbitmq_Tag allows to identify the sensordata for remote or local origin':None,
+							'rabbitmq_tag':'local'
 							}
 
 		config['SENSORS'] =  {'# Only TR-108 uses SenseHat':None,
@@ -80,6 +82,9 @@ class preferences(object):
 							'capsensitivity':'50',
 							'# Manual control allows the front end to provide its own operator input handling':None,
 							'manual_input':'no',
+							'# Keyboard Input - configures the /dev/input/event as lisener and sends this keyboard inputs via rabbitmq':None,
+							'keyboard_input':'no',
+							'keyboard_input_path':'/dev/input/event0'
 							}							
 		
 		config['OUTPUT'] = {'# Display Target (for luma/other driver etc) 1 is st7735 Luma Display.':None,
@@ -216,6 +221,8 @@ class preferences(object):
 		self.tr108 = self.str2bool(config['SYSTEM']['tr108'])
 		self.tr109 = self.str2bool(config['SYSTEM']['tr109'])
 		self.CLI = self.str2bool(config['SYSTEM']['CLI'])
+		
+		self.rabbitmq_tag = str(config['SYSTEM']['rabbitmq_tag'])		
 
 # SENSORS----------------------------------------------------------------------#
 
@@ -262,6 +269,9 @@ class preferences(object):
 		# CAP1208 and sensitivity settings
 		self.input_cap1208 = self.str2bool(config['INPUT']['cap1208'])
 		self.CAPSENSITIVITY = int(config['INPUT']['capsensitivity'])
+
+		self.keyboard_input = self.str2bool(config['INPUT']['keyboard_input'])
+		self.keyboard_input_path = str(config['INPUT']['keyboard_input_path'])
 
 
 # PIN ASSIGNMENTS--------------------------------------------------------------#]
