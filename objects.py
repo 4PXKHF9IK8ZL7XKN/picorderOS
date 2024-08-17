@@ -138,6 +138,13 @@ class preferences(object):
 							'moire':'no',
 							'# Enables video playback':None,
 							'video':'no',
+							'# Rabbitmq Remote':'no',
+							'rabbitmq_remote':'no',
+							'rabbitmq_address':'127.0.0.1',
+							'rabbitmq_port':'5672',
+							'rabbitmq_vhost':'/',	
+							'rabbitmq_user':'rabbit',
+							'rabbitmq_password':'password',
 							'# Enables audio playback (videos will not play without this)':None,
 							'audio':'no',									# Enables audio playback
 							'# Enables warble playback':None,
