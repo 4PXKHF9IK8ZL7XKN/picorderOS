@@ -390,11 +390,11 @@ class sensor(object):
 	def get_gps(self):
 		if configure.gps:
 			gps_data = GPS_function()
-			position = [gps_data["lat"],gps_data["lon"]]
+			position = [gps_data["lat"],gps_data["lon"], configure.rabbitmq_tag]
 			
 		else:
-			position = [None,None]
-		return position ,configure.rabbitmq_tag
+			position = [None,None, configure.rabbitmq_tag]
+		return position 
 
 	def get_bme680(self):
 		self.bme680_temp = self.bme680.temperature
