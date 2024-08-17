@@ -128,12 +128,10 @@ if configure.EM:
 	from modulated_em import *
 
 if configure.rabbitmq_remote_server:
-	print("Remote Server ON")
 	credentials = pika.PlainCredentials(configure.rabbitmq_user,configure.rabbitmq_password)
 	connection = pika.BlockingConnection(pika.ConnectionParameters(configure.rabbitmq_address,configure.rabbitmq_port,configure.rabbitmq_vhost,credentials))
 	channel = connection.channel()
 else:
-	print("Remote Server OFF")
 	connection = pika.BlockingConnection(pika.ConnectionParameters('localhost'))
 	channel = connection.channel()
     
@@ -717,8 +715,8 @@ def sensor_process():
 	
 	counter = 0
 	
-	meta_massage = str(sensors.get_index())
-	print(meta_massage)
+	#meta_massage = str(sensors.get_index())
+	#print(meta_massage)
 	#publish('sensor_metadata',meta_massage)
 
 	while True:
@@ -857,7 +855,6 @@ if __name__ == "__main__":
 		
 # input's from input.py
 # configure.input_pcf8575
-# configure.input_cap_mpr121
 # configure.sensehat adn configure.input_joystick
 # configure.input_gpio
 # configure.input_kb
