@@ -51,9 +51,6 @@ animation_step = 0
 sensor_animation = 0
 lcars_theme_selection = 0
 
-mapping_book_byname = {}
-mapping_book = {}
-
 tmp_dirpath = tempfile.mkdtemp()
 os.chmod(tmp_dirpath , 0o777)
 
@@ -1012,9 +1009,6 @@ def update(ch, method, properties, body):
 	global TERMALFRAME
 	global selected_sensor_values
 	
-	#print('book=', mapping_book_byname)
-	#print('populating=', method.routing_key)
-	
 	timestamp = time.time()
 	value = random.randint(1, 100) 
 	fragdata = []
@@ -1393,21 +1387,7 @@ def init(device):
 	lcars_giantfont = ImageFont.truetype("assets/babs.otf",int(device.height * 0.235))
 	
 	lcars_type1_build() 
-
-def callback_rabbitmq_meta(ch, method, properties, body):
-	global mapping_book_byname
-	global mapping_book
-	if body == None:
-		time.sleep(0.2)
-	else:
-		sensor_index_dict = ast.literal_eval(body.decode())	
-		configure.max_sensors[0] = sensor_index_dict['sensor_index']
-		ret_index = sensor_index_dict.pop('sensor_index')
-		mapping_book_byname = sensor_index_dict
-		for i in sensor_index_dict:
-			mapping_book.update({sensor_index_dict[i]: i})
-		channel.basic_cancel('sensor_metadata')
-             
+            
 def callback(ch, method, properties, body):
 	global style
 	global i
@@ -1465,10 +1445,6 @@ class Job(threading.Thread):
 
 
 if __name__ == "__main__":
-	channel.basic_consume(consumer_tag='sensor_metadata',queue='sensor_metadata',on_message_callback=callback_rabbitmq_meta, auto_ack=True)
-	# Waiting for the Metadata message ca 10 sec
-	channel.start_consuming()
-
 	channel.basic_consume(queue='',on_message_callback=callback, auto_ack=True)
 	# setup the thread with timer and start the IRQ reset function
 	job = Job(interval=timedelta(seconds=WAIT_TIME_SECONDS), execute=animation_push)
