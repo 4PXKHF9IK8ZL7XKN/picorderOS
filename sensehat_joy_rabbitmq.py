@@ -59,7 +59,7 @@ def main():
 		publish("sensehat_joystick",joystick_message)
 		if DEBUG:
 			print("The joystick was {} {}".format(event.action, event.direction))
-		sleep(0.1)
+		time.sleep(0.1)
 		event = sense.stick.wait_for_event()
 		joystick_message = event.action, event.direction, configure.rabbitmq_tag
 		publish("sensehat_joystick",joystick_message)
