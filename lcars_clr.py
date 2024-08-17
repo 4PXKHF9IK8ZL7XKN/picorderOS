@@ -1024,10 +1024,12 @@ def update(ch, method, properties, body):
 	else:
 		targetsize = configure.buffer_size[0]
 		
+	 
 	if method.routing_key == 'GPS_DATA':
 		# needs maybe refiment later, this can be mixed local and remote
 		GPS_DATA[0],GPS_DATA[1],GPS_DATA[2]  = body.decode().strip("[]").split(",")	
-		
+	
+	 	
 	elif method.routing_key == 'bme680':	
 		# decodes data byte stream and splits the values by comma
 		sensor_values = body.decode().strip("()").split(",")
@@ -1086,6 +1088,8 @@ def update(ch, method, properties, body):
 			elif cleanup_index == 15:
 				# bytes rec 
 				sensor_values[7] = float(value4555)
+			elif cleanup_index == 16:
+				 origin_tag = value4555.strip("' '")
 			cleanup_index = cleanup_index + 1
 
 		index = 0
@@ -1095,6 +1099,7 @@ def update(ch, method, properties, body):
 			SYSTEMVITALES[index][6] = timestamp
 			SYSTEMVITALES[index][7] = GPS_DATA[0]
 			SYSTEMVITALES[index][8] = GPS_DATA[1]
+			SYSTEMVITALES[index][9] = origin_tag
 			#print("MATRIX", SYSTEMVITALES[index])
 			fragdata.append(SYSTEMVITALES[index])		
 			# creates a new dataframe to add new data 	
@@ -1107,10 +1112,13 @@ def update(ch, method, properties, body):
 			if currentsize_persensor > targetsize * 12:
 				trimmbuffer_flag = True		
 			index = index + 1	
-			
+	
+	 		
 	elif method.routing_key == 'generators':
 	    # decodes data byte stream and splits the values by comma
-		sensor_values = body.decode().strip("()").split(",")		
+		sensor_values = body.decode().strip("()").split(",")
+		origin_tag = sensor_values[-1:]	
+		del sensor_values[-1]	
 		index = 0
 		for value in sensor_values:
 			#print("GENERATORS:", float(value))
@@ -1118,6 +1126,7 @@ def update(ch, method, properties, body):
 			GENERATORS[index][6] = timestamp
 			GENERATORS[index][7] = GPS_DATA[0]
 			GENERATORS[index][8] = GPS_DATA[1]
+			GENERATORS[index][9] = origin_tag[0].strip("' '")
 			#print("MATRIX", GENERATORS[index])
 			fragdata.append(GENERATORS[index])		
 			# creates a new dataframe to add new data 	
@@ -1129,10 +1138,13 @@ def update(ch, method, properties, body):
 			if currentsize_persensor > targetsize * 4:
 				trimmbuffer_flag = True	
 			index = index + 1	
-				
+	
+	 			
 	elif method.routing_key == 'sensehat':
 	    # decodes data byte stream and splits the values by comma
-		sensor_values = body.decode().strip("()").split(",")		
+		sensor_values = body.decode().strip("()").split(",")
+		origin_tag = sensor_values[-1:]	
+		del sensor_values[-1]		
 		index = 0
 		for value in sensor_values:
 			#print("SENSEHAT:", float(value))
@@ -1140,6 +1152,7 @@ def update(ch, method, properties, body):
 			SENSEHAT[index][6] = timestamp
 			SENSEHAT[index][7] = GPS_DATA[0]
 			SENSEHAT[index][8] = GPS_DATA[1]
+			SENSEHAT[index][9] = origin_tag[0].strip("' '")
 			#print("MATRIX", SENSEHAT[index])
 			fragdata.append(SENSEHAT[index])		
 			# creates a new dataframe to add new data 	
@@ -1151,10 +1164,13 @@ def update(ch, method, properties, body):
 			if currentsize_persensor > targetsize * 9:
 				trimmbuffer_flag = True		
 			index = index + 1
-			
+	
+	 		
 	elif method.routing_key == 'apds9960':
 		# decodes data byte stream and splits the values by comma
-		sensor_values = body.decode().strip(" () ").split(",")		
+		sensor_values = body.decode().strip(" () ").split(",")	
+		origin_tag = sensor_values[-1:]	
+		del sensor_values[-1]			
 		index = 0	
 		for value in sensor_values:
 			#print("APDS9960:", float(value))
@@ -1162,6 +1178,7 @@ def update(ch, method, properties, body):
 			APDS9960[index][6] = timestamp
 			APDS9960[index][7] = GPS_DATA[0]
 			APDS9960[index][8] = GPS_DATA[1]
+			APDS9960[index][9] = origin_tag[0].strip("' '")
 			#print("MATRIX", APDS9960[index])
 			fragdata.append(APDS9960[index])		
 			# creates a new dataframe to add new data 	
@@ -1174,10 +1191,13 @@ def update(ch, method, properties, body):
 				trimmbuffer_flag = True		
 			index = index + 1
 		
-			
+	
+	 		
 	elif method.routing_key == 'lis3mdl':
 		# decodes data byte stream and splits the values by comma
-		sensor_values = body.decode().strip("()").split(",")		
+		sensor_values = body.decode().strip("()").split(",")	
+		origin_tag = sensor_values[-1:]	
+		del sensor_values[-1]		
 		index = 0			
 		for value in sensor_values:
 			#print("LIS3MDL:", float(value))
@@ -1185,6 +1205,7 @@ def update(ch, method, properties, body):
 			LIS3MDL[index][6] = timestamp
 			LIS3MDL[index][7] = GPS_DATA[0]
 			LIS3MDL[index][8] = GPS_DATA[1]
+			LIS3MDL[index][9] = origin_tag[0].strip("' '")
 			#print("MATRIX", LIS3MDL[index])
 			fragdata.append(LIS3MDL[index])		
 			# creates a new dataframe to add new data 	
@@ -1197,9 +1218,12 @@ def update(ch, method, properties, body):
 				trimmbuffer_flag = True		
 			index = index + 1			
 
+	 
 	elif method.routing_key == 'lsm6ds3':
 		# decodes data byte stream and splits the values by comma
-		sensor_values = body.decode().strip("()").split(",")		
+		sensor_values = body.decode().strip("()").split(",")
+		origin_tag = sensor_values[-1:]	
+		del sensor_values[-1]			
 		index = 0	
 		for value in sensor_values:
 			#print("LSM6DS3:", float(value))
@@ -1207,6 +1231,7 @@ def update(ch, method, properties, body):
 			LSM6DS3[index][6] = timestamp
 			LSM6DS3[index][7] = GPS_DATA[0]
 			LSM6DS3[index][8] = GPS_DATA[1]
+			LSM6DS3[index][9] = origin_tag[0].strip("' '")
 			#print("MATRIX", LSM6DS3[index])
 			fragdata.append(LSM6DS3[index])		
 			# creates a new dataframe to add new data 	
@@ -1219,9 +1244,12 @@ def update(ch, method, properties, body):
 				trimmbuffer_flag = True		
 			index = index + 1	
 		
+	 
 	elif method.routing_key == 'scd4x':
 		# decodes data byte stream and splits the values by comma
-		sensor_values = body.decode().strip("()").split(",")		
+		sensor_values = body.decode().strip("()").split(",")
+		origin_tag = sensor_values[-1:]	
+		del sensor_values[-1]	
 		index = 0
 		for value in sensor_values:
 			#print("SCD4X:", float(value))
@@ -1229,6 +1257,7 @@ def update(ch, method, properties, body):
 			SCD4X[index][6] = timestamp
 			SCD4X[index][7] = GPS_DATA[0]
 			SCD4X[index][8] = GPS_DATA[1]
+			SCD4X[index][9] = origin_tag[0].strip("' '")
 			#print("MATRIX", SCD4X[index])
 			fragdata.append(SCD4X[index])		
 			# creates a new dataframe to add new data 	
@@ -1241,9 +1270,12 @@ def update(ch, method, properties, body):
 				trimmbuffer_flag = True		
 			index = index + 1			
 		
+	 
 	elif method.routing_key == 'sht30':
 		# decodes data byte stream and splits the values by comma
-		sensor_values = body.decode().strip("()").split(",")		
+		sensor_values = body.decode().strip("()").split(",")
+		origin_tag = sensor_values[-1:]
+		del sensor_values[-1]			
 		index = 0		
 		for value in sensor_values:
 			#print("SHT30:", float(value))
@@ -1251,6 +1283,7 @@ def update(ch, method, properties, body):
 			SHT30[index][6] = timestamp
 			SHT30[index][7] = GPS_DATA[0]
 			SHT30[index][8] = GPS_DATA[1]
+			SHT30[index][9] = origin_tag[0].strip("' '")
 			#print("SHT30", SHT30[index])
 			fragdata.append(SHT30[index])		
 			# creates a new dataframe to add new data 	
@@ -1262,7 +1295,8 @@ def update(ch, method, properties, body):
 			if currentsize_persensor > targetsize * 3:
 				trimmbuffer_flag = True		
 			index = index + 1
-		
+	
+	 
 	elif method.routing_key == 'bmp280':
 		# decodes data byte stream and splits the values by comma
 		sensor_values = body.decode().strip("()").split(",")	
@@ -1288,14 +1322,17 @@ def update(ch, method, properties, body):
 				trimmbuffer_flag = True		
 			index = index + 1	
 	
+	 
 	elif method.routing_key == 'thermal_frame':
 	    # decodes data byte stream and splits the values by comma
-		sensor_values = body.decode()	
-		sensor_frame = ast.literal_eval(sensor_values)
+		sensor_values = body.decode()
+		sensor_frame = ast.literal_eval(sensor_values)	
+		origin_tag = sensor_frame[1]
 		#print("TERMALFRAME:", sensor_frame)
+		#print("TERMALFRAME:", sensor_frame[1])
 		index = 0
 		
-		for sensor_array_line in sensor_frame:
+		for sensor_array_line in sensor_frame[0]:
 			for datapoint in sensor_array_line:
 				TERMALFRAME[index] = float(datapoint)
 				index = index + 1
@@ -1303,11 +1340,12 @@ def update(ch, method, properties, body):
 		TERMALFRAME[64] = timestamp
 		TERMALFRAME[65] = GPS_DATA[0]
 		TERMALFRAME[66] = GPS_DATA[1]
+		TERMALFRAME[67] = origin_tag
 
 		#print("MATRIX", TERMALFRAME)
 		fragdata_termal.append(TERMALFRAME)		
 		# creates a new dataframe to add new data 	
-		newdata = pd.DataFrame(fragdata_termal, columns=['Value0','Value1','Value2','Value3','Value4','Value5','Value6','Value7','Value8','Value9','Value10','Value11','Value12','Value13','Value14','Value15','Value16','Value17','Value18','Value19','Value20','Value21','Value22','Value23','Value24','Value25','Value26','Value27','Value28','Value29','Value30','Value31','Value32','Value33','Value34','Value35','Value36','Value37','Value38','Value39','Value40','Value41','Value42','Value43','Value44','Value45','Value46','Value47','Value48','Value49','Value50','Value51','Value52','Value53','Value54','Value55','Value56','Value57','Value58','Value59','Value60','Value61','Value62','Value63','timestamp','latitude','longitude'])
+		newdata = pd.DataFrame(fragdata_termal, columns=['Value0','Value1','Value2','Value3','Value4','Value5','Value6','Value7','Value8','Value9','Value10','Value11','Value12','Value13','Value14','Value15','Value16','Value17','Value18','Value19','Value20','Value21','Value22','Value23','Value24','Value25','Value26','Value27','Value28','Value29','Value30','Value31','Value32','Value33','Value34','Value35','Value36','Value37','Value38','Value39','Value40','Value41','Value42','Value43','Value44','Value45','Value46','Value47','Value48','Value49','Value50','Value51','Value52','Value53','Value54','Value55','Value56','Value57','Value58','Value59','Value60','Value61','Value62','Value63','timestamp','latitude','longitude','rabbitmq_tag'])
 		BUFFER_GLOBAL_TERMALFRAME = pd.concat([BUFFER_GLOBAL_TERMALFRAME,newdata]).drop_duplicates().reset_index(drop=True)
 		# we get len of one sensor					
 		currentsize_termalframe = len(BUFFER_GLOBAL_TERMALFRAME)
