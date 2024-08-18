@@ -38,8 +38,8 @@ BUFFER_GLOBAL_EM = pd.DataFrame(columns=['ssid','signal','quality','frequency','
 
 bme680_temp = [0]
 
-#styles = ["type1", "multi_graph", "termal_view","type3", "type4"]
-styles = ["type1", "multi_graph", "termal_view", "video_playback","type3", "type4"]
+styles = ["type1", "multi_graph","type3", "type4"]
+#styles = ["type1", "multi_graph", "termal_view", "video_playback","type3", "type4"]
 style = "type1"
 i = 0
 i2 = 0
@@ -850,8 +850,8 @@ def lcars_type3_build():
 	
 		#draw.rectangle(device.bounding_box, outline="white", fill="grey")
 		
-		print("lcars_theme:", lcars_theme_selection)
-		print(lcars_theme[lcars_theme_selection])
+		#print("lcars_theme:", lcars_theme_selection)
+		#print(lcars_theme[lcars_theme_selection])
 		
 		lcars_element_gibli(device, draw, device.width*0.15,device.height*0.7 ,3,lcars_theme[lcars_theme_selection]["colore0"])
 		lcars_element_gibli(device, draw, device.width*0.24,device.height*0.7 ,3,lcars_theme[lcars_theme_selection]["colore1"])
@@ -1441,8 +1441,6 @@ def callback(ch, method, properties, body):
 	global sensor_animation
 	global lcars_theme_selection
 	
-	update(ch, method, properties, body)
-	
 	if method.routing_key != 'EVENT':
 		sensor_animation = sensor_animation + 0.5
 		if sensor_animation == 4:
@@ -1452,16 +1450,21 @@ def callback(ch, method, properties, body):
     
 		DICT = body.decode()
 		DICT_CLEAN = ast.literal_eval(DICT)
-		print(DICT_CLEAN)		
+		print('EVENT')		
 		
 		if DICT_CLEAN['geo']:
+			print('EVENT - geo')	
 			style = styles.pop()
 			styles.insert(0, style)
+			print('EVENT')
 			
 		if DICT_CLEAN['met']:
+			print('EVENT - met')	
 			lcars_theme_selection = lcars_theme_selection + 1
 			if lcars_theme_selection == 3: 
 				lcars_theme_selection = 0
+				
+	#update(ch, method, properties, body)
 
 def animation_push():
 	global animation_step
