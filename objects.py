@@ -9,8 +9,6 @@ from os.path import exists
 generators = True
 DEBUG = False
 
-GPS_DATA = [4747.0000, 4747.0000]
-
 class preferences(object):
 	def str2bool(self,v):
   		return v.lower() in ("yes", "true", "t", "1")
@@ -464,7 +462,7 @@ class preferences(object):
 		self.rabbitmq_password = str(config['GLOBALS']['rabbitmq_password'])
 
 		# Global holder for current position (lat,lon) as provided by GPS/etc. 
-		self.position = [47,47]
+		self.position = [47,47,'Tag']
 
 		print("Import Objects")
 # create a shared object for global variables and settings.
