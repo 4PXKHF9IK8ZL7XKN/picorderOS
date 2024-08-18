@@ -21,7 +21,14 @@ import sys
 import time
 import threading
 import ast
+import simpleaudio as sa
 from objects import *
+
+scansound = sa.WaveObject.from_wave_file("assets/scanning.wav")
+clicksound = sa.WaveObject.from_wave_file("assets/clicking.wav")
+beepsound = sa.WaveObject.from_wave_file("assets/beep.wav")
+alarmsound = sa.WaveObject.from_wave_file("assets/alarm.wav")
+
 
 
 print("Loading Event Module")
@@ -49,6 +56,9 @@ queue_name = result.method.queue
 channel.queue_bind(
     exchange='sensor_data', queue='', routing_key='touch')
     
+channel.queue_bind(
+    exchange='sensor_data', queue='', routing_key='keyboard')
+    
 def publish(IN_routing_key,data):
 	configure.beep_ready[0] = True
 	configure.eventready[0] = True	
@@ -75,81 +85,84 @@ def callback(ch, method, properties, body):
 	# mpr121 can map 12 inputs
 	
 	#print("array:", configure.eventlist[0])
+	print("CALLBACK",method.routing_key)
+	if method.routing_key == 'touch':
+		if configure.input_cap_mpr121:
+			sensor_dict_unclean = body.decode()
+			sensor_dict = ast.literal_eval(sensor_dict_unclean)
+			print(sensor_dict)
+			#print(type(sensor_dict))
+			for key in sensor_dict:
+				if sensor_dict['DICT'] == 'A':
+					if not key == 'DICT':
+						if key == 0:
+							EVENT_MAP['geo'] = sensor_dict[key]
+							configure.eventlist[0][0] =  sensor_dict[key]
+						elif key == 1:
+							EVENT_MAP['met'] = sensor_dict[key]
+							configure.eventlist[0][1] =  sensor_dict[key]
+						elif key == 2:
+							EVENT_MAP['bio'] = sensor_dict[key]
+							configure.eventlist[0][2] =  sensor_dict[key]
+						elif key == 3:
+							EVENT_MAP['lib'] = sensor_dict[key]
+							configure.eventlist[0][3] =  sensor_dict[key]
+						elif key == 4:
+							EVENT_MAP['pwr'] = sensor_dict[key]
+							configure.eventlist[0][4] =  sensor_dict[key]
+						elif key == 5:
+							EVENT_MAP['f1/f2'] = sensor_dict[key]
+							configure.eventlist[0][5] =  sensor_dict[key]
+						elif key == 6:
+							EVENT_MAP['I'] = sensor_dict[key]
+							configure.eventlist[0][6] =  sensor_dict[key]
+						elif key == 7:
+							EVENT_MAP['E'] = sensor_dict[key]
+							configure.eventlist[0][7] =  sensor_dict[key]
+						elif key == 8:
+							EVENT_MAP['cancel/switch'] = sensor_dict[key]
+						# no mapping here all keys in the top part of the tric are mapped
+						elif key == 9:
+							pass
+						elif key == 10:
+							pass
+						elif key == 11:
+							pass
+				elif sensor_dict['DICT'] == 'B':
+					if not key == 'DICT':
+						if key == 0:
+							EVENT_MAP['accpt/pool'] = sensor_dict[key]
+							#configure.eventlist[0][8] =  sensor_dict[key]						
+						elif key == 1:
+							EVENT_MAP['intrship/tricrder'] = sensor_dict[key]
+							#configure.eventlist[0][9] =  sensor_dict[key]
+						elif key == 2:
+							EVENT_MAP['EMRG'] = sensor_dict[key]
+							#configure.eventlist[0][10] =  sensor_dict[key]
+						elif key == 3:
+							EVENT_MAP['fwd/input'] = sensor_dict[key]
+							#configure.eventlist[0][11] =  sensor_dict[key]
+						elif key == 4:
+							EVENT_MAP['rvs/erase'] = sensor_dict[key]
+							#configure.eventlist[0][12] =  sensor_dict[key]
+						elif key == 5:
+							EVENT_MAP['Ib'] = sensor_dict[key]
+							#configure.eventlist[0][13] =  sensor_dict[key]
+						elif key == 6:
+							EVENT_MAP['Eb'] = sensor_dict[key]
+							#configure.eventlist[0][14] =  sensor_dict[key]
+						elif key == 7:
+							EVENT_MAP['Id'] = sensor_dict[key]
+						elif key == 8:
+							EVENT_MAP['cancel/switch'] = sensor_dict[key]
+						elif key == 9:
+							pass
+						elif key == 10:
+							pass
+						elif key == 11:
+							pass
+
 	
-	if configure.input_cap_mpr121:
-		sensor_dict_unclean = body.decode()
-		sensor_dict = ast.literal_eval(sensor_dict_unclean)
-		#print(sensor_dict)
-		#print(type(sensor_dict))
-		for key in sensor_dict:
-			if sensor_dict['DICT'] == 'A':
-				if not key == 'DICT':
-					if key == 0:
-						EVENT_MAP['geo'] = sensor_dict[key]
-						configure.eventlist[0][0] =  sensor_dict[key]
-					elif key == 1:
-						EVENT_MAP['met'] = sensor_dict[key]
-						configure.eventlist[0][1] =  sensor_dict[key]
-					elif key == 2:
-						EVENT_MAP['bio'] = sensor_dict[key]
-						configure.eventlist[0][2] =  sensor_dict[key]
-					elif key == 3:
-						EVENT_MAP['lib'] = sensor_dict[key]
-						configure.eventlist[0][3] =  sensor_dict[key]
-					elif key == 4:
-						EVENT_MAP['pwr'] = sensor_dict[key]
-						configure.eventlist[0][4] =  sensor_dict[key]
-					elif key == 5:
-						EVENT_MAP['f1/f2'] = sensor_dict[key]
-						configure.eventlist[0][5] =  sensor_dict[key]
-					elif key == 6:
-						EVENT_MAP['I'] = sensor_dict[key]
-						configure.eventlist[0][6] =  sensor_dict[key]
-					elif key == 7:
-						EVENT_MAP['E'] = sensor_dict[key]
-						configure.eventlist[0][7] =  sensor_dict[key]
-					elif key == 8:
-						EVENT_MAP['cancel/switch'] = sensor_dict[key]
-					# no mapping here all keys in the top part of the tric are mapped
-					elif key == 9:
-						pass
-					elif key == 10:
-						pass
-					elif key == 11:
-						pass
-			elif sensor_dict['DICT'] == 'B':
-				if not key == 'DICT':
-					if key == 0:
-						EVENT_MAP['accpt/pool'] = sensor_dict[key]
-						#configure.eventlist[0][8] =  sensor_dict[key]						
-					elif key == 1:
-						EVENT_MAP['intrship/tricrder'] = sensor_dict[key]
-						#configure.eventlist[0][9] =  sensor_dict[key]
-					elif key == 2:
-						EVENT_MAP['EMRG'] = sensor_dict[key]
-						#configure.eventlist[0][10] =  sensor_dict[key]
-					elif key == 3:
-						EVENT_MAP['fwd/input'] = sensor_dict[key]
-						#configure.eventlist[0][11] =  sensor_dict[key]
-					elif key == 4:
-						EVENT_MAP['rvs/erase'] = sensor_dict[key]
-						#configure.eventlist[0][12] =  sensor_dict[key]
-					elif key == 5:
-						EVENT_MAP['Ib'] = sensor_dict[key]
-						#configure.eventlist[0][13] =  sensor_dict[key]
-					elif key == 6:
-						EVENT_MAP['Eb'] = sensor_dict[key]
-						#configure.eventlist[0][14] =  sensor_dict[key]
-					elif key == 7:
-						EVENT_MAP['Id'] = sensor_dict[key]
-					elif key == 8:
-						EVENT_MAP['cancel/switch'] = sensor_dict[key]
-					elif key == 9:
-						pass
-					elif key == 10:
-						pass
-					elif key == 11:
-						pass
 
 	# joystick can map 5 inputs
 	configure.input_joystick
@@ -171,13 +184,8 @@ def callback(ch, method, properties, body):
 	configure.input_cap1208
 	publish('EVENT',EVENT_MAP)
 	print("EVENT:", EVENT_MAP)
+	click = clicksound.play()
 	#print(f" [x] {method.routing_key}:{body}")
-
-def threaded_events():
-	channel.basic_consume(queue='',on_message_callback=callback, auto_ack=True)
-	channel.start_consuming()
-	
-
 
 if __name__ == '__main__':
 	channel.basic_consume(queue='',on_message_callback=callback, auto_ack=True)
