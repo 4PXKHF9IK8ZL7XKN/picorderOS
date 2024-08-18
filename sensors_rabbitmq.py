@@ -9,13 +9,11 @@ import threading
 import pika
 import signal
 import serial
-import sys
 import picos_pika_worker as publisher_worker
 from pynmeagps import NMEAReader
 import RPi.GPIO as GPIO
 import busio as io
 from datetime import timedelta
-
 
 from multiprocessing import Process,Queue,Pipe
 # the following is a sensor module for use with the PicorderOS
@@ -29,9 +27,6 @@ meta_massage = ""
 # Delcares the IRQ Pins for Cap Touch 
 BUTTON_GPIOA = 17
 BUTTON_GPIOB = 27
-
-touchA_dict = {"DICT":"A",0:False,1:False,2:False,3:False,4:False,5:False,6:False,7:False,8:False,9:False,10:False,11:False}
-touchB_dict = {"DICT":"B",0:False,1:False,2:False,3:False,4:False,5:False,6:False,7:False,8:False,9:False,10:False,11:False}
 
 # set the BUS Freq
 I2C_FRQ = 100000
@@ -179,7 +174,7 @@ def signal_handler(sig, frame):
      
     	
 def button_callbackA(channel):
-	global touchA_dict
+	touchA_dict = {"DICT":"A",0:False,1:False,2:False,3:False,4:False,5:False,6:False,7:False,8:False,9:False,10:False,11:False}
 	for i in range(12):
 		touchA_dict[i] = mpr121A[i].value
 	
@@ -188,8 +183,7 @@ def button_callbackA(channel):
 	pikaworkerA.join()
 
 def button_callbackB(channel):
-	global interrupt_flagB
-	global touchB_dict
+	touchB_dict = {"DICT":"B",0:False,1:False,2:False,3:False,4:False,5:False,6:False,7:False,8:False,9:False,10:False,11:False}
 	for i in range(12):
 		touchB_dict[i] = mpr121B[i].value
 
@@ -678,8 +672,8 @@ def main():
 
 		#GPIO.add_event_detect(BUTTON_GPIOA, GPIO.BOTH, callback=button_callbackA, bouncetime=50)
 		#GPIO.add_event_detect(BUTTON_GPIOB, GPIO.BOTH, callback=button_callbackB, bouncetime=50) 
-		GPIO.add_event_detect(BUTTON_GPIOA, GPIO.RISING, callback=button_callbackA, bouncetime=50)
-		GPIO.add_event_detect(BUTTON_GPIOB, GPIO.RISING, callback=button_callbackB, bouncetime=50) 
+		GPIO.add_event_detect(BUTTON_GPIOA, GPIO.RISING, callback=button_callbackA, bouncetime=10)
+		GPIO.add_event_detect(BUTTON_GPIOB, GPIO.RISING, callback=button_callbackB, bouncetime=10) 
     
     # setup the thread with timer and start the IRQ reset function
 	job = Job(interval=timedelta(seconds=WAIT_TIME_SECONDS), execute=reset)
