@@ -32,6 +32,9 @@ from luma.core.render import canvas
 from PIL import ImageFont
 from datetime import timedelta
 
+import psycopg2
+from picos_psql_config import load_config
+
 BUFFER_GLOBAL = pd.DataFrame(columns=['value','min','max','dsc','sym','dev','timestamp','latitude','longitude','rabbitmq_tag'])
 BUFFER_GLOBAL_TERMALFRAME = pd.DataFrame(columns=['Value0','Value1','Value2','Value3','Value4','Value5','Value6','Value7','Value8','Value9','Value10','Value11','Value12','Value13','Value14','Value15','Value16','Value17','Value18','Value19','Value20','Value21','Value22','Value23','Value24','Value25','Value26','Value27','Value28','Value29','Value30','Value31','Value32','Value33','Value34','Value35','Value36','Value37','Value38','Value39','Value40','Value41','Value42','Value43','Value44','Value45','Value46','Value47','Value48','Value49','Value50','Value51','Value52','Value53','Value54','Value55','Value56','Value57','Value58','Value59','Value60','Value61','Value62','Value63','timestamp','latitude','longitude','rabbitmq_tag'])
 BUFFER_GLOBAL_EM = pd.DataFrame(columns=['ssid','signal','quality','frequency','encrypted','channel','dev','mode','dsc','timestamp','latitude','longitude','rabbitmq_tag'])
@@ -446,21 +449,15 @@ def lcars_element_gibli(device, draw, pos_x,pos_y,rotation,colore):
 	draw.rectangle(Rshape_gibli , colore)
 
 
-
-
-# Init rabbitmq connection
-connection = pika.BlockingConnection(
-    pika.ConnectionParameters(host='localhost'))
-channel = connection.channel()
-
-channel.exchange_declare(exchange='sensor_data', exchange_type='topic')
-
-result = channel.queue_declare('', exclusive=True)
-queue_name = result.method.queue
-
-# We request now all Sensor data and Rabbitmq values to make the graph drawing realy valuable 
-channel.queue_bind(
-    exchange='sensor_data', queue='', routing_key='#')
+def connect_psql(config):
+    """ Connect to the PostgreSQL database server """
+    try:
+        # connecting to the PostgreSQL server
+        with psycopg2.connect(**config) as conn:
+            print('Connected to the PostgreSQL server.')
+            return conn
+    except (psycopg2.DatabaseError, Exception) as error:
+        print(error)
 
 def display_settings(device, args):
     """
@@ -510,6 +507,23 @@ def get_device(actual_args=None):
         return None
 
 
+# Init rabbitmq connection
+connection = pika.BlockingConnection(
+    pika.ConnectionParameters(host='localhost'))
+channel = connection.channel()
+
+channel.exchange_declare(exchange='sensor_data', exchange_type='topic')
+
+result = channel.queue_declare('', exclusive=True)
+queue_name = result.method.queue
+
+# We request now all Sensor data and Rabbitmq values to make the graph drawing realy valuable 
+channel.queue_bind(
+    exchange='sensor_data', queue='', routing_key='#')
+
+# Prepare connection to PSQL
+config = load_config()
+print(connect_psql(config))
 
 
 
