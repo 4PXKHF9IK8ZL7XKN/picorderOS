@@ -10,6 +10,7 @@ import pika
 import signal
 import serial
 import sys
+import picos_pika_worker as publisher_worker
 from pynmeagps import NMEAReader
 import RPi.GPIO as GPIO
 import busio as io
@@ -29,8 +30,8 @@ meta_massage = ""
 BUTTON_GPIOA = 17
 BUTTON_GPIOB = 27
 
-interrupt_flagA = False
-interrupt_flagB = False
+touchA_dict = {"DICT":"A",0:False,1:False,2:False,3:False,4:False,5:False,6:False,7:False,8:False,9:False,10:False,11:False}
+touchB_dict = {"DICT":"B",0:False,1:False,2:False,3:False,4:False,5:False,6:False,7:False,8:False,9:False,10:False,11:False}
 
 # set the BUS Freq
 I2C_FRQ = 100000
@@ -176,35 +177,35 @@ def signal_handler(sig, frame):
     GPIO.cleanup()
     sys.exit(0)
      
-    
-# Interrupt Callback functions for the Touch Sensors
-def button_callbackB_action():
-	touchB_dict = {"DICT":"B",0:False,1:False,2:False,3:False,4:False,5:False,6:False,7:False,8:False,9:False,10:False,11:False}
-	for i in range(12):
-		touchB_dict[i] = mpr121B[i].value
-	publish("touch",touchB_dict)
-    
-
-def button_callbackA_action():
-	touchA_dict = {"DICT":"A",0:False,1:False,2:False,3:False,4:False,5:False,6:False,7:False,8:False,9:False,10:False,11:False}
+    	
+def button_callbackA(channel):
+	global touchA_dict
 	for i in range(12):
 		touchA_dict[i] = mpr121A[i].value
-	publish("touch",touchA_dict)
 	
-def button_callbackA(channel):
-	global interrupt_flagA
-	interrupt_flagA = True
+	pikaworkerA = threading.Thread(target = publisher_worker.main_pika_worker, args = ("touch",touchA_dict))
+	pikaworkerA.start()
+	pikaworkerA.join()
 
 def button_callbackB(channel):
 	global interrupt_flagB
-	interrupt_flagB = True
+	global touchB_dict
+	for i in range(12):
+		touchB_dict[i] = mpr121B[i].value
+
+	pikaworkerB = threading.Thread(target = publisher_worker.main_pika_worker, args = ("touch",touchB_dict))
+	pikaworkerB.start()
+	pikaworkerB.join()
+		
 
 def reset():
-    if configure.input_cap_mpr121:
-        if not GPIO.input(17) or not GPIO.input(27):
-            for i in range(12):
-                null = mpr121B[i].value
-                null = mpr121A[i].value
+	if configure.input_cap_mpr121:
+		if not GPIO.input(17) or not GPIO.input(27):
+			#print("RESETA", touchA_dict)
+			#print("RESETB", touchB_dict)
+			for i in range(12):
+				null = mpr121B[i].value
+				null = mpr121A[i].value
 
 
 # This Class helps to start a thread that runs a timer non blocking to reset the IRQ signal on the mpr121
@@ -287,10 +288,7 @@ class sensor(object):
 			self.scd4x_temp = 0000
 			self.scd4x_humi = 0000
 
-		if configure.generators:
-			self.step = 0.0
-			self.step2 = 0.0
-			self.steptan = 0.0
+	
 
 		if configure.system_vitals:
 			totalmem = float(psutil.virtual_memory().total) / 1024
@@ -352,6 +350,7 @@ class sensor(object):
 		if configure.APDS9960:
 			self.apds9960 = adafruit_apds9960.apds9960.APDS9960(i2c)
 			self.apds9960.enable_proximity = True
+			
 			# gesture is a blocking function and bad for i2c communication
 			self.apds9960.enable_gesture = False
 			self.apds9960.enable_color = True
@@ -360,31 +359,14 @@ class sensor(object):
 			self.sht30 = adafruit_sht31d.SHT31D(i2c)
 
 
-	def sin_gen(self):
-		wavestep = math.sin(self.step)
-		self.step += .1
-		return wavestep
 
-	def tan_gen(self):
-		wavestep = math.tan(self.steptan)
-		self.steptan += .1
-		return wavestep
-
-	def sin2_gen(self, offset = 0):
-		wavestep = math.sin(self.step2)
-		self.step2 += .05
-		return wavestep
-
-	def cos_gen(self, offset = 0):
-		wavestep = math.cos(self.step)
-		self.step += .1
-		return wavestep 
 
 	def get_thermal_frame(self):
 		self.thermal_frame = amg.pixels
 		data = numpy.array(self.thermal_frame)
 		high = numpy.max(data)
 		low = numpy.min(data)
+		
 		return self.thermal_frame ,configure.rabbitmq_tag
 
 	def get_gps(self):
@@ -402,6 +384,7 @@ class sensor(object):
 		self.bme680_press = self.bme680.pressure
 		self.bme680_voc = self.bme680.gas / 1000
 		self.bme680_alt = self.bme680.altitude 
+		
 		return self.bme680_temp,self.bme680_humi,self.bme680_press, self.bme680_voc, self.bme680_alt ,configure.rabbitmq_tag
 		
 		
@@ -409,38 +392,44 @@ class sensor(object):
 		self.bmp280_temp = self.bmp280.temperature
 		self.bmp280_press = self.bmp280.pressure
 		self.bmp280_alt = self.bmp280.altitude 
+		
 		return self.bmp280_temp ,self.bmp280_press, self.bmp280_alt	,configure.rabbitmq_tag	
 		
 	def get_sht30(self):
 		self.sht30_temp = self.sht30.temperature
 		self.sht30_rel_humi = self.sht30.relative_humidity
+		
 		return self.sht30_temp , self.sht30_rel_humi ,configure.rabbitmq_tag
 		
 	def get_lsm6ds3(self):
 		self.lsm6ds3_accel_X, self.lsm6ds3_accel_Y, self.lsm6ds3_accel_Z = self.lsm6ds3.acceleration
 		self.lsm6ds3_gyro_X, self.lsm6ds3_gyro_Y, self.lsm6ds3_gyro_Z = self.lsm6ds3.gyro
+		
 		return self.lsm6ds3_accel_X ,self.lsm6ds3_accel_Y, self.lsm6ds3_accel_Z, self.lsm6ds3_gyro_X, self.lsm6ds3_gyro_Y, self.lsm6ds3_gyro_Z ,configure.rabbitmq_tag
 		
 
 	def get_lis3mdl(self):
 		self.lis3mdl_X, self.lis3mdl_Y, self.lis3mdl_Z = self.lis3mdl.magnetic
+		
 		return self.lis3mdl_X, self.lis3mdl_Y, self.lis3mdl_Z ,configure.rabbitmq_tag
 		
 	def get_apds9960(self):
 		self.apds9960_proximity = self.apds9960.proximity
 		self.apds9960_gesture = self.apds9960.gesture()
 		self.apds9960_colore_r ,self.apds9960_colore_g ,self.apds9960_colore_b ,self.apds9960_colore_c = self.apds9960.color_data
+		
 		return self.apds9960_proximity, self.apds9960_gesture, self.apds9960_colore_r ,self.apds9960_colore_g ,self.apds9960_colore_b ,self.apds9960_colore_c, configure.rabbitmq_tag
 		
 		
 	def get_scd4x(self):
 		try:
 			if self.scd4x.data_ready:
-				self.scd4x_CO2 = self.scd4x.CO2
-				self.scd4x_temp = self.scd4x.temperature
+				self.scd4x_CO2 = self.scd4x.CO2	
+				self.scd4x_temp = self.scd4x.temperature			
 				self.scd4x_humi = self.scd4x.relative_humidity
+				
 		except:
-			pass	
+			pass		
 		
 		return self.scd4x_CO2, self.scd4x_temp, self.scd4x_humi ,configure.rabbitmq_tag
 		
@@ -455,18 +444,18 @@ class sensor(object):
 		self.sh_magx = magdata["x"]
 		self.sh_magy = magdata["y"]
 		self.sh_magz = magdata["z"]
-		self.sh_accx = acceldata['x']
-		self.sh_accy = acceldata['y']
+		self.sh_accx = acceldata['x']	
+		self.sh_accy = acceldata['y']		
 		self.sh_accz = acceldata['z']
+		
 			
 		return self.sh_temp, self.sh_baro, self.sh_humi, self.sh_magx, self.sh_magy, self.sh_magz, self.sh_accx, self.sh_accy, self.sh_accz ,configure.rabbitmq_tag
 		
 	def get_pocket_geiger(self):
 		data = self.radiation.status()
 		rad_data = float(data["uSvh"])
-
 		# times 100 to convert to urem/h
-		self.radiat.set(rad_data*100, timestamp, position)
+		self.radiat.set(rad_data*100, timestamp, position)	
 		
 		return self.radiat ,configure.rabbitmq_tag
 		
@@ -493,142 +482,30 @@ class sensor(object):
 		self.bytrece = (float(psutil.net_io_counters().bytes_recv * 0.00001))
 		
 		return self.uptime, self.cpuload ,self.cputemp, self.cpuperc, self.virtmem, self.diskuse, self.bytsent, self.bytrece ,configure.rabbitmq_tag
-		
-	def get_generators(self):
-		timestamp = time.time()
-		self.sinewav = float(self.sin_gen()*100)
-		self.tanwave = float(self.tan_gen()*100)
-		self.coswave = float(self.cos_gen()*100)
-		self.sinwav2 = float(self.sin2_gen()*100)		
-		return self.sinewav, self.tanwave, self.coswave, self.sinwav2 ,configure.rabbitmq_tag
 
 	def get_envirophat(self):
 		self.rgb = light.rgb()
 		self.analog_values = analog.read_all()
 		self.mag_values = motion.magnetometer()
 		self.acc_values = [round(x, 2) for x in motion.accelerometer()]
-
 		self.ep_temp = weather.temperature()
 		self.ep_colo = light.light()
 		self.ep_baro = weather.pressure(unit='hpa')
 		self.ep_magx = self.mag_values[0]
 		self.ep_magy = self.mag_values[1]
 		self.ep_magz = self.mag_values[2]
-		self.ep_accx = self.acc_values[0]
-		self.ep_accy = self.acc_values[1]
-		self.ep_accz = self.acc_values[2]	
+		self.ep_accx = self.acc_values[0]	
+		self.ep_accy = self.acc_values[1]	
+		self.ep_accz = self.acc_values[2]
+			
 		return self.ep_temp, self.ep_baro, self.ep_colo, self.ep_magx, self.ep_magy, self.ep_magz, self.ep_accx, self.ep_accy, self.ep_accz, configure.rabbitmq_tag
 		
-	def get_MLX90614(self):
-		amb_temp = MLX90614.data_to_temp(MLX90614.get_amb_temp)
-		obj_temp = MLX90614.data_to_temp(MLX90614.get_obj_temp)
+	def get_MLX90614(self):	
+		amb_temp = MLX90614.data_to_temp(MLX90614.get_amb_temp)	
+		obj_temp = MLX90614.data_to_temp(MLX90614.get_obj_temp)		
+		
 		return amb_temp, obj_temp, configure.rabbitmq_tag
 
-
-
-
-# function to get index number for aval. Sensors
-	def get_index(self):
-
-		#index holds a counter about sensors that reacts to the get functions 
-		index = {'sensor_index': 0}
-		
-		if configure.gps:
-			# if no data is availabile it stays silet
-			index['sensor_index'] += 1
-			index.update({ "GPS_DATA" : index['sensor_index']})
-
-		if configure.bme:
-			rety = self.get_bme680()
-			if not rety == None: 
-				index['sensor_index'] += 1
-				index.update({ "bme680" : index['sensor_index']})
-				
-		if configure.bmp280:
-			rety = self.get_bmp280()
-			if not rety == None: 
-				index['sensor_index'] += 1
-				index.update({ "bmp280" : index['sensor_index']})
-				
-		if configure.SHT30:
-			rety = self.get_sht30()
-			if not rety == None: 
-				index['sensor_index'] += 1
-				index.update({ "sht30" : index['sensor_index']})
-
-		if configure.sensehat:
-			rety = self.get_sensehat()
-			if not rety == None: 
-				index['sensor_index'] += 1
-				index.update({ "sensehat" : index['sensor_index']})
-
-		if configure.pocket_geiger:
-			rety = self.get_pocket_geiger()
-			if not rety == None: 
-				index['sensor_index'] += 1
-				index.update({ "pocket_geiger" : index['sensor_index']})
-
-		if configure.amg8833:
-			rety = self.get_thermal_frame()
-			if not rety == None: 
-				index['sensor_index'] += 1
-				index.update({ "thermal_frame" : index['sensor_index']})
-				
-		if configure.envirophat:
-			rety = self.get_envirophat()
-			if not rety == None: 
-				index['sensor_index'] += 1
-				index.update({ "envirophat" : index['sensor_index']})
-		
-		if configure.system_vitals:
-			rety = self.get_system_vitals()
-			if not rety == None: 
-				index['sensor_index'] += 1
-				index.update({ "system_vitals" : index['sensor_index']})
-			
-		if configure.generators:
-			rety = self.get_generators()
-			if not rety == None: 
-				index['sensor_index'] += 1
-				index.update({ "generators" : index['sensor_index']})
-				
-		if configure.SCD4X:
-			rety = self.get_scd4x()
-			if not rety == None: 
-				index['sensor_index'] += 1
-				index.update({ "scd4x" : index['sensor_index']})
-				
-		if configure.LSM6DS3TR:
-			rety = self.get_lsm6ds3()
-			if not rety == None: 
-				index['sensor_index'] += 1
-				index.update({ "lsm6ds3" : index['sensor_index']})
-				
-				
-		if configure.LIS3MDL:
-			rety = self.get_lis3mdl()
-			if not rety == None: 
-				index['sensor_index'] += 1
-				index.update({ "lis3mdl" : index['sensor_index']})
-				
-		if configure.APDS9960:
-			rety = self.get_apds9960()
-			if not rety == None: 
-				index['sensor_index'] += 1
-				index.update({ "apds9960" : index['sensor_index']})
-				
-		if configure.ir_thermo:
-			rety = self. self.get_ir_thermo()
-			if not rety == None: 
-				index['sensor_index'] += 1
-				index.update({ "ir_thermo" : index['sensor_index']})
-
-		configure.max_sensors[0] = index
-			
-		if index['sensor_index'] < 1:
-			print("NO SENSORS LOADED")
-
-		return index
 
 	def end(self):
 		if configure.pocket_geiger:
@@ -691,19 +568,6 @@ class MLX90614():
 		data = self.read_reg(self.MLX90614_TOBJ1)
 		return self.data_to_temp(data)
 
-def interrupt_checker():
-	global interrupt_flagA
-	global interrupt_flagB
-	
-	if interrupt_flagA:
-		interrupt_flagA = False
-		button_callbackA_action()
-			
-	if interrupt_flagB:
-		interrupt_flagB = False
-		button_callbackB_action()
-
-
 # function to use the sensor class as a process.
 def sensor_process():
 
@@ -714,107 +578,87 @@ def sensor_process():
 	wifitimer = timer()
 	
 	counter = 0
-	
-	#meta_massage = str(sensors.get_index())
-	#print(meta_massage)
-	#publish('sensor_metadata',meta_massage)
 
 	while True:
-		if timed.timelapsed() > configure.samplerate[0]:
-			
-			interrupt_checker()
+		if timed.timelapsed() > configure.samplerate[0]:	
 			
 			if configure.bme:
 				bme680 = sensors.get_bme680()
 				publish("bme680",bme680)
 				
-			interrupt_checker()
+			
 				
 			if configure.bmp280:
 				bmp280 = sensors.get_bmp280()
 				publish("bmp280",bmp280)
 				
-			interrupt_checker()
+			
 				
 			if configure.SHT30:
-				sht30 = sensors.get_sht30()
+				sht30 = sensors.get_sht30()	
 				publish("sht30",sht30)
 				
-			interrupt_checker()		
+					
 				
 			if configure.SCD4X:
 				scd4x = sensors.get_scd4x()
 				publish("scd4x",scd4x)
 			
-			interrupt_checker()
+			
 				
 			if configure.LSM6DS3TR:
 				lsm6ds3 = sensors.get_lsm6ds3()
 				publish("lsm6ds3",lsm6ds3)
 				
-			interrupt_checker()
+			
 				
 			if configure.LIS3MDL:
 				lis3mdl = sensors.get_lis3mdl()
 				publish("lis3mdl",lis3mdl)
 				
-			interrupt_checker()
+			
 				
 			if configure.APDS9960:
-				apds9960 = sensors.get_apds9960()
+				apds9960 = sensors.get_apds9960()		
 				publish("apds9960",apds9960)
 				
-			interrupt_checker()
+			
 			
 			if configure.amg8833:
 				thermal_frame = sensors.get_thermal_frame()
 				publish("thermal_frame",thermal_frame)
 			
-			interrupt_checker()
-				
+			
 				
 			if configure.system_vitals:
 				system_vitals = sensors.get_system_vitals()
-				publish("system_vitals",system_vitals)
-				
-			interrupt_checker()
-				
-			if configure.generators:
-				generatorsCurve = sensors.get_generators()
-				publish("generators",generatorsCurve)
-				
-			interrupt_checker()
+				publish("system_vitals",system_vitals)			
+			
 				
 			if configure.gps:
 				gps_parsed = sensors.get_gps()
 				if gps_parsed[0] is not None and gps_parsed[1] is not None:
 					publish("GPS_DATA",gps_parsed)
 				
-			interrupt_checker()
+			
 				
 			if configure.sensehat:
-				sensehat_data = sensors.get_sensehat()
-				publish("sensehat",sensehat_data)
-				
-			interrupt_checker()
+				sensehat_data = sensors.get_sensehat()	
+				publish("sensehat",sensehat_data)		
 			
 			if configure.envirophat:
 				envirophat_data = sensors.get_envirophat()
-				publish("envirophat",envirophat_data)
-				
-			interrupt_checker()
+				publish("envirophat",envirophat_data)	
 							
-			if configure.pocket_geiger:
-				pocket_geigert_data = sensors.get_pocket_geiger()
-				publish("pocket_geiger",pocket_geiger_data)
-				
-			interrupt_checker()
+			if configure.pocket_geiger:			
+				pocket_geigert_data = sensors.get_pocket_geiger()			
+				publish("pocket_geiger",pocket_geiger_data)	
 
-			if configure.ir_thermo:
-				ir_thermo_data = sensors.get_ir_thermo()
+			if configure.ir_thermo:		
+				ir_thermo_data = sensors.get_ir_thermo()	
 				publish("ir_thermo",ir_thermo_data)
 				
-			interrupt_checker()
+			
 				
 			#if counter == 10:
 			#	publish('sensor_metadata',meta_massage)
@@ -832,14 +676,14 @@ def main():
 		GPIO.setup(BUTTON_GPIOA, GPIO.IN)
 		GPIO.setup(BUTTON_GPIOB, GPIO.IN)
 
-		GPIO.add_event_detect(BUTTON_GPIOA, GPIO.BOTH, callback=button_callbackA, bouncetime=50)
-		GPIO.add_event_detect(BUTTON_GPIOB, GPIO.BOTH, callback=button_callbackB, bouncetime=50) 
+		#GPIO.add_event_detect(BUTTON_GPIOA, GPIO.BOTH, callback=button_callbackA, bouncetime=50)
+		#GPIO.add_event_detect(BUTTON_GPIOB, GPIO.BOTH, callback=button_callbackB, bouncetime=50) 
+		GPIO.add_event_detect(BUTTON_GPIOA, GPIO.RISING, callback=button_callbackA, bouncetime=50)
+		GPIO.add_event_detect(BUTTON_GPIOB, GPIO.RISING, callback=button_callbackB, bouncetime=50) 
     
     # setup the thread with timer and start the IRQ reset function
 	job = Job(interval=timedelta(seconds=WAIT_TIME_SECONDS), execute=reset)
-	job.start()
-    
-    
+	job.start() 
  
 	while not configure.status == "quit":
 		while True:
