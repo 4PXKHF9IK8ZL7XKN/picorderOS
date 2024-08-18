@@ -52,5 +52,5 @@ def disconnect():
 def main_pika_worker(var,var2):
 	declare_channel()
 	publish_worker(var,var2)
-	exit()
+	time.sleep(0.1)
 
