@@ -358,12 +358,14 @@ class sensor(object):
 
 	def get_gps(self):
 		global local_gps
-		position = [None,None, configure.rabbitmq_tag]
+		# we get it anytime because its different per sensor read
+		timestamp = time.time()
+		position = [None,None,timestamp, configure.rabbitmq_tag]
 		# braching of local gps information , i want to attach local gps information to the sensor data, so that i can send them with the readings and wenn i combine the 2 devices, can i see wehre the data is from and dont have to puzzle data together later 
 		if configure.gps:
 			# when gps is on , try to read the data here and fill the variables to send it
 			gps_data = GPS_function()
-			position = [gps_data["lat"],gps_data["lon"], configure.rabbitmq_tag]
+			position = [gps_data["lat"],gps_data["lon"],timestamp, configure.rabbitmq_tag]
 		
 		# this part stores gps data in a global to fill sensor data , when we dont have data do we fill a location thats known to be wrong but nice to know 
 		if position[0] is not None and position[1] is not None :
