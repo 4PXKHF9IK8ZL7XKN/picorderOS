@@ -29,7 +29,10 @@ def GPS_function():
 	trCourse = None
 	date = None	
 	sat_view = 0
+	sat_viewA = 0
+	sat_viewB = 0
 	pos_val = 'N'
+	alt = 0
 
 	# reading in serial stream
 	while True:
@@ -80,11 +83,20 @@ def GPS_function():
 			# thanks to this short display of the date do i have to fix it when i m dead
 			epoch = datetime.datetime(date2+2000, date1, date0, time0, time1, time2).timestamp() 
 		if '$GPGSV' == item[0]:
-			sat_view = sat_view + 1
+			sat_viewA = int(item[1])
 		if '$GPGLL' == item[0]:
 			pos_val = item[6]
+		if '$GPGGA' == item[0]:
+			sat_viewB = int(item[7])
+			alt = item[9]
 			
-	return  lat0, lat1, lat2 ,lat3 ,lat4 , dirLat ,lon0 , lon1, lon2, lon3, lon4, dirLon, speed, trCourse, pos_val, sat_view, epoch
+		if sat_viewB == 0:
+			sat_view = sat_viewA
+		else:
+			sat_view = sat_viewB
+		
+			
+	return  lat0, lat1, lat2 ,lat3 ,lat4 , dirLat ,lon0 , lon1, lon2, lon3, lon4, dirLon, speed, trCourse, alt, pos_val, sat_view, epoch
 
 def decode(coord):
     #Converts DDDMM.MMMMM > DD deg MM.MMMMM min
