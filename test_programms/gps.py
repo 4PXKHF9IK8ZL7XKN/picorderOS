@@ -4,19 +4,21 @@
 
 import serial
 import time
-import os
-import sys
 import datetime
 
 from serial import Serial
-
-mode = 0
 
 #ser = serial.Serial('/dev/ttyUSB0', 115200, timeout=3)
 ser = serial.Serial('/dev/ttyACM0', 115200, timeout=3)
 
 
-def GPS_function():
+def GPS_function(select):
+
+	if select:
+		mode = 1 
+	else:
+		mode = 0
+
 	NEMA_DICT = []
 	data = ''
 	
@@ -33,6 +35,8 @@ def GPS_function():
 	sat_viewB = 0
 	pos_val = 'N'
 	alt = 0
+	lat_compat = 0
+	lon_compat = 0
 
 	# reading in serial stream
 	while True:
@@ -70,10 +74,13 @@ def GPS_function():
 			#print("---Parsing GPRMC---")
 			time0, time1, time2 = int(item[1][0:2]), int(item[1][2:4]), int( item[1][4:6])
 			lat0, lat1, lat2 ,lat3 ,lat4 = decode(item[3]) #latitude
+			lat_compat = round(float(item[3])*0.01,10) # moving dot super magic
 			dirLat = item[4]      #latitude direction N/S
 			lon0, lon1, lon2, lon3, lon4 = decode(item[5]) #longitute
+			lon_compat = round(float(item[5])*0.01,10) # moving dot super magic
 			dirLon = item[6]      #longitude direction E/W
 			speed = float(item[7])      #Speed in knots
+			
 			if item[8] == '':
 				trCourse = 0
 			else:
@@ -88,15 +95,15 @@ def GPS_function():
 			pos_val = item[6]
 		if '$GPGGA' == item[0]:
 			sat_viewB = int(item[7])
-			alt = float(item[9])
+			if item[9] != '':
+				alt = float(item[9])
 			
-		if sat_viewB == 0:
-			sat_view = sat_viewA
-		else:
-			sat_view = sat_viewB
-		
-			
-	return  lat0, lat1, lat2 ,lat3 ,lat4 , dirLat ,lon0 , lon1, lon2, lon3, lon4, dirLon, speed, trCourse, alt, pos_val, sat_view, epoch
+	if sat_viewB == 0:
+		sat_view = sat_viewA
+	else:
+		sat_view = sat_viewB
+				
+	return lat_compat, lon_compat, lat0, lat1, lat2 ,lat3 ,lat4 , dirLat ,lon0 , lon1, lon2, lon3, lon4, dirLon, speed, trCourse, alt, pos_val, sat_view, epoch
 
 def decode(coord):
     #Converts DDDMM.MMMMM > DD deg MM.MMMMM min
@@ -109,5 +116,5 @@ def decode(coord):
 
 
 
-print(GPS_function())
+print(GPS_function(False))
 
