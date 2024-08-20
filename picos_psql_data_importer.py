@@ -69,7 +69,7 @@ def table_create(con, table_str):
     ret = False
     try:
         cur = con.cursor()
-        cur.execute('CREATE TABLE "' + table_str + '" (id serial PRIMARY KEY, value real,timestamp numeric,latitude bigint,longitude bigint,rabbitmq_tag text);')
+        cur.execute('CREATE TABLE "' + table_str + '" (id serial PRIMARY KEY, value real,timestamp numeric,latitude bigint,longitude bigint);')
         ret = table_exists(con, table_str)
         if ret is True:
         	print("TABLE: ", table_str ,"CREATED")
