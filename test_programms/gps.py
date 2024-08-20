@@ -88,7 +88,7 @@ def GPS_function():
 			pos_val = item[6]
 		if '$GPGGA' == item[0]:
 			sat_viewB = int(item[7])
-			alt = item[9]
+			alt = float(item[9])
 			
 		if sat_viewB == 0:
 			sat_view = sat_viewA
