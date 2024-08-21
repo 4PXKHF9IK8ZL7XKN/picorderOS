@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 # PYTHON_ARGCOMPLETE_OK
 
-GPS_DATA = [37.7820885,-122.3045112,'local']
+GPS_DATA = [37.7820885,-122.3045112, 0, 0, 0,0 , 37 , 'deg', 78, 20885 , 'min' , 'N', 122 , 'deg' ,30 , 45112, 'min', 'W' , 'N', 0, 'local']
 # USS Hornet - Sea, Air and Space Museum (Alameda) , Pavel Knows ;)
 
 BME680 = [[0,-40,85,'Thermometer','\xB0','BME680','timestamp','latitude','longitude','rabbitmq_tag'],[0,0,100,'Hygrometer','%','BME680','timestamp','latitude','longitude','rabbitmq_tag'],[0,300,1100,'Barometer','hPa','BME680','timestamp','latitude','longitude','rabbitmq_tag'],[0,0,500,'VOC','ppm','BME680','timestamp','latitude','longitude','rabbitmq_tag'],[0,-50,1100,'ALT','m','BME680','timestamp','latitude','longitude','rabbitmq_tag']]
