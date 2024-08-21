@@ -9,8 +9,10 @@ import datetime
 from serial import Serial
 
 #ser = serial.Serial('/dev/ttyUSB0', 115200, timeout=3)
-ser = serial.Serial('/dev/ttyACM0', 115200, timeout=3)
+#ser = serial.Serial('/dev/ttyACM0', 115200, timeout=3)
 
+port = '/dev/ttyACM0'
+baud = 115200
 
 def GPS_function(select):
 
@@ -37,6 +39,8 @@ def GPS_function(select):
 	alt = 0
 	lat_compat = 0
 	lon_compat = 0
+	
+	ser = serial.Serial(port, baud, timeout=3)
 
 	# reading in serial stream
 	while True:
