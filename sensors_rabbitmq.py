@@ -873,7 +873,7 @@ def main():
 			if counter == 180:
 				counter = 0
 			else:
-				time.sleep(0.001)
+				time.sleep(0.0001)
 
 
 if __name__ == "__main__":
