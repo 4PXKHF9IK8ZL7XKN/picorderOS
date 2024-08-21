@@ -102,8 +102,10 @@ def GPS_function(select):
 		sat_view = sat_viewA
 	else:
 		sat_view = sat_viewB
+		
+	gps_update = {"lat" : lat_compat, "lon" : lon_compat, "speed" : speed, "altitude" : alt, "track" : trCourse, "sats" : sat_view , "lat0" : lat0 , "lat1" : lat1, "lat2" : lat2 ,"lat3" : lat3 ,"lat4" : lat4 , "dirLat" : dirLat, "lon0" : lon0 , "lon1" : lon1, "lon2" : lon2, "lon3" : lon3, "lon4" : lon4, "dirLon" : dirLon,"pos_val" : pos_val, "time" : epoch}
 				
-	return lat_compat, lon_compat, lat0, lat1, lat2 ,lat3 ,lat4 , dirLat ,lon0 , lon1, lon2, lon3, lon4, dirLon, speed, trCourse, alt, pos_val, sat_view, epoch
+	return gps_update
 
 def decode(coord):
     #Converts DDDMM.MMMMM > DD deg MM.MMMMM min
