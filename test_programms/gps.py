@@ -80,9 +80,13 @@ def GPS_function(select):
 			lat0, lat1, lat2 ,lat3 ,lat4 = decode(item[3]) #latitude
 			lat_compat = round(float(item[3])*0.01,10) # moving dot super magic
 			dirLat = item[4]      #latitude direction N/S
+			if dirLat == 'S':
+				lat_compat = lat_compat *-1
 			lon0, lon1, lon2, lon3, lon4 = decode(item[5]) #longitute
 			lon_compat = round(float(item[5])*0.01,10) # moving dot super magic
 			dirLon = item[6]      #longitude direction E/W
+			if dirLon == 'W':
+				lon_compat = lon_compat *-1
 			speed = float(item[7])      #Speed in knots
 			
 			if item[8] == '':
