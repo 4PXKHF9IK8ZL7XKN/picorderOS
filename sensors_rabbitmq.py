@@ -258,6 +258,16 @@ def GPS_function(select):
 	alt = 0
 	lat_compat = 0
 	lon_compat = 0
+	lat0 = 0
+	lat1 = 0
+	lat2 = 0
+	lat3 = 0
+	lat4 = 0
+	lon0 = 0
+	lon1 = 0
+	lon2 = 0
+	lon3 = 0
+	lon4 = 0
 	
 	ser = serial.Serial(port, baud, timeout=3)
 
@@ -298,11 +308,12 @@ def GPS_function(select):
 		if "$GPRMC" == item[0] or "$GNRMC" == item[0]: 
 			if item[2] == 'V':
 				print("no satellite data available")
-				return 1, "no satellite data available"
+				return False
 			#print("---Parsing GPRMC---")
 			time0, time1, time2 = int(item[1][0:2]), int(item[1][2:4]), int( item[1][4:6])
 			
-			lat0, lat1, lat2 ,lat3 ,lat4 = decode(item[3]) #latitude			
+			lat0, lat1, lat2 ,lat3 ,lat4 = decode(item[3]) #latitude
+			lat_compat = float(item[3])
 			if hasattr(item[13], "lat"):
 				if item[13].lat != '':
 					lat_compat = float(item[13].lat)
@@ -312,7 +323,8 @@ def GPS_function(select):
 				if item[13].NS != '':
 					dirLat = str(item[13].NS)			
 			
-			lon0, lon1, lon2, lon3, lon4 = decode(item[5]) #longitute		
+			lon0, lon1, lon2, lon3, lon4 = decode(item[5]) #longitute	
+			lon_compat = float(item[5])
 			if hasattr(item[13], "lon"):
 				if item[13].lon != '':
 					lon_compat = float(item[13].lon)	
@@ -370,6 +382,7 @@ def GPS_function(select):
 	gps_update = {"lat" : lat_compat, "lon" : lon_compat, "speed" : speed, "altitude" : alt, "track" : trCourse, "sats" : sat_view , "lat0" : lat0 , "lat1" : lat1, "lat2" : lat2 ,"lat3" : lat3 ,"lat4" : lat4 , "dirLat" : dirLat, "lon0" : lon0 , "lon1" : lon1, "lon2" : lon2, "lon3" : lon3, "lon4" : lon4, "dirLon" : dirLon,"pos_val" : pos_val, "time" : epoch}
 				
 	return gps_update
+	
 
 class sensor(object):
 
@@ -483,30 +496,33 @@ class sensor(object):
 		if configure.gps:
 			# when gps is on , try to read the data here and fill the variables to send it
 			gps_data = GPS_function(False)
-			position = [
-			gps_data["lat"],
-			gps_data["lon"],
-			gps_data["speed"],
-			gps_data["altitude"],
-			gps_data["track"],
-			gps_data["sats"],
-			gps_data["lat0"],
-			gps_data["lat1"],
-			gps_data["lat2"],
-			gps_data["lat3"],
-			gps_data["lat4"],
-			gps_data["dirLat"],
-			gps_data["lon0"],
-			gps_data["lon1"],
-			gps_data["lon2"],
-			gps_data["lon3"],
-			gps_data["lon4"],
-			gps_data["dirLon"],
-			gps_data["pos_val"],
-			gps_data["time"],
-			configure.rabbitmq_tag
-			]
-		
+			if gps_data is False:
+				position = [None, None, 0, 0, 0,0 , None , None, None, None ,None , None, None , None , None , None, None, None , None, timestamp, configure.rabbitmq_tag]
+			else:
+				position = [
+				gps_data["lat"],
+				gps_data["lon"],
+				gps_data["speed"],
+				gps_data["altitude"],
+				gps_data["track"],
+				gps_data["sats"],
+				gps_data["lat0"],
+				gps_data["lat1"],
+				gps_data["lat2"],
+				gps_data["lat3"],
+				gps_data["lat4"],
+				gps_data["dirLat"],
+				gps_data["lon0"],
+				gps_data["lon1"],
+				gps_data["lon2"],
+				gps_data["lon3"],
+				gps_data["lon4"],
+				gps_data["dirLon"],
+				gps_data["pos_val"],
+				gps_data["time"],
+				configure.rabbitmq_tag
+				]
+			
 		# this part stores gps data in a global to fill sensor data , when we dont have data do we fill a location thats known to be wrong but nice to know 
 		if position[0] is not None and position[1] is not None :
 			local_gps = position
@@ -753,8 +769,9 @@ class MLX90614():
 		return self.data_to_temp(data)
 
 # function to use the sensor class as a process.
-def sensor_process():
-
+def main():
+	declare_channel()
+	
 	global meta_massage
 
 	sensors = sensor()
@@ -762,15 +779,25 @@ def sensor_process():
 	wifitimer = timer()
 	
 	counter = 0
+	
+	
+	
+	# setup GPIO IRQ
+	GPIO.setmode(GPIO.BCM)
+	if configure.input_cap_mpr121:
+		GPIO.setup(BUTTON_GPIOA, GPIO.IN)
+		GPIO.setup(BUTTON_GPIOB, GPIO.IN)
 
-	while True:
-		if timed.timelapsed() > configure.samplerate[0]:	
-		
-			if configure.gps:
-				gps_parsed = sensors.get_gps()
-				if gps_parsed[0] is not None and gps_parsed[1] is not None:
-					publish("GPS_DATA",gps_parsed)
-		
+		GPIO.add_event_detect(BUTTON_GPIOA, GPIO.RISING, callback=button_callbackA, bouncetime=10)
+		GPIO.add_event_detect(BUTTON_GPIOB, GPIO.RISING, callback=button_callbackB, bouncetime=10) 
+    
+    # setup the thread with timer and start the IRQ reset function
+	job = Job(interval=timedelta(seconds=WAIT_TIME_SECONDS), execute=reset)
+	job.start() 
+
+	while not configure.status == "quit":
+
+		while True:
 			
 			if configure.bme:
 				bme680 = sensors.get_bme680()
@@ -836,28 +863,18 @@ def sensor_process():
 				ir_thermo_data = sensors.get_ir_thermo()	
 				publish("ir_thermo",ir_thermo_data)
 				
-	
-			timed.logtime()
-        
-def main():
-	declare_channel()
-	
-	# setup GPIO IRQ
-	GPIO.setmode(GPIO.BCM)
-	if configure.input_cap_mpr121:
-		GPIO.setup(BUTTON_GPIOA, GPIO.IN)
-		GPIO.setup(BUTTON_GPIOB, GPIO.IN)
+			if counter == 0:
+				if configure.gps:
+					gps_parsed = sensors.get_gps()
+					if gps_parsed[0] is not None and gps_parsed[1] is not None:
+						publish("GPS_DATA",gps_parsed)
+				
+			counter = counter + 1 
+			if counter == 180:
+				counter = 0
+			else:
+				time.sleep(0.001)
 
-		GPIO.add_event_detect(BUTTON_GPIOA, GPIO.RISING, callback=button_callbackA, bouncetime=10)
-		GPIO.add_event_detect(BUTTON_GPIOB, GPIO.RISING, callback=button_callbackB, bouncetime=10) 
-    
-    # setup the thread with timer and start the IRQ reset function
-	job = Job(interval=timedelta(seconds=WAIT_TIME_SECONDS), execute=reset)
-	job.start() 
- 
-	while not configure.status == "quit":
-		while True:
-		    sensor_process()
 
 if __name__ == "__main__":
 	try:
