@@ -65,11 +65,24 @@ def table_exists(con, table_str):
 	return exists
 
 def table_create(con, table_str):
+	ret = False
+	try:
+		cur = con.cursor()
+		cur.execute('CREATE TABLE "' + table_str + '" (id serial PRIMARY KEY, value real,timestamp numeric,latitude numeric,longitude numeric);')
+		ret = table_exists(con, table_str)
+		if ret is True:
+			print("TABLE: ", table_str ,"CREATED")
+		cur.close()
+	except psycopg2.Error as e:
+		print( e )
+	return ret  
+    
+def table_create_gps(con, table_str):
 
     ret = False
     try:
         cur = con.cursor()
-        cur.execute('CREATE TABLE "' + table_str + '" (id serial PRIMARY KEY, value real,timestamp numeric,latitude bigint,longitude bigint);')
+        cur.execute('CREATE TABLE "' + table_str + '" (id serial PRIMARY KEY, speed real, altitude real, track real, sats real, timestamp numeric,latitude numeric ,longitude numeric);')
         ret = table_exists(con, table_str)
         if ret is True:
         	print("TABLE: ", table_str ,"CREATED")
@@ -111,6 +124,7 @@ def empty_tablecheck(con, table_str):
 	ret = False
 	try:
 		cur = con.cursor()
+		cur.execute('select * from "' + table_str + '" LIMIT 0')
 		lengh = len(cur.fetchall())
 		cur.close()
 	except psycopg2.Error as e:
@@ -120,34 +134,56 @@ def empty_tablecheck(con, table_str):
 
 
 
-
 def insert_data(con, table_str, value, stamp, lat, lon, tag):
 	print("DEBUG:",table_str, value, stamp, lat, lon, tag)
 	check_table = empty_tablecheck(con, table_str)
 	ret = False
-	prep_tag = f'"{tag}"'
-	print(prep_tag)
 	try:
 		cur = con.cursor()
-		print("DEBUG:", check_table)
-		if check_table == True:
-			print("DEBUG: DO WE FETCHE HERE?")
+		cur.execute('select * from "' + table_str + '"')
+		if check_table == False:
 			lengh = len(cur.fetchall())
 		cur.execute('INSERT INTO "' + table_str + '" (value, timestamp, latitude, longitude) VALUES ( '+ str(value) + ' , ' +  str(stamp) + ' , ' + str(lat) + ' , ' + str(lon) + ');')     
 		# i know its crude, i may should read data with now known index
-		#if check_table == True:
-		ret = True          	
-		#else:
-			#lengh2 = len(cur.fetchall())
-			#if lengh2 == lengh + 1:
-			#ret = True        
+		if check_table == True:
+			cur.execute('select * from "' + table_str + '"')
+			lengh = len(cur.fetchall())
+			ret = True  	
+		else:
+			cur.execute('select * from "' + table_str + '"')
+			lengh2 = len(cur.fetchall())
+			if lengh2 == lengh + 1:
+				ret = True          
 		cur.close()
 	except psycopg2.Error as e:
-		print( e , "error und so")
+		print( e )
 	return ret
     
-
-   
+def insert_data_gps(con, table_str, speed, altitude, track, sats, stamp, lat, lon, tag):
+	#print("DEBUG:",table_str, speed, altitude, track, sats, stamp, lat, lon, tag)
+	check_table = empty_tablecheck(con, table_str)
+	ret = False
+	try:
+		cur = con.cursor()
+		cur.execute('select * from "' + table_str + '"')
+		if check_table == False:
+			lengh = len(cur.fetchall())
+		cur.execute('INSERT INTO "' + table_str + '" (speed, altitude, track, sats, timestamp, latitude, longitude) VALUES ( '+ str(speed) + ' , ' + str(altitude) + ' , ' + str(track) + ' , ' + str(sats) + ' , ' +  str(stamp) + ' , ' + str(lat) + ' , ' + str(lon) + ');')     
+		# i know its crude, i may should read data with now known index
+		if check_table == True:
+			cur.execute('select * from "' + table_str + '"')
+			lengh = len(cur.fetchall())
+			ret = True  	
+		else:
+			cur.execute('select * from "' + table_str + '"')
+			lengh2 = len(cur.fetchall())
+			if lengh2 == lengh + 1:
+				ret = True     
+		cur.close()
+	except psycopg2.Error as e:
+		print( e )
+	return ret   
+ 
     
     
 def connect_psql(config):
@@ -191,36 +227,47 @@ def callback(ch, method, properties, body):
 	 
 	if method.routing_key == 'GPS_DATA':
 		# needs maybe refiment later, this can be mixed local and remote
-		GPS_DATA[0],GPS_DATA[1],GPS_DATA[2]  = body.decode().strip("[]").split(",")	
-	
+		GPS_DATA[0], GPS_DATA[1], GPS_DATA[2], GPS_DATA[3], GPS_DATA[4], GPS_DATA[5], GPS_DATA[6], GPS_DATA[7], GPS_DATA[8], GPS_DATA[9], GPS_DATA[10], GPS_DATA[11], GPS_DATA[12], GPS_DATA[13], GPS_DATA[14], GPS_DATA[15], GPS_DATA[16], GPS_DATA[17], GPS_DATA[18], GPS_DATA[19], GPS_DATA[20] = body.decode().strip("[]").split(",")	
+		# creates a new dataframe to add new data
+		table_string = '%s_%s_%s' % (str(GPS_DATA[20]).strip("' "),'GPS_DATA','POS')
+		ret = table_exists(psql_connection, table_string)
+		if ret is False:
+			table_create_gps(psql_connection,  table_string)
+		#empty_tablecheck(psql_connection,  table_string)
+		insert_data_gps(psql_connection,  table_string, GPS_DATA[2], GPS_DATA[3], GPS_DATA[4], GPS_DATA[5], GPS_DATA[19], GPS_DATA[0], GPS_DATA[1], GPS_DATA[20])
 	 	
 	elif method.routing_key == 'bme680':	
 		# decodes data byte stream and splits the values by comma
 		sensor_values = body.decode().strip("()").split(",")
 		origin_tag = sensor_values[-1:]
+		del sensor_values[-1]		
+		longitude = sensor_values[-1:]
 		del sensor_values[-1]	
+		latitude = sensor_values[-1:]
+		del sensor_values[-1]
+		sensortimestamp = sensor_values[-1:]
+		del sensor_values[-1]
 		index = 0
 		for value in sensor_values:
 			#print("BME680:", float(value))
 			BME680[index][0] = float(value)					
-			BME680[index][6] = timestamp
-			BME680[index][7] = GPS_DATA[0]
-			BME680[index][8] = GPS_DATA[1]
+			BME680[index][6] = sensortimestamp[0]
+			BME680[index][7] = latitude[0]
+			BME680[index][8] = longitude[0]
 			BME680[index][9] = origin_tag[0].strip("' '")
 			#print("MATRIX", BME680[index])
-			fragdata.append(BME680[index])		
+			#fragdata.append(BME680[index])		
+			
 			# creates a new dataframe to add new data
 			table_string = '%s_%s_%s' % (BME680[index][9],BME680[index][5],BME680[index][3])
+
 			ret = table_exists(psql_connection, table_string)
 			if ret is False:
 				table_create(psql_connection,  table_string)
-			array = get_table_col_names(psql_connection,  table_string)
-			print(BME680[index][3],array)
 			
 			#table_drop(psql_connection, table_string)
 			
 			ret = insert_data(psql_connection,  table_string, BME680[index][0], BME680[index][6], BME680[index][7], BME680[index][8],BME680[index][9])
-			print("writing?", ret )
 				
 			#newdata = pd.DataFrame(fragdata, columns=['value','min','max','dsc','sym','dev','timestamp','latitude','longitude','rabbitmq_tag'])
 			#BUFFER_GLOBAL = pd.concat([#BUFFER_GLOBAL,#newdata]).drop_duplicates().reset_index(drop=True)
