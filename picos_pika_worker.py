@@ -12,12 +12,10 @@ DEBUG = False
 if configure.rabbitmq_remote:
 	credentials = pika.PlainCredentials(configure.rabbitmq_user,configure.rabbitmq_password)
 	connection = pika.BlockingConnection(pika.ConnectionParameters(configure.rabbitmq_address,configure.rabbitmq_port,configure.rabbitmq_vhost,credentials))
-	channel = connection.channel()
 else:
 	connection = pika.BlockingConnection(pika.ConnectionParameters('localhost'))
-	channel = connection.channel()
 
-def declare_channel():
+def declare_channel(channel):
 	# Setup Channels for Sensors
 	channel.exchange_declare(exchange='sensor_data', exchange_type='topic')
 	channel.queue_declare(queue='sensor_metadata')
@@ -34,6 +32,8 @@ def publish_worker(IN_routing_key,data):
 	time_unix = time.time()
 	try:
 		if message is not None:
+			channel = connection.channel()
+			declare_channel(channel)
 			channel.basic_publish(exchange=stack, routing_key=routing_key, body=message)
 		else:
 			print("Is that a buffer underflow?")
@@ -50,7 +50,5 @@ def disconnect():
     connection.close()
 
 def main_pika_worker(var,var2):
-	declare_channel()
 	publish_worker(var,var2)
-	time.sleep(0.1)
-
+	return

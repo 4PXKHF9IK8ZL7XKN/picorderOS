@@ -9,6 +9,7 @@ import threading
 import pika
 import signal
 import serial
+import datetime
 import picos_pika_worker as publisher_worker
 from pynmeagps import NMEAReader
 import RPi.GPIO as GPIO
@@ -23,6 +24,8 @@ generators = True
 DEBUG = False
 
 meta_massage = ""
+local_gps = [37.7820885,-122.3045112,configure.rabbitmq_tag]
+
 
 # Delcares the IRQ Pins for Cap Touch 
 BUTTON_GPIOA = 17
@@ -220,36 +223,166 @@ class Job(threading.Thread):
             while not self.stopped.wait(self.interval.total_seconds()):
                 self.execute(*self.args, **self.kwargs)
 
-
-def GPS_function():
-		gps_update = {"lat" : None, "lon" : None, "speed" : 0.00,"altitude":0.00, "track" : 0.00, "sats":0}
-
-		stream = serial.Serial(port, baud, timeout=3)
-		nmr = NMEAReader(stream)
-		(raw_data, parsed_data) = nmr.read()
-
-		if hasattr(parsed_data, "lat"):
-
-			if parsed_data.lat != '':
-				gps_update["lat"] = float(parsed_data.lat)
-
-			if parsed_data.lon != '':
-				gps_update["lon"] = float(parsed_data.lon)
+def decode(coord):
+    #Converts DDDMM.MMMMM > DD deg MM.MMMMM min
+    x = coord.split(".")
+    head = x[0]
+    tail = int(x[1])
+    deg = int(head[0:-2])
+    min = int(head[-2:])
+    return deg , "deg" , min , tail , "min"
 
 
-		if hasattr(parsed_data, "altitude"):
+def GPS_function(select):
 
-			if parsed_data.altitude != '':
-				gps_update["altitude"] = float(parsed_data.altitude)
+	if select:
+		mode = 1 
+	else:
+		mode = 0
 
+	NMEA_DICT = []
+	data = ''
+	
+	time = None
+	lat = None
+	dirLat = None
+	lon = None
+	dirLon = None
+	speed = None
+	trCourse = None
+	date = None	
+	sat_view = 0
+	sat_viewA = 0
+	sat_viewB = 0
+	pos_val = 'N'
+	alt = 0
+	lat_compat = 0
+	lon_compat = 0
+	lat0 = 0
+	lat1 = 0
+	lat2 = 0
+	lat3 = 0
+	lat4 = 0
+	lon0 = 0
+	lon1 = 0
+	lon2 = 0
+	lon3 = 0
+	lon4 = 0
+	
+	ser = serial.Serial(port, baud, timeout=3)
 
-		if hasattr(parsed_data, "speed"):
-
-			if parsed_data.speed != '':
-				gps_update["speed"] = float(parsed_data.speed)
-
-		return gps_update
-
+	# reading in serial stream
+	while True:
+		data_array = [0]
+		while ser.inWaiting() > 0:
+			if mode == 0:
+				data = ser.read(ser.inWaiting())
+			if mode == 1:
+				data = ser.readline(ser.inWaiting())
+			# converting bytes to string
+			data_stream = data.decode()
+			data = data_stream
+			# removing special symbols like linefeed , return 
+			data = data.replace('\n','')
+			data = data.replace('\t','')
+			data = data.replace('\r','')
+			# creating a array by coma split
+			data_array = data.split(',')
+			if  data_array[0] != '$GPTXT':
+				#adding the payload to may data to get the abbility to later query the data too in relation 
+				payload = NMEAReader.parse(data_stream,validate=0)
+				#print("payload:", payload )
+				# creating a matrix by adding the array in the NEMA array
+				data_array.append(payload)
+				NMEA_DICT.append(data_array)
+		#stopping the serial read when i detect the last sentence from a NEMA block 
+		if mode == 0:
+			if data_array[0] == '$GPGLL':
+				break
+		if mode == 1:
+			if data_array[0] == '$GNVTG':
+				break
+		
+	for item in NMEA_DICT:
+		#print("item", item )	
+		if "$GPRMC" == item[0] or "$GNRMC" == item[0]: 
+			if item[2] == 'V':
+				print("no satellite data available")
+				return False
+			#print("---Parsing GPRMC---")
+			time0, time1, time2 = int(item[1][0:2]), int(item[1][2:4]), int( item[1][4:6])
+			
+			lat0, lat1, lat2 ,lat3 ,lat4 = decode(item[3]) #latitude
+			lat_compat = float(item[3])
+			if hasattr(item[13], "lat"):
+				if item[13].lat != '':
+					lat_compat = float(item[13].lat)
+					
+			dirLat = item[4]      #latitude direction N/S
+			if hasattr(item[13], "NS"):
+				if item[13].NS != '':
+					dirLat = str(item[13].NS)			
+			
+			lon0, lon1, lon2, lon3, lon4 = decode(item[5]) #longitute	
+			lon_compat = float(item[5])
+			if hasattr(item[13], "lon"):
+				if item[13].lon != '':
+					lon_compat = float(item[13].lon)	
+										
+			dirLon = item[6]      #longitude direction E/W	
+			if hasattr(item[13], "EW"):
+				if item[13].EW != '':
+					dirLon = str(item[13].EW)			
+			
+			# setting speed from own parsing and then try pynmeagps
+			speed = float(item[7])      #Speed in knots		
+			if hasattr(item[13], "spd"):
+				if item[13].lon != '':
+					speed = float(item[13].spd)		
+			
+			if item[8] == '':
+				trCourse = 0
+			else:
+				trCourse = float(item[8])   #True course
+				if hasattr(item[13], "cog"):
+					if item[13].cog != '':
+						speed = float(item[13].cog)					
+			
+			date0, date1, date2 = int(item[9][0:2]), int(item[9][2:4]), int(item[9][4:6]) #date
+			# thanks to this short display of the date do i have to fix it when i m dead
+			epoch = datetime.datetime(date2+2000, date1, date0, time0, time1, time2).timestamp() 
+		if '$GPGSV' == item[0]:
+			sat_viewA = int(item[1])
+		if '$GPGLL' == item[0]:
+			pos_val = item[6]
+			if hasattr(item[8], "status"):
+				if item[8].status != '':
+					pos_val = str(item[8].status)	
+			
+		if '$GPGGA' == item[0]:
+			sat_viewB = int(item[7])
+			if hasattr(item[15], "numSV"):
+				if item[15].numSV != '':
+					sat_viewB = float(item[15].numSV)	
+			
+			if item[9] != '':
+				alt = float(item[9])				
+				if hasattr(item[15], "alt"):
+					if item[15].alt != '':
+						alt = float(item[15].alt)	
+				
+			
+	if sat_viewB == 0:
+		sat_view = sat_viewA
+	else:
+		sat_view = sat_viewB
+		
+	
+		
+	gps_update = {"lat" : lat_compat, "lon" : lon_compat, "speed" : speed, "altitude" : alt, "track" : trCourse, "sats" : sat_view , "lat0" : lat0 , "lat1" : lat1, "lat2" : lat2 ,"lat3" : lat3 ,"lat4" : lat4 , "dirLat" : dirLat, "lon0" : lon0 , "lon1" : lon1, "lon2" : lon2, "lon3" : lon3, "lon4" : lon4, "dirLon" : dirLon,"pos_val" : pos_val, "time" : epoch}
+				
+	return gps_update
+	
 
 class sensor(object):
 
@@ -354,68 +487,126 @@ class sensor(object):
 
 
 
+	def get_gps(self):
+		global local_gps
+		# we get it anytime because its different per sensor read
+		timestamp = time.time()
+		position = [None, None, 0, 0, 0,0 , None , None, None, None ,None , None, None , None , None , None, None, None , None, timestamp, configure.rabbitmq_tag]
+		# braching of local gps information , i want to attach local gps information to the sensor data, so that i can send them with the readings and wenn i combine the 2 devices, can i see wehre the data is from and dont have to puzzle data together later 
+		if configure.gps:
+			# when gps is on , try to read the data here and fill the variables to send it
+			gps_data = GPS_function(False)
+			if gps_data is False:
+				position = [None, None, 0, 0, 0,0 , None , None, None, None ,None , None, None , None , None , None, None, None , None, timestamp, configure.rabbitmq_tag]
+			else:
+				position = [
+				gps_data["lat"],
+				gps_data["lon"],
+				gps_data["speed"],
+				gps_data["altitude"],
+				gps_data["track"],
+				gps_data["sats"],
+				gps_data["lat0"],
+				gps_data["lat1"],
+				gps_data["lat2"],
+				gps_data["lat3"],
+				gps_data["lat4"],
+				gps_data["dirLat"],
+				gps_data["lon0"],
+				gps_data["lon1"],
+				gps_data["lon2"],
+				gps_data["lon3"],
+				gps_data["lon4"],
+				gps_data["dirLon"],
+				gps_data["pos_val"],
+				gps_data["time"],
+				configure.rabbitmq_tag
+				]
+			
+		# this part stores gps data in a global to fill sensor data , when we dont have data do we fill a location thats known to be wrong but nice to know 
+		if position[0] is not None and position[1] is not None :
+			local_gps = position
+		else:
+			local_gps = [37.7820885,-122.3045112, 0, 0, 0,0 , 37 , 'deg', 78, 20885 , 'min' , 'N', 122 , 'deg' ,30 , 45112, 'min', 'W' , 'N', timestamp, configure.rabbitmq_tag]
+		
+		# any case retun, if its not none gets send
+		return position 
 
 	def get_thermal_frame(self):
+		global local_gps
 		self.thermal_frame = amg.pixels
 		data = numpy.array(self.thermal_frame)
 		high = numpy.max(data)
 		low = numpy.min(data)
+		# we get it anytime because its different per sensor read
+		timestamp = time.time()
 		
-		return self.thermal_frame ,configure.rabbitmq_tag
+		return self.thermal_frame , timestamp ,local_gps[0], local_gps[1] ,configure.rabbitmq_tag
 
-	def get_gps(self):
-		if configure.gps:
-			gps_data = GPS_function()
-			position = [gps_data["lat"],gps_data["lon"], configure.rabbitmq_tag]
-			
-		else:
-			position = [None,None, configure.rabbitmq_tag]
-		return position 
 
 	def get_bme680(self):
+		global local_gps
 		self.bme680_temp = self.bme680.temperature
 		self.bme680_humi = self.bme680.humidity
 		self.bme680_press = self.bme680.pressure
 		self.bme680_voc = self.bme680.gas / 1000
-		self.bme680_alt = self.bme680.altitude 
+		self.bme680_alt = self.bme680.altitude
+		# we get it anytime because its different per sensor read
+		timestamp = time.time() 
 		
-		return self.bme680_temp,self.bme680_humi,self.bme680_press, self.bme680_voc, self.bme680_alt ,configure.rabbitmq_tag
+		return self.bme680_temp,self.bme680_humi,self.bme680_press, self.bme680_voc, self.bme680_alt , timestamp ,local_gps[0], local_gps[1] ,configure.rabbitmq_tag
 		
 		
 	def get_bmp280(self):
+		global local_gps
 		self.bmp280_temp = self.bmp280.temperature
 		self.bmp280_press = self.bmp280.pressure
-		self.bmp280_alt = self.bmp280.altitude 
+		self.bmp280_alt = self.bmp280.altitude
+		# we get it anytime because its different per sensor read
+		timestamp = time.time() 
 		
-		return self.bmp280_temp ,self.bmp280_press, self.bmp280_alt	,configure.rabbitmq_tag	
+		return self.bmp280_temp ,self.bmp280_press, self.bmp280_alt	, timestamp ,local_gps[0], local_gps[1] ,configure.rabbitmq_tag	
 		
 	def get_sht30(self):
+		global local_gps
 		self.sht30_temp = self.sht30.temperature
 		self.sht30_rel_humi = self.sht30.relative_humidity
-		
-		return self.sht30_temp , self.sht30_rel_humi ,configure.rabbitmq_tag
+		# we get it anytime because its different per sensor read
+		timestamp = time.time()
+				
+		return self.sht30_temp , self.sht30_rel_humi , timestamp ,local_gps[0], local_gps[1] ,configure.rabbitmq_tag
 		
 	def get_lsm6ds3(self):
+		global local_gps
 		self.lsm6ds3_accel_X, self.lsm6ds3_accel_Y, self.lsm6ds3_accel_Z = self.lsm6ds3.acceleration
 		self.lsm6ds3_gyro_X, self.lsm6ds3_gyro_Y, self.lsm6ds3_gyro_Z = self.lsm6ds3.gyro
+		# we get it anytime because its different per sensor read
+		timestamp = time.time()
 		
-		return self.lsm6ds3_accel_X ,self.lsm6ds3_accel_Y, self.lsm6ds3_accel_Z, self.lsm6ds3_gyro_X, self.lsm6ds3_gyro_Y, self.lsm6ds3_gyro_Z ,configure.rabbitmq_tag
+		return self.lsm6ds3_accel_X ,self.lsm6ds3_accel_Y, self.lsm6ds3_accel_Z, self.lsm6ds3_gyro_X, self.lsm6ds3_gyro_Y, self.lsm6ds3_gyro_Z , timestamp ,local_gps[0], local_gps[1] ,configure.rabbitmq_tag
 		
 
 	def get_lis3mdl(self):
+		global local_gps
 		self.lis3mdl_X, self.lis3mdl_Y, self.lis3mdl_Z = self.lis3mdl.magnetic
+		# we get it anytime because its different per sensor read
+		timestamp = time.time()
 		
-		return self.lis3mdl_X, self.lis3mdl_Y, self.lis3mdl_Z ,configure.rabbitmq_tag
+		return self.lis3mdl_X, self.lis3mdl_Y, self.lis3mdl_Z , timestamp ,local_gps[0], local_gps[1] ,configure.rabbitmq_tag
 		
 	def get_apds9960(self):
+		global local_gps
 		self.apds9960_proximity = self.apds9960.proximity
 		self.apds9960_gesture = self.apds9960.gesture()
 		self.apds9960_colore_r ,self.apds9960_colore_g ,self.apds9960_colore_b ,self.apds9960_colore_c = self.apds9960.color_data
+		# we get it anytime because its different per sensor read
+		timestamp = time.time()
 		
 		return self.apds9960_proximity, self.apds9960_gesture, self.apds9960_colore_r ,self.apds9960_colore_g ,self.apds9960_colore_b ,self.apds9960_colore_c, configure.rabbitmq_tag
 		
 		
 	def get_scd4x(self):
+		global local_gps
 		try:
 			if self.scd4x.data_ready:
 				self.scd4x_CO2 = self.scd4x.CO2	
@@ -424,11 +615,14 @@ class sensor(object):
 				
 		except:
 			pass		
+		# we get it anytime because its different per sensor read
+		timestamp = time.time()
 		
-		return self.scd4x_CO2, self.scd4x_temp, self.scd4x_humi ,configure.rabbitmq_tag
+		return self.scd4x_CO2, self.scd4x_temp, self.scd4x_humi , timestamp ,local_gps[0], local_gps[1] ,configure.rabbitmq_tag
 		
 
 	def get_sensehat(self):
+		global local_gps
 		magdata = sense.get_compass_raw()
 		acceldata = sense.get_accelerometer_raw()
 
@@ -441,20 +635,26 @@ class sensor(object):
 		self.sh_accx = acceldata['x']	
 		self.sh_accy = acceldata['y']		
 		self.sh_accz = acceldata['z']
+		# we get it anytime because its different per sensor read
+		timestamp = time.time()
 		
 			
-		return self.sh_temp, self.sh_baro, self.sh_humi, self.sh_magx, self.sh_magy, self.sh_magz, self.sh_accx, self.sh_accy, self.sh_accz ,configure.rabbitmq_tag
+		return self.sh_temp, self.sh_baro, self.sh_humi, self.sh_magx, self.sh_magy, self.sh_magz, self.sh_accx, self.sh_accy, self.sh_accz , timestamp ,local_gps[0], local_gps[1] ,configure.rabbitmq_tag
 		
 	def get_pocket_geiger(self):
+		global local_gps
 		data = self.radiation.status()
 		rad_data = float(data["uSvh"])
 		# times 100 to convert to urem/h
 		self.radiat.set(rad_data*100, timestamp, position)	
+		# we get it anytime because its different per sensor read
+		timestamp = time.time()
 		
-		return self.radiat ,configure.rabbitmq_tag
+		return self.radiat , timestamp ,local_gps[0], local_gps[1] ,configure.rabbitmq_tag
 		
 	# provides the basic definitions for the system vitals sensor readouts
 	def get_system_vitals(self):
+		global local_gps
 		timestamp = time.time()
 		if not configure.pc:
 			f = os.popen("cat /sys/class/thermal/thermal_zone0/temp").readline()
@@ -475,9 +675,10 @@ class sensor(object):
 		self.bytsent = (float(psutil.net_io_counters().bytes_sent * 0.00001))
 		self.bytrece = (float(psutil.net_io_counters().bytes_recv * 0.00001))
 		
-		return self.uptime, self.cpuload ,self.cputemp, self.cpuperc, self.virtmem, self.diskuse, self.bytsent, self.bytrece ,configure.rabbitmq_tag
+		return self.uptime, self.cpuload ,self.cputemp, self.cpuperc, self.virtmem, self.diskuse, self.bytsent, self.bytrece , timestamp ,local_gps[0], local_gps[1] ,configure.rabbitmq_tag
 
 	def get_envirophat(self):
+		global local_gps
 		self.rgb = light.rgb()
 		self.analog_values = analog.read_all()
 		self.mag_values = motion.magnetometer()
@@ -491,12 +692,17 @@ class sensor(object):
 		self.ep_accx = self.acc_values[0]	
 		self.ep_accy = self.acc_values[1]	
 		self.ep_accz = self.acc_values[2]
+		# we get it anytime because its different per sensor read
+		timestamp = time.time()
 			
 		return self.ep_temp, self.ep_baro, self.ep_colo, self.ep_magx, self.ep_magy, self.ep_magz, self.ep_accx, self.ep_accy, self.ep_accz, configure.rabbitmq_tag
 		
-	def get_MLX90614(self):	
+	def get_MLX90614(self):
+		global local_gps	
 		amb_temp = MLX90614.data_to_temp(MLX90614.get_amb_temp)	
 		obj_temp = MLX90614.data_to_temp(MLX90614.get_obj_temp)		
+		# we get it anytime because its different per sensor read
+		timestamp = time.time()
 		
 		return amb_temp, obj_temp, configure.rabbitmq_tag
 
@@ -563,8 +769,9 @@ class MLX90614():
 		return self.data_to_temp(data)
 
 # function to use the sensor class as a process.
-def sensor_process():
-
+def main():
+	declare_channel()
+	
 	global meta_massage
 
 	sensors = sensor()
@@ -572,9 +779,25 @@ def sensor_process():
 	wifitimer = timer()
 	
 	counter = 0
+	
+	
+	
+	# setup GPIO IRQ
+	GPIO.setmode(GPIO.BCM)
+	if configure.input_cap_mpr121:
+		GPIO.setup(BUTTON_GPIOA, GPIO.IN)
+		GPIO.setup(BUTTON_GPIOB, GPIO.IN)
 
-	while True:
-		if timed.timelapsed() > configure.samplerate[0]:	
+		GPIO.add_event_detect(BUTTON_GPIOA, GPIO.RISING, callback=button_callbackA, bouncetime=10)
+		GPIO.add_event_detect(BUTTON_GPIOB, GPIO.RISING, callback=button_callbackB, bouncetime=10) 
+    
+    # setup the thread with timer and start the IRQ reset function
+	job = Job(interval=timedelta(seconds=WAIT_TIME_SECONDS), execute=reset)
+	job.start() 
+
+	while not configure.status == "quit":
+
+		while True:
 			
 			if configure.bme:
 				bme680 = sensors.get_bme680()
@@ -597,43 +820,31 @@ def sensor_process():
 			if configure.SCD4X:
 				scd4x = sensors.get_scd4x()
 				publish("scd4x",scd4x)
-			
-			
+				
 				
 			if configure.LSM6DS3TR:
 				lsm6ds3 = sensors.get_lsm6ds3()
 				publish("lsm6ds3",lsm6ds3)
-				
-			
+					
 				
 			if configure.LIS3MDL:
 				lis3mdl = sensors.get_lis3mdl()
 				publish("lis3mdl",lis3mdl)
-				
-			
+					
 				
 			if configure.APDS9960:
 				apds9960 = sensors.get_apds9960()		
 				publish("apds9960",apds9960)
-				
-			
+							
 			
 			if configure.amg8833:
 				thermal_frame = sensors.get_thermal_frame()
 				publish("thermal_frame",thermal_frame)
-			
-			
+						
 				
 			if configure.system_vitals:
 				system_vitals = sensors.get_system_vitals()
-				publish("system_vitals",system_vitals)			
-			
-				
-			if configure.gps:
-				gps_parsed = sensors.get_gps()
-				if gps_parsed[0] is not None and gps_parsed[1] is not None:
-					publish("GPS_DATA",gps_parsed)
-				
+				publish("system_vitals",system_vitals)							
 			
 				
 			if configure.sensehat:
@@ -652,36 +863,18 @@ def sensor_process():
 				ir_thermo_data = sensors.get_ir_thermo()	
 				publish("ir_thermo",ir_thermo_data)
 				
-			
+			if counter == 0:
+				if configure.gps:
+					gps_parsed = sensors.get_gps()
+					if gps_parsed[0] is not None and gps_parsed[1] is not None:
+						publish("GPS_DATA",gps_parsed)
 				
-			#if counter == 10:
-			#	publish('sensor_metadata',meta_massage)
-			#	counter = 0
+			counter = counter + 1 
+			if counter == 180:
+				counter = 0
+			else:
+				time.sleep(0.0001)
 
-			counter += 1
-			timed.logtime()
-        
-def main():
-	declare_channel()
-	
-	# setup GPIO IRQ
-	GPIO.setmode(GPIO.BCM)
-	if configure.input_cap_mpr121:
-		GPIO.setup(BUTTON_GPIOA, GPIO.IN)
-		GPIO.setup(BUTTON_GPIOB, GPIO.IN)
-
-		#GPIO.add_event_detect(BUTTON_GPIOA, GPIO.BOTH, callback=button_callbackA, bouncetime=50)
-		#GPIO.add_event_detect(BUTTON_GPIOB, GPIO.BOTH, callback=button_callbackB, bouncetime=50) 
-		GPIO.add_event_detect(BUTTON_GPIOA, GPIO.RISING, callback=button_callbackA, bouncetime=10)
-		GPIO.add_event_detect(BUTTON_GPIOB, GPIO.RISING, callback=button_callbackB, bouncetime=10) 
-    
-    # setup the thread with timer and start the IRQ reset function
-	job = Job(interval=timedelta(seconds=WAIT_TIME_SECONDS), execute=reset)
-	job.start() 
- 
-	while not configure.status == "quit":
-		while True:
-		    sensor_process()
 
 if __name__ == "__main__":
 	try:

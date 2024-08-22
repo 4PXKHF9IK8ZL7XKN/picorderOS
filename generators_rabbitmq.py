@@ -87,7 +87,7 @@ class sensor_functions(object):
 		self.coswave = float(self.cos_gen()*100)
 		self.sinwav2 = float(self.sin2_gen()*100)
 				
-		return self.sinewav, self.tanwave, self.coswave, self.sinwav2 ,configure.rabbitmq_tag
+		return self.sinewav, self.tanwave, self.coswave, self.sinwav2 ,timestamp, 47, 47, configure.rabbitmq_tag
 
 
 def main():
@@ -98,7 +98,7 @@ def main():
 	while True:	
 		generatorsCurve = sensors.get_generators()	
 		publish_generators('generators',generatorsCurve)
-		time.sleep(1)
+		time.sleep(0.5)
 
 if __name__ == "__main__":
 	if configure.generators:
