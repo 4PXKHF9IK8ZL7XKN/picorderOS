@@ -15,7 +15,6 @@ import time
 import colorsys
 import threading
 import pika
-import pandas as pd
 import ast
 import statistics
 import vlc
@@ -35,10 +34,6 @@ from datetime import timedelta
 import psycopg2
 from picos_psql_config import load_config
 
-BUFFER_GLOBAL = pd.DataFrame(columns=['value','min','max','dsc','sym','dev','timestamp','latitude','longitude','rabbitmq_tag'])
-BUFFER_GLOBAL_TERMALFRAME = pd.DataFrame(columns=['Value0','Value1','Value2','Value3','Value4','Value5','Value6','Value7','Value8','Value9','Value10','Value11','Value12','Value13','Value14','Value15','Value16','Value17','Value18','Value19','Value20','Value21','Value22','Value23','Value24','Value25','Value26','Value27','Value28','Value29','Value30','Value31','Value32','Value33','Value34','Value35','Value36','Value37','Value38','Value39','Value40','Value41','Value42','Value43','Value44','Value45','Value46','Value47','Value48','Value49','Value50','Value51','Value52','Value53','Value54','Value55','Value56','Value57','Value58','Value59','Value60','Value61','Value62','Value63','timestamp','latitude','longitude','rabbitmq_tag'])
-BUFFER_GLOBAL_EM = pd.DataFrame(columns=['ssid','signal','quality','frequency','encrypted','channel','dev','mode','dsc','timestamp','latitude','longitude','rabbitmq_tag'])
-
 bme680_temp = [0]
 
 styles = ["type1", "multi_graph","type3", "type4"]
@@ -57,7 +52,7 @@ lcars_theme_selection = 0
 tmp_dirpath = tempfile.mkdtemp()
 os.chmod(tmp_dirpath , 0o777)
 
-selected_sensor_values = [{"BME680":"Barometer"},{"GENERATORS":"SineWave"},{"BMP280":"Thermometer"}]
+selected_sensor_values = [["local","BME680","Barometer"],["local","GENERATORS","SineWave"],["local","BME680","Thermometer"]]
 
 vlc_instance = None
 
@@ -106,8 +101,7 @@ def lcars_element_graph(device, draw,pos_ax,pos_ay,pos_bx,pos_by, sensors_dict,m
 	else:
 		samples = 64
 		
-	# (calulation the graph lengh absulut) deviding through tha samples to get the steps of drawing 
-	graph_resulutio_X_multi = ( pos_bx - pos_ax ) / samples
+	time_lengh = 60
 
 	#bounding box
 	box_element_graph = [(pos_ax , pos_ay), (pos_bx, pos_by)] 
@@ -122,13 +116,23 @@ def lcars_element_graph(device, draw,pos_ax,pos_ay,pos_bx,pos_by, sensors_dict,m
 		
 	#draw.text((pos_ax, pos_by), text=sensors_legende, font=lcars_microfont, fill=lcars_theme[lcars_theme_selection]["font0"])
 	
-	# Unpacking the array with dicts
+	# Unpacking the array with with array
 	for index_a, sensors_to_read in enumerate(sensors_dict):
-		# dev is the Pi dsc the cpu 
+		# dev is the Pi dsc the cpu, location_tag is a name of the sending device like local remote or tric2351
+		#print("liste",index_a, sensors_to_read )
+
+		# by setting up all sensor values with a timestamp , can we now select the time section to watch , and ask get recent for example for the last minute
+		location_tag,sensor_dev,sensor_dsc = sensors_to_read
+		#print(get_recent(location_tag, sensor_dev, sensor_dsc, time_lengh))
+		recent, elements_forgieventime = get_recent(location_tag, sensor_dev, sensor_dsc, time_lengh)
+		if type(recent) != bool:
 		
-		for sensor_dev,sensor_dsc in sensors_to_read.items():
-			#print(get_recent(sensor_dsc, sensor_dev, samples, timeing=True))
-			recent, timelength = get_recent(sensor_dsc, sensor_dev, samples, timeing=True)		
+			if elements_forgieventime == 0:
+				elements_forgieventime = 60
+				
+			# (calulation the graph lengh absulut) deviding through tha samples to get the steps of drawing 
+			graph_resulutio_X_multi = ( pos_bx - pos_ax ) / elements_forgieventime
+			
 			
 			# This Block checks for the global variable that defines the sensor end selects the array inside so that i can get the min max values 
 			my_global_vars = globals()
@@ -136,57 +140,59 @@ def lcars_element_graph(device, draw,pos_ax,pos_ay,pos_bx,pos_by, sensors_dict,m
 			for index_b, array_tosearch in enumerate(my_global_vars[sensor_dev]):
 				if array_tosearch[3] == sensor_dsc:
 					mysensor_array = my_global_vars[sensor_dev][index_b]
-			#print("index of array", mysensor_array)
+					#print("index of array", mysensor_array)
 				
-			# This draws my dots
-			for index, data_point in enumerate(recent):
-			
-				range_of_graph = mysensor_array[2] - mysensor_array[1]
-				graph_hight = pos_by - pos_ay				
+				
+					# This draws my dots
+					for index, data_point in enumerate(recent):		
+						
+						#print(data_point)
+						range_of_graph = mysensor_array[2] - mysensor_array[1]
+						graph_hight = pos_by - pos_ay				
+							
+						if mode == 1:
+							grap_y_multi = graph_hight / range_of_graph
+						else:
+							grap_y_multi = graph_hight / range_of_graph
+							
+							######print("graph;", range_of_graph,graph_hight,grap_y_multi, sensor_dsc )
+							# this happens for exampe in the Generrators with +-100 min max vaules
+							if mysensor_array[1] < -1:
+								#print("is negativ", mysensor_array[1], sensor_dsc)
+								offset = pos_ay*0.05 + mysensor_array[1] * grap_y_multi
 					
-				if mode == 1:
-					grap_y_multi = graph_hight / range_of_graph
-				else:
-					grap_y_multi = graph_hight / range_of_graph
-					
-					######print("graph;", range_of_graph,graph_hight,grap_y_multi, sensor_dsc )
-					# this happens for exampe in the Generrators with +-100 min max vaules
-					if mysensor_array[1] < -1:
-						#print("is negativ", mysensor_array[1], sensor_dsc)
-						offset = pos_ay*0.05 + mysensor_array[1] * grap_y_multi
-			
 
-				
-				#draw.ellipse([pos_bx*0.99-index*graph_resulutio_X_multi,pos_by-grap_y_multi * data_point,pos_bx*0.99+2-index*graph_resulutio_X_multi,pos_by-grap_y_multi * data_point+2],lcars_colores[index_a]['value'], outline = lcars_colores[index_a]['value'])
-				
-				
-				if len(recent) > 1:
-					older_data_point = recent[index - 1]
 					
-					if mode == 1:
-						draw.line([pos_bx*0.99-(index - 1)*graph_resulutio_X_multi,pos_by-older_data_point,pos_bx*0.99-(index - 1)*graph_resulutio_X_multi,pos_by-older_data_point,pos_bx*0.99-index*graph_resulutio_X_multi,pos_by-data_point,pos_bx*0.99-index*graph_resulutio_X_multi,pos_by+-data_point],fill=lcars_colores[index_a]['value'])
-					else:
-						draw.line([pos_bx*0.99-(index - 1)*graph_resulutio_X_multi,offset+pos_by-grap_y_multi * older_data_point,pos_bx*0.99-(index - 1)*graph_resulutio_X_multi,offset+pos_by-grap_y_multi * older_data_point,pos_bx*0.99-index*graph_resulutio_X_multi,offset+pos_by-grap_y_multi * data_point,pos_bx*0.99-index*graph_resulutio_X_multi,offset+pos_by-grap_y_multi * data_point],fill=lcars_colores[index_a]['value'])
+							#draw.ellipse([pos_bx*0.99-index*graph_resulutio_X_multi,pos_by-grap_y_multi * data_point,pos_bx*0.99+2-index*graph_resulutio_X_multi,pos_by-grap_y_multi * data_point+2],lcars_colores[index_a]['value'], outline = lcars_colores[index_a]['value'])
+						
+						
+							if len(recent) > 1:
+								older_data_point = recent[index - 1]
+								
+								if mode == 1:
+									draw.line([pos_bx*0.99-(index - 1)*graph_resulutio_X_multi,pos_by-older_data_point,pos_bx*0.99-(index - 1)*graph_resulutio_X_multi,pos_by-older_data_point,pos_bx*0.99-index*graph_resulutio_X_multi,pos_by-data_point,pos_bx*0.99-index*graph_resulutio_X_multi,pos_by+-data_point],fill=lcars_colores[index_a]['value'])
+								else:
+									draw.line([pos_bx*0.99-(index - 1)*graph_resulutio_X_multi,offset+pos_by-grap_y_multi * older_data_point,pos_bx*0.99-(index - 1)*graph_resulutio_X_multi,offset+pos_by-grap_y_multi * older_data_point,pos_bx*0.99-index*graph_resulutio_X_multi,offset+pos_by-grap_y_multi * data_point,pos_bx*0.99-index*graph_resulutio_X_multi,offset+pos_by-grap_y_multi * data_point],fill=lcars_colores[index_a]['value'])
+							
+						
+						
 					
+					# This Displays the Sensor Naming on the Left
+					draw.text((pos_ax, pos_ay+index_a*(device.height * 0.055)), text=str(sensor_dsc), font=lcars_microfont, fill=lcars_colores[index_a]['value'])
 					
+					# This Displays the Sensor Legende on the Right Top
+					draw.text((pos_bx*0.95-index_a*(device.height * 0.1), pos_ay), text=str(mysensor_array[2]), font=lcars_microfont, fill=lcars_colores[index_a]['value'])
 					
-				
-			# This Displays the Sensor Naming on the Left
-			draw.text((pos_ax, pos_ay+index_a*(device.height * 0.055)), text=str(sensor_dsc), font=lcars_microfont, fill=lcars_colores[index_a]['value'])
-			
-			# This Displays the Sensor Legende on the Right Top
-			draw.text((pos_bx*0.95-index_a*(device.height * 0.1), pos_ay), text=str(mysensor_array[2]), font=lcars_microfont, fill=lcars_colores[index_a]['value'])
-			
-			# This Displays the Sensor Legende on the Right Bottom
-			draw.text((pos_bx*0.95-index_a*(device.height * 0.1), pos_by*0.92), text=str(mysensor_array[1]), font=lcars_microfont, fill=lcars_colores[index_a]['value'])
-			
+					# This Displays the Sensor Legende on the Right Bottom
+					draw.text((pos_bx*0.95-index_a*(device.height * 0.1), pos_by*0.92), text=str(mysensor_array[1]), font=lcars_microfont, fill=lcars_colores[index_a]['value'])
+					
 
-			sensor_legende = '{0}{1}'.format(round(mysensor_array[0]),mysensor_array[4])
+					sensor_legende = '{0}{1}'.format(round(mysensor_array[0]),mysensor_array[4])
 
-			# This Displays the Sensor Legende Bottom
-			draw.text((pos_ax+index_a*(device.height * 0.25), pos_by), text=str(sensor_legende), font=lcars_microfont, fill=lcars_colores[index_a]['value'])
-			
-			#print("bufferinframe", len(recent))
+					# This Displays the Sensor Legende Bottom
+					draw.text((pos_ax+index_a*(device.height * 0.25), pos_by), text=str(sensor_legende), font=lcars_microfont, fill=lcars_colores[index_a]['value'])
+					
+					#print("bufferinframe", len(recent))		
 
 
 
@@ -449,16 +455,6 @@ def lcars_element_gibli(device, draw, pos_x,pos_y,rotation,colore):
 	draw.rectangle(Rshape_gibli , colore)
 
 
-def connect_psql(config):
-    """ Connect to the PostgreSQL database server """
-    try:
-        # connecting to the PostgreSQL server
-        with psycopg2.connect(**config) as conn:
-            print('Connected to the PostgreSQL server.')
-            return conn
-    except (psycopg2.DatabaseError, Exception) as error:
-        print(error)
-
 def display_settings(device, args):
     """
     Display a short summary of the settings.
@@ -519,12 +515,10 @@ queue_name = result.method.queue
 
 # We request now all Sensor data and Rabbitmq values to make the graph drawing realy valuable 
 channel.queue_bind(
-    exchange='sensor_data', queue='', routing_key='#')
-
-# Prepare connection to PSQL
-config = load_config()
-print(connect_psql(config))
-
+    exchange='sensor_data', queue='', routing_key='EVENT')
+    
+channel.queue_bind(
+    exchange='sensor_data', queue='', routing_key='system_vitals')
 
 
 def lcars_type0_build():
@@ -950,8 +944,6 @@ def lcars_type3_build():
 		draw.text((left2 + 1, top2+device.height * 0.079+device.height * 0.102+device.height * 0.13), text=text5, font= lcars_titlefont , fill=lcars_theme[lcars_theme_selection]["font0"])	
 		draw.text((left2 + 1, top2+device.height * 0.079+device.height * 0.102+device.height * 0.13+device.height * 0.16), text=text6, font=lcars_bigfont, fill=lcars_theme[lcars_theme_selection]["font0"])	
 		draw.text((left2 + 1, top2+device.height * 0.079+device.height * 0.102+device.height * 0.13+device.height * 0.16+device.height * 0.235), text=text7, font= lcars_giantfont, fill=lcars_theme[lcars_theme_selection]["font0"])	
-		
-		
 
 class LCARS_Struct(object):
 	global lcars_colore
@@ -978,40 +970,22 @@ class LCARS_Struct(object):
   
 # return a list of n most recent data from specific sensor defined by keys
 # gets Called from pilgraph
-def get_recent(dsc, dev, num, timeing):	
-	# Filters the pd Dataframe to a Device like dsc="Thermometer" 
-	
-	#print("Sensor_count:",configure.max_sensors[0])
-	
-	currentsize = len(BUFFER_GLOBAL)
-	
-	#print("currentsize ",currentsize )
-	
-	result = BUFFER_GLOBAL[BUFFER_GLOBAL["dsc"] == dsc]
-	#print("result")
-	#print(result)
-	
-	#print("Buffer")
-	#print(BUFFER_GLOBAL[BUFFER_GLOBAL["dsc"] == 'CpuTemp')
-	#print(BUFFER_GLOBAL)
-	
-	untrimmed_data = result.loc[result['dev'] == dev]
+def get_recent(tag, dsc, dev, time_ing):	
+	timelength = 0
+	clean_slices = []
 
-	# trim it to length (num).
-	trimmed_data = untrimmed_data.tail(num)
-
-
-	# return a list of the values
-	data_line = trimmed_data['value'].tolist()		
-	times = trimmed_data['timestamp'].tolist()
+	table_string = '%s_%s_%s' % (tag,dsc,dev)
+	table_data = return_data_from_sql(psql_connection_lcars, table_string, time_ing)
+	slices = table_data
 	
-	# Reversing the datapoints to change graph scrolling later reversed
-	slices = data_line[::-1]
-
-	timelength = num
+	if type(table_data) != bool:
+		timelength = len(table_data)
+		for item in table_data:
+			item_clean = float(str(item).strip("(, )"))
+			clean_slices.append(item_clean)
+		slices = clean_slices
 
 	return slices, timelength      
-
 
 
 def init(device):
@@ -1091,6 +1065,41 @@ class Job(threading.Thread):
             while not self.stopped.wait(self.interval.total_seconds()):
                 self.execute(*self.args, **self.kwargs)
 
+
+def return_data_from_sql(con, table_str, time_lengh_sec):
+	ret = False
+	now_time = time.time()
+	time_past = now_time - time_lengh_sec 
+	
+	try:
+		cur = con.cursor()
+		cur.execute('select value from "' + table_str + '"  where timestamp > '+ str(time_past) + ' order by timestamp desc')
+		values = cur.fetchall()
+		ret = values
+		cur.close()
+	except psycopg2.Error as e:
+		if e == "no results to fetch":
+			print( e )
+	return ret	
+	
+	
+		
+def connect_psql(config):
+    """ Connect to the PostgreSQL database server """
+    try:
+        # connecting to the PostgreSQL server
+        with psycopg2.connect(**config) as conn:
+            print('Connected to the PostgreSQL server.')
+            return conn
+    except (psycopg2.DatabaseError, Exception) as error:
+        print(error) 		
+
+
+
+# Prepare connection to PSQL
+config = load_config()
+psql_connection_lcars = connect_psql(config)
+psql_connection_lcars.autocommit = True
 
 if __name__ == "__main__":
 	channel.basic_consume(queue='',on_message_callback=callback, auto_ack=True)
