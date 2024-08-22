@@ -16,22 +16,22 @@ result = channel.queue_declare('', exclusive=True)
 queue_name = result.method.queue
 
 channel.queue_bind(
-    exchange='sensor_data', queue='', routing_key='bme680')
+    exchange='sensor_data', queue='', routing_key='#')
 
-channel.queue_bind(
-    exchange='sensor_data', queue='', routing_key='scd4x')
+#channel.queue_bind(
+#    exchange='sensor_data', queue='', routing_key='scd4x')
 
-channel.queue_bind(
-    exchange='sensor_data', queue='', routing_key='GPS_DATA')
+#channel.queue_bind(
+#    exchange='sensor_data', queue='', routing_key='GPS_DATA')
 
-channel.queue_bind(
-    exchange='sensor_data', queue='', routing_key='sensehat_joystick')
+#channel.queue_bind(
+#    exchange='sensor_data', queue='', routing_key='sensehat_joystick')
 
-channel.queue_bind(
-    exchange='sensor_data', queue='', routing_key='sensehat')
+#channel.queue_bind(
+#    exchange='sensor_data', queue='', routing_key='sensehat')
 
-channel.queue_bind(
-    exchange='sensor_data', queue='', routing_key='keyboard')
+#channel.queue_bind(
+#    exchange='sensor_data', queue='', routing_key='keyboard')
 
 
 
