@@ -58,6 +58,8 @@ channel.queue_bind(
 channel.queue_bind(
     exchange='sensor_data', queue='', routing_key='system_vitals')
    
+channel.queue_bind(
+    exchange='sensor_data', queue='', routing_key='generators')
 
 
 def table_list(con):
