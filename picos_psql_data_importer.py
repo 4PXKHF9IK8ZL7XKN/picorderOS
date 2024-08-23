@@ -272,7 +272,7 @@ def connect_psql(config):
         
 def callback(ch, method, properties, body):
 
-	print(f" [x] {method.routing_key}:{body}")
+	#print(f" [x] {method.routing_key}:{body}")
 
 	global GPS_DATA
 	global BME680
