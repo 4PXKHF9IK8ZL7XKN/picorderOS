@@ -44,9 +44,6 @@ def videoplayer_frame(device, draw, pos_ax,pos_ay,pos_bx,pos_by,filename):
 	frame_y = int(pos_by - pos_ay)
 	if frame_x is not None and frame_y is not None:
 		frame_set = True
-	
-	print("frame_x",frame_x)
-	print("frame_y",frame_y)
 
 	# Create a video capture object, in this case we are reading the video from a file
 	vid_capture = cv2.VideoCapture(filename)
@@ -57,12 +54,10 @@ def videoplayer_frame(device, draw, pos_ax,pos_ay,pos_bx,pos_by,filename):
 	else:
 		# Get frame rate information
 		fps = vid_capture.get(cv2.CAP_PROP_FPS)
-		print('Frames per second : ', fps,'FPS')
  
         # Get frame count
         # You can replace 7 with CAP_PROP_FRAME_COUNT as well, they are enumerations
 		frame_count = vid_capture.get(7)
-		print('Frame count : ', frame_count)
  
  	# used to record the time when we processed last frame 
 	prev_frame_time = 0
