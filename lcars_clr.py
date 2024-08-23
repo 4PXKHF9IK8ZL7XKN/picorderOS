@@ -36,8 +36,8 @@ from picos_psql_config import load_config
 
 bme680_temp = [0]
 
-styles = ["type1", "multi_graph","type3", "type4"]
-#styles = ["type1", "multi_graph", "termal_view", "video_playback","type3", "type4"]
+#styles = ["type1", "multi_graph","type3", "type4"]
+styles = ["type1", "multi_graph", "termal_view", "video_playback","type3", "type4"]
 style = "type1"
 i = 0
 i2 = 0
@@ -65,7 +65,7 @@ lcars_titlefont = None
 lcars_bigfont = None
 lcars_giantfont = None
 
-def lcars_element_videoframe(device, pos_ax,pos_ay,pos_bx,pos_by,file,option):
+def lcars_element_videoframe(device, draw, pos_ax,pos_ay,pos_bx,pos_by,filename,option):
 	# this element needs to be on top so no canvase can be used here
 
 	fill = "yellow"
@@ -75,6 +75,8 @@ def lcars_element_videoframe(device, pos_ax,pos_ay,pos_bx,pos_by,file,option):
 	global vlc_instance
 	global tmp_dirpath
 	global lcars_microfont
+	
+	filename = "/home/christian/projekt/picorderOS/assets/Firestorm Reveal Trailer.mp4"
 	
 	#print("VLC",type(vlc_instance))
 	
@@ -87,7 +89,10 @@ def lcars_element_videoframe(device, pos_ax,pos_ay,pos_bx,pos_by,file,option):
 		player.set_media(media)
 		player.play()
 		
-		videoplayer_frame(device)
+		frame_x = int(pos_bx - pos_ax)
+		frame_y = int(pos_by - pos_ay)	
+		
+		videoplayer_frame(device, draw, pos_ax,pos_ay,pos_bx,pos_by,filename)
 		#player.release()
 
 def lcars_element_graph(device, draw,pos_ax,pos_ay,pos_bx,pos_by, sensors_dict,mode):
@@ -916,7 +921,7 @@ def lcars_videoplayer_build():
 		draw.text((left + 1, top), text=text, font=lcars_littlefont, fill=lcars_theme[lcars_theme_selection]["font0"])	
 		
 	####picosvideoplayer without canvis and overdrawing i hope
-	lcars_element_videoframe(device, device.width*0.15,device.height*0.12,device.width*0.95,device.height*0.85,file,option)
+	lcars_element_videoframe(device, draw, device.width*0.15,device.height*0.12,device.width*0.95,device.height*0.85,file,option)
 	
 	
 
