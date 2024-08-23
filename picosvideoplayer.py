@@ -61,16 +61,21 @@ def videoplayer_frame(device):
  
 	fps_count = 0
 
+	frame_no = 0
+	
+	starttime = time.time()
+
 	while(vid_capture.isOpened()):
 		# vid_capture.read() methods returns a tuple, first element is a bool 
 		# and the second is frame
-		ret, frame = vid_capture.read()
-		if frame is None:
-			break
-		img = Image.fromarray(frame)
-		if ret == True:
+		frame_exists, frame = vid_capture.read()
+		
+		if frame_exists:
+			img = Image.fromarray(frame)
 			#cv2.imshow('Frame',frame)
-			if fps_count > fps*3.33:
+			time_dis_millis = (time.time() - starttime) * 1000
+			print("distance", time_dis_millis, vid_capture.get(cv2.CAP_PROP_POS_MSEC))
+			if time_dis_millis <  vid_capture.get(cv2.CAP_PROP_POS_MSEC):
 				if img.width != device.width or img.height != device.height:
 		            
 					# resize video to fit device
@@ -82,7 +87,10 @@ def videoplayer_frame(device):
 			fps_count = 1/(new_frame_time-prev_frame_time) 
 			prev_frame_time = new_frame_time 
 			fps_count = int(fps_count) 
-			print("fps:", fps_count)
+			print("for frame : " + str(frame_no) + "   timestamp is: ", str(vid_capture.get(cv2.CAP_PROP_POS_MSEC)), "fps:", fps_count)
+			frame_no += 1
+		else:
+			break
                  
             # 20 is in milliseconds, try to increase the value, say 50 and observe
             #key = cv2.waitKey(1)
