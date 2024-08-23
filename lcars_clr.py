@@ -53,6 +53,8 @@ tmp_dirpath = tempfile.mkdtemp()
 os.chmod(tmp_dirpath , 0o777)
 
 selected_sensor_values = [["local","BME680","Barometer"],["local","GENERATORS","SineWave"],["local","BME680","Thermometer"]]
+#selected_sensor_values = [["local","BME680","Barometer"],["local","GENERATORS","SineWave"],["local","BME680","Thermometer"],["local","APDS9960","proximity"]]
+#selected_sensor_values = [["local","GENERATORS","SineWave"]]
 
 vlc_instance = None
 
@@ -89,10 +91,21 @@ def lcars_element_videoframe(device, pos_ax,pos_ay,pos_bx,pos_by,file,option):
 		#player.release()
 
 def lcars_element_graph(device, draw,pos_ax,pos_ay,pos_bx,pos_by, sensors_dict,mode):
+	# mode is auto scalling depending on min max
 	fill = "yellow"
 	fill2 = "red"
 	offset = 0
 	sensor_legende = ""
+	mode = 1
+	center_line = True
+	offset_line = True
+	draw_dots = False
+	draw_lines = True
+	display_current_avr = False
+	decimal = 2
+	style_dots = False
+	radius = 4
+	line_thicknes = 1
 
 	global lcars_microfont
 
@@ -108,24 +121,26 @@ def lcars_element_graph(device, draw,pos_ax,pos_ay,pos_bx,pos_by, sensors_dict,m
 	draw.rectangle(box_element_graph,fill="black", outline=lcars_theme[lcars_theme_selection]["colore5"])
 	
 	# center line
-	#calc_center_of_graph = pos_ay+(pos_by - pos_ay)/2
-	#centerline_element_graph = [(pos_ax,calc_center_of_graph),(pos_bx,calc_center_of_graph)] 
-	#draw.line(centerline_element_graph,fill=lcars_theme[lcars_theme_selection]["colore5"])
-		
-	#sensors_legende = str(sensors_dict)
-		
-	#draw.text((pos_ax, pos_by), text=sensors_legende, font=lcars_microfont, fill=lcars_theme[lcars_theme_selection]["font0"])
+	if center_line:
+		calc_center_of_graph = pos_ay+(pos_by - pos_ay)/2
+		centerline_element_graph = [(pos_ax,calc_center_of_graph),(pos_bx,calc_center_of_graph)] 
+		draw.line(centerline_element_graph,fill=lcars_theme[lcars_theme_selection]["colore5"])
 	
 	# Unpacking the array with with array
 	for index_a, sensors_to_read in enumerate(sensors_dict):
 		# dev is the Pi dsc the cpu, location_tag is a name of the sending device like local remote or tric2351
-		#print("liste",index_a, sensors_to_read )
 
 		# by setting up all sensor values with a timestamp , can we now select the time section to watch , and ask get recent for example for the last minute
 		location_tag,sensor_dev,sensor_dsc = sensors_to_read
-		#print(get_recent(location_tag, sensor_dev, sensor_dsc, time_lengh))
+
+		# calling for the data set
 		recent, elements_forgieventime = get_recent(location_tag, sensor_dev, sensor_dsc, time_lengh)
-		if type(recent) != bool:
+		
+		if type(recent) != bool and recent != []:
+		
+			sensor_min = min(recent)
+			sensor_max = max(recent)
+			sensor_avr = statistics.mean(recent)
 		
 			if elements_forgieventime == 0:
 				elements_forgieventime = 60
@@ -136,63 +151,130 @@ def lcars_element_graph(device, draw,pos_ax,pos_ay,pos_bx,pos_by, sensors_dict,m
 			
 			# This Block checks for the global variable that defines the sensor end selects the array inside so that i can get the min max values 
 			my_global_vars = globals()
-			#print("!sensor_legende2",my_global_vars[sensor_dev])
 			for index_b, array_tosearch in enumerate(my_global_vars[sensor_dev]):
 				if array_tosearch[3] == sensor_dsc:
+					# getting the global defined stats for the sensor
 					mysensor_array = my_global_vars[sensor_dev][index_b]
-					#print("index of array", mysensor_array)
+
 				
 				
 					# This draws my dots
 					for index, data_point in enumerate(recent):		
-						
-						#print(data_point)
+				
+						# Defining my Graph
 						range_of_graph = mysensor_array[2] - mysensor_array[1]
-						graph_hight = pos_by - pos_ay				
+						graph_hight = pos_by - pos_ay	
+						grap_y_multi = graph_hight / range_of_graph		
+																	
 							
 						if mode == 1:
-							grap_y_multi = graph_hight / range_of_graph
-						else:
-							grap_y_multi = graph_hight / range_of_graph
+							# autoscale on
+							range_of_graph = sensor_max - sensor_min
 							
-							######print("graph;", range_of_graph,graph_hight,grap_y_multi, sensor_dsc )
-							# this happens for exampe in the Generrators with +-100 min max vaules
-							if mysensor_array[1] < -1:
-								#print("is negativ", mysensor_array[1], sensor_dsc)
-								offset = pos_ay*0.05 + mysensor_array[1] * grap_y_multi
-					
-
-					
-							#draw.ellipse([pos_bx*0.99-index*graph_resulutio_X_multi,pos_by-grap_y_multi * data_point,pos_bx*0.99+2-index*graph_resulutio_X_multi,pos_by-grap_y_multi * data_point+2],lcars_colores[index_a]['value'], outline = lcars_colores[index_a]['value'])
-						
-						
-							if len(recent) > 1:
-								older_data_point = recent[index - 1]
+							# catch devision by 0
+							if range_of_graph == 0:
+								grap_y_multi = graph_hight
 								
-								if mode == 1:
-									draw.line([pos_bx*0.99-(index - 1)*graph_resulutio_X_multi,pos_by-older_data_point,pos_bx*0.99-(index - 1)*graph_resulutio_X_multi,pos_by-older_data_point,pos_bx*0.99-index*graph_resulutio_X_multi,pos_by-data_point,pos_bx*0.99-index*graph_resulutio_X_multi,pos_by+-data_point],fill=lcars_colores[index_a]['value'])
-								else:
-									draw.line([pos_bx*0.99-(index - 1)*graph_resulutio_X_multi,offset+pos_by-grap_y_multi * older_data_point,pos_bx*0.99-(index - 1)*graph_resulutio_X_multi,offset+pos_by-grap_y_multi * older_data_point,pos_bx*0.99-index*graph_resulutio_X_multi,offset+pos_by-grap_y_multi * data_point,pos_bx*0.99-index*graph_resulutio_X_multi,offset+pos_by-grap_y_multi * data_point],fill=lcars_colores[index_a]['value'])
+							grap_y_multi = graph_hight / range_of_graph
 							
+							if sensor_min < -1:
+								offset = ( sensor_min * grap_y_multi ) * -1
+						else:
+							if mysensor_array[1] < -1:
+								offset = (mysensor_array[1] * grap_y_multi) * -1
+								
+								
+						# center line
+						if offset_line:
+							calc_offset_line_of_graph = pos_by*0.99-(offset)							
+							offset_line_element_graph = [(pos_ax,calc_offset_line_of_graph),(pos_bx,calc_offset_line_of_graph)] 
+							draw.line(offset_line_element_graph,fill=lcars_colores[index_a]['value'])
 						
 						
+						# when we dont have negativ values do we need to use the indexer inbetween to not overscale
+						data_unit_index = sensor_max - data_point
+						if len(recent) > 1:
+							older_data_point = recent[index - 1]						
+							older_data_unit_index = sensor_max - older_data_point
+						
+						if offset == 0:
+							point_in_graph = data_unit_index * grap_y_multi
+							if len(recent) > 1:
+								older_point_in_graph = older_data_unit_index * grap_y_multi
+						else:
+							point_in_graph = data_point * grap_y_multi
+							if len(recent) > 1:
+								older_point_in_graph = older_data_point * grap_y_multi
+					
+	
+								
+						xmovement = pos_bx*0.99-(index - 1)*graph_resulutio_X_multi
+						ymovement = pos_by*0.99-(offset+point_in_graph)
+						if len(recent) > 1:
+							older_xmovement = pos_bx*0.99-(index - 2)*graph_resulutio_X_multi
+							older_ymovement = pos_by*0.99-(offset+older_point_in_graph)
+							
+						if draw_dots:
+
+							if style_dots: 
+								draw.rectangle(
+									[xmovement,
+									ymovement,
+									xmovement+radius,
+									ymovement+radius],
+								fill = lcars_colores[index_a]['value'], outline = lcars_colores[index_a]['value'])
+							else:								
+								draw.ellipse(
+									[xmovement,
+									ymovement,
+									xmovement+radius,
+									ymovement+radius],
+								fill = lcars_colores[index_a]['value'], outline = lcars_colores[index_a]['value'])
+							
+	
+						
+						if draw_lines:
+							draw.line(
+								[older_xmovement,
+								older_ymovement,
+							
+								older_xmovement+line_thicknes,
+								older_ymovement+line_thicknes,
+							
+								xmovement,
+								ymovement,
+							
+								xmovement+line_thicknes,
+								ymovement+line_thicknes],
+							
+							fill=lcars_colores[index_a]['value'])
+	
 					
 					# This Displays the Sensor Naming on the Left
 					draw.text((pos_ax, pos_ay+index_a*(device.height * 0.055)), text=str(sensor_dsc), font=lcars_microfont, fill=lcars_colores[index_a]['value'])
 					
 					# This Displays the Sensor Legende on the Right Top
-					draw.text((pos_bx*0.95-index_a*(device.height * 0.1), pos_ay), text=str(mysensor_array[2]), font=lcars_microfont, fill=lcars_colores[index_a]['value'])
-					
+					if mode == 1:
+						draw.text((pos_bx*0.95-index_a*(device.height * 0.1), pos_ay), text=str(round(sensor_max)), font=lcars_microfont, fill=lcars_colores[index_a]['value'])
+					else:
+						draw.text((pos_bx*0.95-index_a*(device.height * 0.1), pos_ay), text=str(mysensor_array[2]), font=lcars_microfont, fill=lcars_colores[index_a]['value'])
+						
+						
 					# This Displays the Sensor Legende on the Right Bottom
-					draw.text((pos_bx*0.95-index_a*(device.height * 0.1), pos_by*0.92), text=str(mysensor_array[1]), font=lcars_microfont, fill=lcars_colores[index_a]['value'])
-					
+					if mode == 1:
+						draw.text((pos_bx*0.95-index_a*(device.height * 0.1), pos_by*0.92), text=str(round(sensor_min)), font=lcars_microfont, fill=lcars_colores[index_a]['value'])
+					else:
+						draw.text((pos_bx*0.95-index_a*(device.height * 0.1), pos_by*0.92), text=str(mysensor_array[1]), font=lcars_microfont, fill=lcars_colores[index_a]['value'])
 
-					sensor_legende = '{0}{1}'.format(round(mysensor_array[0]),mysensor_array[4])
+					if display_current_avr:
+						sensor_legende = '{0}{1}'.format(round(sensor_avr,decimal),mysensor_array[4])
+					else:
+						vaule_unpacking = recent[-1:]
+						sensor_legende = '{0}{1}'.format(round(vaule_unpacking[0],decimal),mysensor_array[4])
 
 					# This Displays the Sensor Legende Bottom
 					draw.text((pos_ax+index_a*(device.height * 0.25), pos_by), text=str(sensor_legende), font=lcars_microfont, fill=lcars_colores[index_a]['value'])
-					
-					#print("bufferinframe", len(recent))		
+						
 
 
 
