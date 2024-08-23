@@ -18,6 +18,7 @@ import pika
 import ast
 import statistics
 import vlc
+import numpy as np
 
 from picoscolores import *
 from picosglobals import *
@@ -30,6 +31,7 @@ from luma.core import cmdline, error
 from luma.core.render import canvas
 from PIL import ImageFont
 from datetime import timedelta
+from colour import Color
 
 import psycopg2
 from picos_psql_config import load_config
@@ -280,25 +282,45 @@ def lcars_element_graph(device, draw,pos_ax,pos_ay,pos_bx,pos_by, sensors_dict,m
 					# This Displays the Sensor Legende Bottom
 					draw.text((pos_ax+index_a*(device.height * 0.25), pos_by), text=str(sensor_legende), font=lcars_microfont, fill=lcars_colores[index_a]['value'])
 						
+# some utility functions for termal grid
+def constrain(val, min_val, max_val):
+    return min(max_val, max(min_val, val))
 
 
+def map_value(x, in_min, in_max, out_min, out_max):
+    return (x - in_min) * (out_max - out_min) / (in_max - in_min) + out_min
 
 
 def lcars_element_termal_array(device, draw,pos_ax,pos_ay,pos_bx,pos_by):
-	fill = "yellow"
-	fill2 = "red"
-	offset = 0
-	sensor_legende = ""
+
+	global lcars_microfont
+	
 	location_tag = 'local'
 	sensor_dev = 'TERMALFRAME'
 	sensor_dsc = 'ARRAY'
-	time_lengh = 10
-
-	global lcars_microfont
+	
+	termal_matrix = []
+	value_list = []
+	
+	MINTEMP = 26.0
+	MAXTEMP = 32.0
+	
+	COLORDEPTH = 1024
+	
+	points = [(math.floor(ix / 8), (ix % 8)) for ix in range(0, 64)]
+	grid_x, grid_y = np.mgrid[0:7:32j, 0:7:32j]
+	
+	points = [(math.floor(ix / 8), (ix % 8)) for ix in range(0, 64)]
+	grid_x, grid_y = np.mgrid[0:7:32j, 0:7:32j]
+	
+	blue = Color("indigo")
+	colors = list(blue.range_to(Color("red"), COLORDEPTH))
+	# create the array of colors
+	colors = [(int(c.red * 255), int(c.green * 255), int(c.blue * 255)) for c in colors]
 		
 	# Cacluate the element lengh we interpolate a frame in between
-	array_resulutio_X = ( pos_bx - pos_ax ) / 17
-	array_resulutio_Y = ( pos_by - pos_ay ) / 17
+	array_resulutio_X = ( pos_bx - pos_ax ) / 30
+	array_resulutio_Y = ( pos_by - pos_ay ) / 30
 
 	#bounding box
 	box_element_graph = [(pos_ax , pos_ay), (pos_bx, pos_by)] 
@@ -306,80 +328,35 @@ def lcars_element_termal_array(device, draw,pos_ax,pos_ay,pos_bx,pos_by):
 	
 	result, elements_forgieventime = get_recent_termal(location_tag, sensor_dev, sensor_dsc)
 	if type(result) != bool and result != []:
+		for value in result:
+			value_list.append(value)
+		numbers = np.array(value_list)
+		termal_matrix = np.split(numbers, 8)
 		
-		data_line = [result]
-		pure_dataline = data_line[0][:63]
-		avarage_temp = math.ceil(statistics.mean(pure_dataline)*2)
-		interpolatet_array = [(0,avarage_temp,avarage_temp*2)]
+		pixels = []
+		for row in termal_matrix:
+			pixels = pixels + row
+		pixels = [map_value(p, MINTEMP, MAXTEMP, 0, COLORDEPTH - 1) for p in pixels]
 		
-		# building a full blue frame as rendering step 1
-		for fullarray in range(0,289,1):
-			interpolatet_array.append((0,avarage_temp,avarage_temp*2))
-			
-		mask_counter_A = 0
-		mask_counter_B = 0
-		mask_counter_C = 0
-		mask_on = False
-		data_line_index = 0
-		# this is a range for to sensor value 
-		stepping = 255 / 80
-		# setting now the pixels from the sensor values translatet to colores with red more and blue less 
-		# trying to center my pixels here to get it not to mutch washed out 
-		for array_index ,pixel_off_pic in enumerate(interpolatet_array):
-			# Masking Top and Bottom
-			# carefull this values a pixel counter and i calculatet so that i get a centert array of 64 pixels with a space in between
-			if array_index >= 0 and array_index < 272:
-				# Masking Left and Right and defining my rows again
-				if mask_counter_A <= 16 and  mask_counter_A >= 0:	
-					#interpolatet_array[array_index] = '#00ff00'								
-					if mask_on:				
-						if mask_counter_B % 2 != 0:	
-							interpolatet_array[array_index] = '#ff0000'			
-							#print("my real pixels",math.ceil(data_line[0][data_line_index]))
-							colore_builder_part1 = data_line[0][data_line_index] *2 * stepping
-							# this is more or less percentage of temp to value
-							colore_builder_part1 = math.ceil(colore_builder_part1 )
-							colore_builder_part2 = 255 - math.ceil(colore_builder_part1 / 4)
-							colore_builder = (200,colore_builder_part1,colore_builder_part2)
-							#print("colore_int", colore_builder  )
-							# this section sets the colore of the pixels around the main sensor value
-							interpolatet_array[array_index+1] = (0,math.ceil(colore_builder_part1*1),math.ceil(colore_builder_part2*1))
-							interpolatet_array[array_index-1] = (0,math.ceil(colore_builder_part1*1),math.ceil(colore_builder_part2*1))
-							interpolatet_array[array_index+17] = (0,math.ceil(colore_builder_part1*1),math.ceil(colore_builder_part2*1))
-							interpolatet_array[array_index-17] = (0,math.ceil(colore_builder_part1*1),math.ceil(colore_builder_part2*1))
-							interpolatet_array[array_index+16] = (0,math.ceil(colore_builder_part1*1),math.ceil(colore_builder_part2*1))
-							interpolatet_array[array_index-16] = (0,math.ceil(colore_builder_part1*1),math.ceil(colore_builder_part2*1))
-							interpolatet_array[array_index+18] = (0,math.ceil(colore_builder_part1*1),math.ceil(colore_builder_part2*1))
-							interpolatet_array[array_index-18] = (0,math.ceil(colore_builder_part1*1),math.ceil(colore_builder_part2*1))
-							interpolatet_array[array_index] = colore_builder
-							#interpolatet_array[array_index] = '#ff0000'
-							data_line_index = data_line_index + 1				
-					mask_counter_B = mask_counter_B + 1			
-				mask_counter_A = mask_counter_A + 1
-				if mask_counter_A == 17:
-					mask_counter_A = 0
-					mask_counter_B = 0
-					
-					mask_counter_C = mask_counter_C + 1
-					if mask_counter_C == 1:
-						if mask_on == False:
-							mask_on = True
-						elif mask_on == True:
-							mask_on = False
-						mask_counter_C = 0
-						
-		
-		
-		# Drawing the Array
-		pixel_counter = 0
-		for index1_X , columns in enumerate(range(0,17,1)):	
-			for index2_Y, rows in enumerate(range(0,17,1)):
-				draw.rectangle((pos_ax+index1_X*array_resulutio_X , pos_ay+index2_Y*array_resulutio_Y,pos_ax+index1_X*array_resulutio_X+array_resulutio_X ,pos_ay+index2_Y*array_resulutio_Y+array_resulutio_Y),fill=interpolatet_array[pixel_counter], outline=interpolatet_array[pixel_counter])
-				pixel_counter = pixel_counter + 1
-				
-				
-		
-	
+		# perform interpolation
+		bicubic = griddata(points, pixels, (grid_x, grid_y), method="cubic")
+    	
+		# draw everything
+		for ix, row in enumerate(bicubic):
+			for jx, pixel in enumerate(row):
+				print("drawing",jx, pixel )
+		        #pygame.draw.rect(
+		            #lcd,
+		            #colors[constrain(int(pixel), 0, COLORDEPTH - 1)],
+		            #(
+		               # displayPixelHeight * ix,
+		                #displayPixelWidth * jx,
+		                #displayPixelHeight,
+		                #displayPixelWidth,
+		            #),
+		        #)
+
+
 
 def lcars_element_elbow(device, draw,pos_x,pos_y,rotation,colore):
 # element needs x,y position
@@ -1184,7 +1161,6 @@ def return_data_from_sql_termal(con, table_str):
 	now_time = time.time()
 	time_past = now_time - 10
 	
-	print(time_past)
 	try:
 		cur = con.cursor()
 		cur.execute('select val0, val1, val2, val3, val4, val5, val6, val7, val8, val9, val10, val11, val12, val13, val14, val15, val16, val17, val18, val19, val20, val21, val22, val23, val24, val25, val26, val27, val28, val29, val30, val31, val32, val33, val34, val35, val36, val37, val38, val39, val40, val41, val42, val43, val44, val45, val46, val47, val48, val49, val50, val51, val52, val53, val54, val55, val56, val57, val58, val59, val60, val61, val62, val63 from "' + table_str + '"  where timestamp > '+ str(time_past) + ' order by timestamp desc LIMIT 1')
