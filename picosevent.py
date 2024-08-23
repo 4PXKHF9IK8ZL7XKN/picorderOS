@@ -17,6 +17,7 @@
 # next, enter, cancel/switch
 
 import pika
+import os
 import sys
 import time
 import threading
@@ -57,24 +58,31 @@ channel.queue_bind(
     exchange='sensor_data', queue='', routing_key='touch')
     
 channel.queue_bind(
-    exchange='sensor_data', queue='', routing_key='keyboard')
+    exchange='sensor_data', queue='', routing_key='keyboard')    
     
 def publish(IN_routing_key,data):
 	configure.beep_ready[0] = True
 	configure.eventready[0] = True	
+
 	stack = 'sensor_data'
 	if IN_routing_key == 'sensor_metadata':
 		stack = ''
-   
+
 	routing_key = str(IN_routing_key)
 	message = str(data)
 	time_unix = time.time()
 	try:
-		channel.basic_publish(exchange=stack, routing_key=routing_key, body=message)
-	except:
-		raise Exception("Publish Faild, connection lost") 
-		disconnect()
-		sys.exit(1)		
+		if message is not None:
+			channel = connection.channel()
+			channel.basic_publish(exchange=stack, routing_key=routing_key, body=message)
+		else:
+			print("Is that a buffer underflow?")
+	except Exception as e:
+		print("An error occurred:",e)
+		try:
+			raise Exception('Terminating')
+		finally:
+			os._exit(1)
 	if DEBUG:
 		print(f" {time_unix} [x] Sent {stack} {routing_key}:{message}")
 		
