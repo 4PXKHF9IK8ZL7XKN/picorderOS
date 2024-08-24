@@ -98,7 +98,7 @@ def main():
 	while True:	
 		generatorsCurve = sensors.get_generators()	
 		publish_generators('generators',generatorsCurve)
-		time.sleep(0.5)
+		time.sleep(1)
 
 if __name__ == "__main__":
 	if configure.generators:
