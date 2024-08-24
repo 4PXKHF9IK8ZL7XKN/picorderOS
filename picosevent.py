@@ -196,8 +196,12 @@ def callback(ch, method, properties, body):
 	#print(f" [x] {method.routing_key}:{body}")
 
 if __name__ == '__main__':
-	channel.basic_consume(queue='',on_message_callback=callback, auto_ack=True)
-	channel.start_consuming()
+	try:
+		channel.basic_consume(queue='',on_message_callback=callback, auto_ack=True)
+		channel.start_consuming()
+	except KeyboardInterrupt or Exception or OSError as e:
+		print("Termination", e)
+		sys.exit(1)
 
 
 
