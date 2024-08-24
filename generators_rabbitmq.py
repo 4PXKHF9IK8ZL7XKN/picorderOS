@@ -106,9 +106,10 @@ if __name__ == "__main__":
 			declare_channel()
 			main()
 			signal.signal(signal.SIGINT, signal_handler)
-		except KeyboardInterrupt or Exception:
+		except KeyboardInterrupt or Exception or OSError as e:
+			print("Termination", e)
 			disconnect()
-			exit()
+			sys.exit(1)
 	else:
 		print("Service Disabled")
 		exit(1)
