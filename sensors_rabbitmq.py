@@ -23,6 +23,8 @@ print("Loading Unified Sensor Module")
 generators = True
 DEBUG = False
 
+softbreak_flag = False
+
 meta_massage = ""
 local_gps = [37.7820885,-122.3045112,configure.rabbitmq_tag]
 
@@ -137,10 +139,6 @@ else:
 def declare_channel():
 	# Setup Channels for Sensors
 	channel.exchange_declare(exchange='sensor_data', exchange_type='topic')
-	channel.queue_declare(queue='sensor_metadata')
-	# cleanup entreys , we could have multible index
-	channel.queue_purge(queue='sensor_metadata')
-
     
 def publish(IN_routing_key,data):
 	stack = 'sensor_data'
@@ -156,11 +154,12 @@ def publish(IN_routing_key,data):
 		else:
 			print("Is that a buffer underflow?")
 	except Exception as e:
-		print("An error occurred:",e)
+		print("An error occurred in Sensors Rabbitmq:",e)
 		try:
 			raise Exception('Terminating')
 		finally:
-			os._exit(1)
+			disconnect()
+			sys.exit(1)
 		
 		
 		
@@ -177,20 +176,27 @@ def signal_handler(sig, frame):
      
     	
 def button_callbackA(channel):
+	global softbreak_flag
 	touchA_dict = {"DICT":"A",0:False,1:False,2:False,3:False,4:False,5:False,6:False,7:False,8:False,9:False,10:False,11:False}
+	softbreak_flag = True
 	for i in range(12):
 		touchA_dict[i] = mpr121A[i].value
-	
+		
+	softbreak_flag = False	
 	pikaworkerA = threading.Thread(target = publisher_worker.main_pika_worker, args = ("touch",touchA_dict))
+	pikaworkerA.daemon = True
 	pikaworkerA.start()
 	pikaworkerA.join()
 
 def button_callbackB(channel):
+	global softbreak_flag
 	touchB_dict = {"DICT":"B",0:False,1:False,2:False,3:False,4:False,5:False,6:False,7:False,8:False,9:False,10:False,11:False}
+	softbreak_flag = True
 	for i in range(12):
 		touchB_dict[i] = mpr121B[i].value
-
+	softbreak_flag = False	
 	pikaworkerB = threading.Thread(target = publisher_worker.main_pika_worker, args = ("touch",touchB_dict))
+	pikaworkerB.daemon = True
 	pikaworkerB.start()
 	pikaworkerB.join()
 		
@@ -768,19 +774,23 @@ class MLX90614():
 		data = self.read_reg(self.MLX90614_TOBJ1)
 		return self.data_to_temp(data)
 
-# function to use the sensor class as a process.
-def main():
+def soft_break():
+	global softbreak_flag
+	if softbreak_flag:
+		time.sleep(0.5)
+		softbreak_flag  = False
+	return
+
+
+
+if __name__ == "__main__":
 	declare_channel()
-	
-	global meta_massage
 
 	sensors = sensor()
 	timed = timer()
 	wifitimer = timer()
 	
 	counter = 0
-	
-	
 	
 	# setup GPIO IRQ
 	GPIO.setmode(GPIO.BCM)
@@ -791,98 +801,114 @@ def main():
 		GPIO.add_event_detect(BUTTON_GPIOA, GPIO.RISING, callback=button_callbackA, bouncetime=10)
 		GPIO.add_event_detect(BUTTON_GPIOB, GPIO.RISING, callback=button_callbackB, bouncetime=10) 
     
-    # setup the thread with timer and start the IRQ reset function
-	job = Job(interval=timedelta(seconds=WAIT_TIME_SECONDS), execute=reset)
-	job.start() 
-
-	while not configure.status == "quit":
-
-		while True:
-			
+		# setup the thread with timer and start the IRQ reset function
+		job = Job(interval=timedelta(seconds=WAIT_TIME_SECONDS), execute=reset)
+		job.start()
+		
+    
+	while True:
+		try:
+ 		
 			if configure.bme:
 				bme680 = sensors.get_bme680()
 				publish("bme680",bme680)
-				
-			
-				
+		        
+			soft_break()
+		        
 			if configure.bmp280:
 				bmp280 = sensors.get_bmp280()
 				publish("bmp280",bmp280)
-				
-			
-				
+		        
+			soft_break()
+		        
 			if configure.SHT30:
 				sht30 = sensors.get_sht30()	
 				publish("sht30",sht30)
-				
-					
-				
+		        
+			soft_break()		
+		        
 			if configure.SCD4X:
 				scd4x = sensors.get_scd4x()
 				publish("scd4x",scd4x)
-				
-				
+	        
+			soft_break()	
+		        
 			if configure.LSM6DS3TR:
 				lsm6ds3 = sensors.get_lsm6ds3()
 				publish("lsm6ds3",lsm6ds3)
-					
-				
+	        
+			soft_break()		
+		        
 			if configure.LIS3MDL:
 				lis3mdl = sensors.get_lis3mdl()
 				publish("lis3mdl",lis3mdl)
-					
-				
+	        
+			soft_break()		
+		        
 			if configure.APDS9960:
 				apds9960 = sensors.get_apds9960()		
 				publish("apds9960",apds9960)
-							
-			
+		        
+			soft_break()			
+	        
 			if configure.amg8833:
 				thermal_frame = sensors.get_thermal_frame()
 				publish("thermal_frame",thermal_frame)
-						
-				
+				        
+			soft_break()
+		        
 			if configure.system_vitals:
 				system_vitals = sensors.get_system_vitals()
 				publish("system_vitals",system_vitals)							
-			
-				
+	        
+			soft_break()
+		        
 			if configure.sensehat:
 				sensehat_data = sensors.get_sensehat()	
-				publish("sensehat",sensehat_data)		
-			
+				publish("sensehat",sensehat_data)
+				        
+			soft_break()
+	        
 			if configure.envirophat:
 				envirophat_data = sensors.get_envirophat()
 				publish("envirophat",envirophat_data)	
-							
+		        
+			soft_break()
+					        
 			if configure.pocket_geiger:			
 				pocket_geigert_data = sensors.get_pocket_geiger()			
 				publish("pocket_geiger",pocket_geiger_data)	
+		        
+			soft_break()
 
 			if configure.ir_thermo:		
 				ir_thermo_data = sensors.get_ir_thermo()	
 				publish("ir_thermo",ir_thermo_data)
-				
+		        
+			soft_break()
+		        
 			if counter == 0:
 				if configure.gps:
 					gps_parsed = sensors.get_gps()
 					if gps_parsed[0] is not None and gps_parsed[1] is not None:
+						soft_break()
 						publish("GPS_DATA",gps_parsed)
-				
+				        
+			soft_break()
+		        
 			counter = counter + 1 
 			if counter == 180:
 				counter = 0
 			else:
 				time.sleep(0.01)
+					
+		except KeyboardInterrupt or Exception or OSError as e:
+			print("Termination", e)
+			break
+			job.join()
+			disconnect()
+			sys.exit(1)
 
-
-if __name__ == "__main__":
-	try:
-		main()
-		signal.signal(signal.SIGINT, signal_handler)
-	except KeyboardInterrupt or Exception:
-		disconnect()
-		exit()
 		
 # input's from input.py
 # configure.input_pcf8575
