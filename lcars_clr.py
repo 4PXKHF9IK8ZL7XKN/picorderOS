@@ -36,6 +36,8 @@ from colour import Color
 import psycopg2
 from picos_psql_config import load_config
 
+from scipy.interpolate import griddata
+
 bme680_temp = [0]
 
 styles = [ "multi_graph","termal_view"]
@@ -142,8 +144,7 @@ def lcars_element_graph(device, draw,pos_ax,pos_ay,pos_bx,pos_by, sensors_dict,m
 
 		# calling for the data set
 		recent, elements_forgieventime = get_recent(location_tag, sensor_dev, sensor_dsc, time_lengh)
-		
-		if type(recent) != bool and recent != []:
+		if type(recent) != bool and len(recent) != 0:
 		
 			sensor_min = min(recent)
 			sensor_max = max(recent)
@@ -181,8 +182,8 @@ def lcars_element_graph(device, draw,pos_ax,pos_ay,pos_bx,pos_by, sensors_dict,m
 							# catch devision by 0
 							if range_of_graph == 0:
 								grap_y_multi = graph_hight
-								
-							grap_y_multi = graph_hight / range_of_graph
+							else:	
+							    grap_y_multi = graph_hight / range_of_graph
 							
 							if sensor_min < -1:
 								offset = ( sensor_min * grap_y_multi ) * -1
@@ -220,6 +221,10 @@ def lcars_element_graph(device, draw,pos_ax,pos_ay,pos_bx,pos_by, sensors_dict,m
 						if len(recent) > 1:
 							older_xmovement = pos_bx*0.99-(index - 2)*graph_resulutio_X_multi
 							older_ymovement = pos_by*0.99-(offset+older_point_in_graph)
+						else:
+							print("NO Data")
+							older_xmovement = pos_bx*0.99
+							older_ymovement = pos_by*0.99
 							
 						if draw_dots:
 
@@ -290,6 +295,10 @@ def constrain(val, min_val, max_val):
 def map_value(x, in_min, in_max, out_min, out_max):
     return (x - in_min) * (out_max - out_min) / (in_max - in_min) + out_min
 
+def chunks(lst, n):
+    """Yield successive n-sized chunks from lst."""
+    for i in range(0, len(lst), n):
+        yield lst[i:i + n]
 
 def lcars_element_termal_array(device, draw,pos_ax,pos_ay,pos_bx,pos_by):
 
@@ -318,20 +327,20 @@ def lcars_element_termal_array(device, draw,pos_ax,pos_ay,pos_bx,pos_by):
 	# create the array of colors
 	colors = [(int(c.red * 255), int(c.green * 255), int(c.blue * 255)) for c in colors]
 		
-	# Cacluate the element lengh we interpolate a frame in between
-	array_resulutio_X = ( pos_bx - pos_ax ) / 30
-	array_resulutio_Y = ( pos_by - pos_ay ) / 30
+	# Cacluate the element lengh we interpolate a frame in between	
+	displayPixelWidth = ( pos_bx - pos_ax ) / 30
+	displayPixelHeight = ( pos_by - pos_ay ) / 30
 
 	#bounding box
 	box_element_graph = [(pos_ax , pos_ay), (pos_bx, pos_by)] 
 	draw.rectangle(box_element_graph,fill="black", outline=lcars_theme[lcars_theme_selection]["colore5"])
 	
 	result, elements_forgieventime = get_recent_termal(location_tag, sensor_dev, sensor_dsc)
-	if type(result) != bool and result != []:
+	print("result",result)
+	if type(result) != bool and len(result) != 0:
 		for value in result:
 			value_list.append(value)
-		numbers = np.array(value_list)
-		termal_matrix = np.split(numbers, 8)
+		termal_matrix = list(chunks(value_list, 8))
 		
 		pixels = []
 		for row in termal_matrix:
@@ -342,20 +351,15 @@ def lcars_element_termal_array(device, draw,pos_ax,pos_ay,pos_bx,pos_by):
 		bicubic = griddata(points, pixels, (grid_x, grid_y), method="cubic")
     	
 		# draw everything
-		for ix, row in enumerate(bicubic):
-			for jx, pixel in enumerate(row):
-				print("drawing",jx, pixel )
-		        #pygame.draw.rect(
-		            #lcd,
-		            #colors[constrain(int(pixel), 0, COLORDEPTH - 1)],
-		            #(
-		               # displayPixelHeight * ix,
-		                #displayPixelWidth * jx,
-		                #displayPixelHeight,
-		                #displayPixelWidth,
-		            #),
-		        #)
-
+		for index1_X, row in enumerate(bicubic):
+			for index2_Y, pixel in enumerate(row):
+				print("drawing row", index1_X,"zeile", index2_Y," row data" , row, "pixel" , pixel )
+				draw.rectangle((
+				pos_ax+index1_X*displayPixelWidth , 
+				pos_ay+index2_Y*displayPixelHeight,
+				pos_ax+index1_X*displayPixelWidth+displayPixelWidth ,
+				pos_ay+index2_Y*displayPixelHeight+displayPixelHeight),
+				colors[constrain(int(pixel), 0, COLORDEPTH - 1)])
 
 
 def lcars_element_elbow(device, draw,pos_x,pos_y,rotation,colore):
@@ -1036,6 +1040,7 @@ class LCARS_Struct(object):
 def get_recent(tag, dsc, dev, time_ing):	
 	timelength = 0
 	clean_slices = []
+	slices = False
 
 	table_string = '%s_%s_%s' % (tag,dsc,dev)
 	table_data = return_data_from_sql(psql_connection_lcars, table_string, time_ing)
@@ -1049,12 +1054,13 @@ def get_recent(tag, dsc, dev, time_ing):
 	return slices, timelength    
 	
 def get_recent_termal(tag, dsc, dev):	
-	timelength = 0
+	items_count = 0
 	clean_slices = []
+	array_data = False
 
 	table_string = '%s_%s_%s' % (tag,dsc,dev)
 	table_data = return_data_from_sql_termal(psql_connection_lcars, table_string)	
-	if type(table_data) != bool:
+	if type(table_data) != bool and len(table_data) != 0:
 		array_data = ast.literal_eval(str(table_data[0]).strip("( )"))
 		items_count = len(array_data)
 	return array_data, items_count  
@@ -1159,7 +1165,7 @@ def return_data_from_sql(con, table_str, time_lengh_sec):
 def return_data_from_sql_termal(con, table_str):
 	ret = False
 	now_time = time.time()
-	time_past = now_time - 10
+	time_past = now_time - 30
 	
 	try:
 		cur = con.cursor()
