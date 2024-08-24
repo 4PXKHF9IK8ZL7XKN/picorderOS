@@ -720,8 +720,7 @@ def callback(ch, method, properties, body):
 		longitude = sensor_frame[3]
 		latitude = sensor_frame[2]
 		sensortimestamp = sensor_frame[1]
-		
-		print("tag:",origin_tag)
+
 		index = 0		
 		for sensor_array_line in sensor_frame[0]:
 			for datapoint in sensor_array_line:
@@ -737,7 +736,6 @@ def callback(ch, method, properties, body):
 		
 		# creates a new dataframe to add new data
 		table_string = '%s_%s_%s' % (TERMALFRAME[67],'TERMALFRAME','ARRAY')
-		print("string: ", table_string)	
 
 		ret = table_exists(psql_connection, table_string)
 		if ret is False:
@@ -749,8 +747,8 @@ TERMALFRAME[36], TERMALFRAME[37], TERMALFRAME[38], TERMALFRAME[39], TERMALFRAME[
 TERMALFRAME[46], TERMALFRAME[47], TERMALFRAME[48], TERMALFRAME[49], TERMALFRAME[50], TERMALFRAME[51], TERMALFRAME[52], TERMALFRAME[53], TERMALFRAME[54], TERMALFRAME[55],
 TERMALFRAME[56], TERMALFRAME[57], TERMALFRAME[58], TERMALFRAME[59], TERMALFRAME[60], TERMALFRAME[61], TERMALFRAME[62], TERMALFRAME[63], TERMALFRAME[64], TERMALFRAME[65], TERMALFRAME[66] ,TERMALFRAME[67])
 		print("Termal",ret, ent_id)
-		#if ret is False:
-		#	os.exit("SQL Write Faild")
+		if ret is False:
+			os.exit("SQL Write Faild")
 			
 		purge_data_totime(psql_connection,  table_string, keep_data_lengh)
 
@@ -774,8 +772,9 @@ if __name__ == "__main__":
 	channel.basic_consume(queue='',on_message_callback=callback, auto_ack=True)
 	try:	
 		channel.start_consuming()
-	except KeyboardInterrupt:
-		pass
+	except KeyboardInterrupt or Exception or OSError as e:
+		print("Termination", e)
+		sys.exit(1)
 
 
 
