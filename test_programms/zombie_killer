@@ -1,0 +1,15 @@
+#!/bin/bash
+LIST=$(ps -ax | grep 'lcars_clr\|sensors_rabbitmq' | awk ' {printf $1 " "}'  )
+IFS=', '
+read -ra array <<< "$LIST"
+# get item count
+LENGH="${#array[@]}"
+NEWLENGH=$(echo $LENGH - 1 | bc)
+#echo ${array[@]}
+unset 'array[NEWLENGH]'
+#echo ${array[@]}
+for item in "${array[@]}"
+do
+echo "Try to kill Zombie" $item
+kill $item
+done
