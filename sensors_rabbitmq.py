@@ -10,7 +10,7 @@ import pika
 import signal
 import serial
 import datetime
-import picos_pika_worker as publisher_worker
+
 from pynmeagps import NMEAReader
 import RPi.GPIO as GPIO
 import busio as io
@@ -24,10 +24,11 @@ generators = True
 DEBUG = False
 
 softbreak_flag = False
+term_signal = False
 
 meta_massage = ""
-local_gps = [37.7820885,-122.3045112,configure.rabbitmq_tag]
 
+local_gps = [37.7820885,-122.3045112,configure.rabbitmq_tag]
 
 # Delcares the IRQ Pins for Cap Touch 
 BUTTON_GPIOA = 17
@@ -62,9 +63,15 @@ if configure.input_cap_mpr121:
 	import busio
 	import signal
 	
-	# Note you can optionally change the address of the device:
-	mpr121A = adafruit_mpr121.MPR121(i2c, address=0x5A)
-	mpr121B = adafruit_mpr121.MPR121(i2c, address=0x5B)	
+	try:
+	
+		# Note you can optionally change the address of the device:
+		mpr121A = adafruit_mpr121.MPR121(i2c, address=0x5A)
+		mpr121B = adafruit_mpr121.MPR121(i2c, address=0x5B)	
+	
+	except OSError as e:
+		print("Error in Sensors Rabbitmq by request I2C", e)
+		sys.exit(1)
 	
 if configure.bme:
 	import adafruit_bme680
@@ -157,6 +164,7 @@ def publish(IN_routing_key,data):
 		print("An error occurred in Sensors Rabbitmq:",e)
 		try:
 			raise Exception('Terminating')
+			signal.raise_signal(signal.SIGTERM)
 		finally:
 			disconnect()
 			sys.exit(1)
@@ -165,41 +173,32 @@ def publish(IN_routing_key,data):
 		
 	if DEBUG:
 		print(f" {time_unix} [x] Sent {stack} {routing_key}:{message}")
-
+ 
     
 def disconnect():
     connection.close()
-        
-def signal_handler(sig, frame):
-    GPIO.cleanup()
-    sys.exit(0)
-     
     	
 def button_callbackA(channel):
 	global softbreak_flag
+	global term_signal
 	touchA_dict = {"DICT":"A",0:False,1:False,2:False,3:False,4:False,5:False,6:False,7:False,8:False,9:False,10:False,11:False}
 	softbreak_flag = True
 	for i in range(12):
 		touchA_dict[i] = mpr121A[i].value
-		
+	publish("touch",touchA_dict)	
 	softbreak_flag = False	
-	pikaworkerA = threading.Thread(target = publisher_worker.main_pika_worker, args = ("touch",touchA_dict))
-	pikaworkerA.daemon = True
-	pikaworkerA.start()
-	pikaworkerA.join()
+
 
 def button_callbackB(channel):
 	global softbreak_flag
+	global term_signal
 	touchB_dict = {"DICT":"B",0:False,1:False,2:False,3:False,4:False,5:False,6:False,7:False,8:False,9:False,10:False,11:False}
 	softbreak_flag = True
 	for i in range(12):
 		touchB_dict[i] = mpr121B[i].value
+	publish("touch",touchB_dict)
 	softbreak_flag = False	
-	pikaworkerB = threading.Thread(target = publisher_worker.main_pika_worker, args = ("touch",touchB_dict))
-	pikaworkerB.daemon = True
-	pikaworkerB.start()
-	pikaworkerB.join()
-		
+	
 
 def reset():
 	if configure.input_cap_mpr121:
@@ -387,8 +386,15 @@ def GPS_function(select):
 		
 	gps_update = {"lat" : lat_compat, "lon" : lon_compat, "speed" : speed, "altitude" : alt, "track" : trCourse, "sats" : sat_view , "lat0" : lat0 , "lat1" : lat1, "lat2" : lat2 ,"lat3" : lat3 ,"lat4" : lat4 , "dirLat" : dirLat, "lon0" : lon0 , "lon1" : lon1, "lon2" : lon2, "lon3" : lon3, "lon4" : lon4, "dirLon" : dirLon,"pos_val" : pos_val, "time" : epoch}
 				
-	return gps_update
-	
+	return gps_update	
+
+def signal_handler_function(signum, frame):
+	print("Signal from Worker Thread - Terminate on error")
+	disconnect()
+	GPIO.cleanup()  
+	sys.exit(1)
+
+
 
 class sensor(object):
 
@@ -532,6 +538,7 @@ class sensor(object):
 		# this part stores gps data in a global to fill sensor data , when we dont have data do we fill a location thats known to be wrong but nice to know 
 		if position[0] is not None and position[1] is not None :
 			local_gps = position
+			
 		else:
 			local_gps = [37.7820885,-122.3045112, 0, 0, 0,0 , 37 , 'deg', 78, 20885 , 'min' , 'N', 122 , 'deg' ,30 , 45112, 'min', 'W' , 'N', timestamp, configure.rabbitmq_tag]
 		
@@ -540,11 +547,17 @@ class sensor(object):
 
 	def get_thermal_frame(self):
 		global local_gps
-		self.thermal_frame = amg.pixels
-		data = numpy.array(self.thermal_frame)
-		high = numpy.max(data)
-		low = numpy.min(data)
-		# we get it anytime because its different per sensor read
+		try:
+			self.thermal_frame = amg.pixels
+			data = numpy.array(self.thermal_frame)
+			high = numpy.max(data)
+			low = numpy.min(data)
+		except OSError as e:
+			print("Error in Sensors Rabbitmq by request I2C", e)
+			disconnect()
+			GPIO.cleanup()  
+			sys.exit(1)
+
 		timestamp = time.time()
 		
 		return self.thermal_frame , timestamp ,local_gps[0], local_gps[1] ,configure.rabbitmq_tag
@@ -552,12 +565,18 @@ class sensor(object):
 
 	def get_bme680(self):
 		global local_gps
-		self.bme680_temp = self.bme680.temperature
-		self.bme680_humi = self.bme680.humidity
-		self.bme680_press = self.bme680.pressure
-		self.bme680_voc = self.bme680.gas / 1000
-		self.bme680_alt = self.bme680.altitude
-		# we get it anytime because its different per sensor read
+		try:
+			self.bme680_temp = self.bme680.temperature
+			self.bme680_humi = self.bme680.humidity
+			self.bme680_press = self.bme680.pressure
+			self.bme680_voc = self.bme680.gas / 1000
+			self.bme680_alt = self.bme680.altitude
+		except OSError as e:
+			print("Error in Sensors Rabbitmq by request I2C", e)
+			disconnect()
+			GPIO.cleanup()  
+			sys.exit(1)
+
 		timestamp = time.time() 
 		
 		return self.bme680_temp,self.bme680_humi,self.bme680_press, self.bme680_voc, self.bme680_alt , timestamp ,local_gps[0], local_gps[1] ,configure.rabbitmq_tag
@@ -565,28 +584,46 @@ class sensor(object):
 		
 	def get_bmp280(self):
 		global local_gps
-		self.bmp280_temp = self.bmp280.temperature
-		self.bmp280_press = self.bmp280.pressure
-		self.bmp280_alt = self.bmp280.altitude
-		# we get it anytime because its different per sensor read
+		try:
+			self.bmp280_temp = self.bmp280.temperature
+			self.bmp280_press = self.bmp280.pressure
+			self.bmp280_alt = self.bmp280.altitude
+		except OSError as e:
+			print("Error in Sensors Rabbitmq by request I2C", e)
+			disconnect()
+			GPIO.cleanup()  
+			sys.exit(1)
+	
 		timestamp = time.time() 
 		
 		return self.bmp280_temp ,self.bmp280_press, self.bmp280_alt	, timestamp ,local_gps[0], local_gps[1] ,configure.rabbitmq_tag	
 		
 	def get_sht30(self):
 		global local_gps
-		self.sht30_temp = self.sht30.temperature
-		self.sht30_rel_humi = self.sht30.relative_humidity
-		# we get it anytime because its different per sensor read
+		try:
+			self.sht30_temp = self.sht30.temperature
+			self.sht30_rel_humi = self.sht30.relative_humidity
+		except OSError as e:
+			print("Error in Sensors Rabbitmq by request I2C", e)
+			disconnect()
+			GPIO.cleanup()  
+			sys.exit(1)
+
 		timestamp = time.time()
 				
 		return self.sht30_temp , self.sht30_rel_humi , timestamp ,local_gps[0], local_gps[1] ,configure.rabbitmq_tag
 		
 	def get_lsm6ds3(self):
 		global local_gps
-		self.lsm6ds3_accel_X, self.lsm6ds3_accel_Y, self.lsm6ds3_accel_Z = self.lsm6ds3.acceleration
-		self.lsm6ds3_gyro_X, self.lsm6ds3_gyro_Y, self.lsm6ds3_gyro_Z = self.lsm6ds3.gyro
-		# we get it anytime because its different per sensor read
+		try:
+			self.lsm6ds3_accel_X, self.lsm6ds3_accel_Y, self.lsm6ds3_accel_Z = self.lsm6ds3.acceleration
+			self.lsm6ds3_gyro_X, self.lsm6ds3_gyro_Y, self.lsm6ds3_gyro_Z = self.lsm6ds3.gyro
+		except OSError as e:
+			print("Error in Sensors Rabbitmq by request I2C", e)
+			disconnect()
+			GPIO.cleanup()  
+			sys.exit(1)
+
 		timestamp = time.time()
 		
 		return self.lsm6ds3_accel_X ,self.lsm6ds3_accel_Y, self.lsm6ds3_accel_Z, self.lsm6ds3_gyro_X, self.lsm6ds3_gyro_Y, self.lsm6ds3_gyro_Z , timestamp ,local_gps[0], local_gps[1] ,configure.rabbitmq_tag
@@ -594,18 +631,31 @@ class sensor(object):
 
 	def get_lis3mdl(self):
 		global local_gps
-		self.lis3mdl_X, self.lis3mdl_Y, self.lis3mdl_Z = self.lis3mdl.magnetic
-		# we get it anytime because its different per sensor read
+		try:
+			self.lis3mdl_X, self.lis3mdl_Y, self.lis3mdl_Z = self.lis3mdl.magnetic
+			
+		except OSError as e:
+			print("Error in Sensors Rabbitmq by request I2C", e)
+			disconnect()
+			GPIO.cleanup()  
+			sys.exit(1)
+
 		timestamp = time.time()
 		
 		return self.lis3mdl_X, self.lis3mdl_Y, self.lis3mdl_Z , timestamp ,local_gps[0], local_gps[1] ,configure.rabbitmq_tag
 		
 	def get_apds9960(self):
 		global local_gps
-		self.apds9960_proximity = self.apds9960.proximity
-		self.apds9960_gesture = self.apds9960.gesture()
-		self.apds9960_colore_r ,self.apds9960_colore_g ,self.apds9960_colore_b ,self.apds9960_colore_c = self.apds9960.color_data
-		# we get it anytime because its different per sensor read
+		try:
+			self.apds9960_proximity = self.apds9960.proximity
+			self.apds9960_gesture = self.apds9960.gesture()
+			self.apds9960_colore_r ,self.apds9960_colore_g ,self.apds9960_colore_b ,self.apds9960_colore_c = self.apds9960.color_data
+		except OSError as e:
+			print("Error in Sensors Rabbitmq by request I2C", e)
+			disconnect()
+			GPIO.cleanup()  
+			sys.exit(1)
+
 		timestamp = time.time()
 		
 		return self.apds9960_proximity, self.apds9960_gesture, self.apds9960_colore_r ,self.apds9960_colore_g ,self.apds9960_colore_b ,self.apds9960_colore_c, configure.rabbitmq_tag
@@ -613,6 +663,7 @@ class sensor(object):
 		
 	def get_scd4x(self):
 		global local_gps
+		# this is different, this sensor needs to head up to send data back. 
 		try:
 			if self.scd4x.data_ready:
 				self.scd4x_CO2 = self.scd4x.CO2	
@@ -629,19 +680,26 @@ class sensor(object):
 
 	def get_sensehat(self):
 		global local_gps
-		magdata = sense.get_compass_raw()
-		acceldata = sense.get_accelerometer_raw()
+		try:
+			magdata = sense.get_compass_raw()
+			acceldata = sense.get_accelerometer_raw()
 
-		self.sh_temp = sense.get_temperature()
-		self.sh_humi = sense.get_humidity()
-		self.sh_baro = sense.get_pressure()
-		self.sh_magx = magdata["x"]
-		self.sh_magy = magdata["y"]
-		self.sh_magz = magdata["z"]
-		self.sh_accx = acceldata['x']	
-		self.sh_accy = acceldata['y']		
-		self.sh_accz = acceldata['z']
-		# we get it anytime because its different per sensor read
+			self.sh_temp = sense.get_temperature()
+			self.sh_humi = sense.get_humidity()
+			self.sh_baro = sense.get_pressure()
+			self.sh_magx = magdata["x"]
+			self.sh_magy = magdata["y"]
+			self.sh_magz = magdata["z"]
+			self.sh_accx = acceldata['x']	
+			self.sh_accy = acceldata['y']		
+			self.sh_accz = acceldata['z']
+			
+		except OSError as e:
+			print("Error in Sensors Rabbitmq by request I2C", e)
+			disconnect()
+			GPIO.cleanup()  
+			sys.exit(1)
+
 		timestamp = time.time()
 		
 			
@@ -649,11 +707,18 @@ class sensor(object):
 		
 	def get_pocket_geiger(self):
 		global local_gps
-		data = self.radiation.status()
-		rad_data = float(data["uSvh"])
-		# times 100 to convert to urem/h
-		self.radiat.set(rad_data*100, timestamp, position)	
-		# we get it anytime because its different per sensor read
+		try:
+			data = self.radiation.status()
+			rad_data = float(data["uSvh"])
+			# times 100 to convert to urem/h
+			self.radiat.set(rad_data*100, timestamp, position)	
+			
+		except OSError as e:
+			print("Error in Sensors Rabbitmq by request I2C", e)
+			disconnect()
+			GPIO.cleanup()  			
+			sys.exit(1)
+		
 		timestamp = time.time()
 		
 		return self.radiat , timestamp ,local_gps[0], local_gps[1] ,configure.rabbitmq_tag
@@ -685,29 +750,43 @@ class sensor(object):
 
 	def get_envirophat(self):
 		global local_gps
-		self.rgb = light.rgb()
-		self.analog_values = analog.read_all()
-		self.mag_values = motion.magnetometer()
-		self.acc_values = [round(x, 2) for x in motion.accelerometer()]
-		self.ep_temp = weather.temperature()
-		self.ep_colo = light.light()
-		self.ep_baro = weather.pressure(unit='hpa')
-		self.ep_magx = self.mag_values[0]
-		self.ep_magy = self.mag_values[1]
-		self.ep_magz = self.mag_values[2]
-		self.ep_accx = self.acc_values[0]	
-		self.ep_accy = self.acc_values[1]	
-		self.ep_accz = self.acc_values[2]
-		# we get it anytime because its different per sensor read
+		try:
+			self.rgb = light.rgb()
+			self.analog_values = analog.read_all()
+			self.mag_values = motion.magnetometer()
+			self.acc_values = [round(x, 2) for x in motion.accelerometer()]
+			self.ep_temp = weather.temperature()
+			self.ep_colo = light.light()
+			self.ep_baro = weather.pressure(unit='hpa')
+			self.ep_magx = self.mag_values[0]
+			self.ep_magy = self.mag_values[1]
+			self.ep_magz = self.mag_values[2]
+			self.ep_accx = self.acc_values[0]	
+			self.ep_accy = self.acc_values[1]	
+			self.ep_accz = self.acc_values[2]
+			
+		except OSError as e:
+			print("Error in Sensors Rabbitmq by request I2C", e)
+			disconnect()
+			GPIO.cleanup()  
+			sys.exit(1)
+			
 		timestamp = time.time()
 			
 		return self.ep_temp, self.ep_baro, self.ep_colo, self.ep_magx, self.ep_magy, self.ep_magz, self.ep_accx, self.ep_accy, self.ep_accz, configure.rabbitmq_tag
 		
 	def get_MLX90614(self):
 		global local_gps	
-		amb_temp = MLX90614.data_to_temp(MLX90614.get_amb_temp)	
-		obj_temp = MLX90614.data_to_temp(MLX90614.get_obj_temp)		
-		# we get it anytime because its different per sensor read
+		try:
+			amb_temp = MLX90614.data_to_temp(MLX90614.get_amb_temp)	
+			obj_temp = MLX90614.data_to_temp(MLX90614.get_obj_temp)	
+			
+		except OSError as e:
+			print("Error in Sensors Rabbitmq by request I2C", e)
+			disconnect()
+			GPIO.cleanup()  
+			sys.exit(1)	
+
 		timestamp = time.time()
 		
 		return amb_temp, obj_temp, configure.rabbitmq_tag
@@ -791,7 +870,7 @@ if __name__ == "__main__":
 	wifitimer = timer()
 	
 	counter = 0
-	
+		
 	# setup GPIO IRQ
 	GPIO.setmode(GPIO.BCM)
 	if configure.input_cap_mpr121:
@@ -801,112 +880,115 @@ if __name__ == "__main__":
 		GPIO.add_event_detect(BUTTON_GPIOA, GPIO.RISING, callback=button_callbackA, bouncetime=10)
 		GPIO.add_event_detect(BUTTON_GPIOB, GPIO.RISING, callback=button_callbackB, bouncetime=10) 
     
-		# setup the thread with timer and start the IRQ reset function
-		job = Job(interval=timedelta(seconds=WAIT_TIME_SECONDS), execute=reset)
-		job.start()
-		
-    
 	while True:
 		try:
- 		
+
+			signal.signal(signal.SIGTERM, signal_handler_function)
+			
 			if configure.bme:
 				bme680 = sensors.get_bme680()
 				publish("bme680",bme680)
-		        
+			    
 			soft_break()
-		        
+			    
 			if configure.bmp280:
 				bmp280 = sensors.get_bmp280()
 				publish("bmp280",bmp280)
-		        
+			    
 			soft_break()
-		        
+			    
 			if configure.SHT30:
 				sht30 = sensors.get_sht30()	
 				publish("sht30",sht30)
-		        
+			    
 			soft_break()		
-		        
+			    
 			if configure.SCD4X:
 				scd4x = sensors.get_scd4x()
 				publish("scd4x",scd4x)
-	        
+		    
 			soft_break()	
-		        
+			    
 			if configure.LSM6DS3TR:
 				lsm6ds3 = sensors.get_lsm6ds3()
 				publish("lsm6ds3",lsm6ds3)
-	        
+		    
 			soft_break()		
-		        
+			    
 			if configure.LIS3MDL:
 				lis3mdl = sensors.get_lis3mdl()
 				publish("lis3mdl",lis3mdl)
-	        
+		    
 			soft_break()		
-		        
+			    
 			if configure.APDS9960:
 				apds9960 = sensors.get_apds9960()		
 				publish("apds9960",apds9960)
-		        
+			    
 			soft_break()			
-	        
+		    
 			if configure.amg8833:
 				thermal_frame = sensors.get_thermal_frame()
 				publish("thermal_frame",thermal_frame)
-				        
+					    
 			soft_break()
-		        
+			    
 			if configure.system_vitals:
 				system_vitals = sensors.get_system_vitals()
 				publish("system_vitals",system_vitals)							
-	        
+		    
 			soft_break()
-		        
+			    
 			if configure.sensehat:
 				sensehat_data = sensors.get_sensehat()	
 				publish("sensehat",sensehat_data)
-				        
+					    
 			soft_break()
-	        
+		    
 			if configure.envirophat:
 				envirophat_data = sensors.get_envirophat()
 				publish("envirophat",envirophat_data)	
-		        
+			    
 			soft_break()
-					        
+						    
 			if configure.pocket_geiger:			
 				pocket_geigert_data = sensors.get_pocket_geiger()			
 				publish("pocket_geiger",pocket_geiger_data)	
-		        
+			    
 			soft_break()
 
 			if configure.ir_thermo:		
 				ir_thermo_data = sensors.get_ir_thermo()	
 				publish("ir_thermo",ir_thermo_data)
-		        
+			    
 			soft_break()
-		        
+			
+			reset()
+			
+			soft_break()
+			    
 			if counter == 0:
 				if configure.gps:
 					gps_parsed = sensors.get_gps()
 					if gps_parsed[0] is not None and gps_parsed[1] is not None:
 						soft_break()
 						publish("GPS_DATA",gps_parsed)
-				        
+					    
 			soft_break()
-		        
+			    
 			counter = counter + 1 
 			if counter == 180:
 				counter = 0
 			else:
 				time.sleep(0.01)
 					
+					
 		except KeyboardInterrupt or Exception or OSError as e:
 			print("Termination", e)
 			break
-			job.join()
+			#job.join()
 			disconnect()
+			GPIO.cleanup()  
 			sys.exit(1)
 
 		
