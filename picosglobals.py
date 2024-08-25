@@ -1,7 +1,6 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 # PYTHON_ARGCOMPLETE_OK
-
 GPS_DATA = [37.7820885,-122.3045112, 0, 0, 0,0 , 37 , 'deg', 78, 20885 , 'min' , 'N', 122 , 'deg' ,30 , 45112, 'min', 'W' , 'N', 0, 'local']
 # USS Hornet - Sea, Air and Space Museum (Alameda) , Pavel Knows ;)
 
