@@ -6,7 +6,7 @@ import time
 import sys
 import pika
 import picosglobals
-import piwifi
+import subprocess
 
 
 from objects import *
@@ -67,6 +67,15 @@ class sensor_functions(object):
 	def get_wifi_stats(self):
 		GPS_DATA = picosglobals.GPS_DATA
 		timestamp = time.time()
+
+		return_code = subprocess.run(["sudo", "iw", "wlan0", "scan"]) 
+		lines = str(return_code).split('\n')
+		for line in lines:
+			print(line)
+		
+
+		
+
 		
 		
 		self.sinewav = "static"
@@ -82,10 +91,11 @@ if __name__ == "__main__":
 			timed = timer()
 			sensors = sensor_functions()
 
-			while True:	
-				wifi_stats = sensors.get_wifi_stats()	
-				#publish_wifi_stats('wifi_stats',wifi_stats)
-				time.sleep(1)
+			#while True:	
+			wifi_stats = sensors.get_wifi_stats()	
+			#publish_wifi_stats('wifi_stats',wifi_stats)
+			#time.sleep(1)
+			sys.exit(1)
 
 			signal.signal(signal.SIGINT, signal_handler)
 		except KeyboardInterrupt or Exception or OSError as e:
