@@ -5,6 +5,7 @@ import struct
 import sys
 import pika
 import math
+import picosglobals
 
 from objects import *
 
@@ -50,7 +51,7 @@ def publish_generators(IN_routing_key,data):
 def disconnect():
     connection.close()
 
-class sensor_functions(object):
+class sensor_functions(object): 
 
 	def __init__(self):
 
@@ -81,13 +82,14 @@ class sensor_functions(object):
 		
 		
 	def get_generators(self):
+		GPS_DATA = picosglobals.GPS_DATA
 		timestamp = time.time()
 		self.sinewav = float(self.sin_gen()*100)
 		self.tanwave = float(self.tan_gen()*100)
 		self.coswave = float(self.cos_gen()*100)
 		self.sinwav2 = float(self.sin2_gen()*100)
 				
-		return self.sinewav, self.tanwave, self.coswave, self.sinwav2 ,timestamp, 47, 47, configure.rabbitmq_tag
+		return self.sinewav, self.tanwave, self.coswave, self.sinwav2 ,timestamp, GPS_DATA[0], GPS_DATA[1], configure.rabbitmq_tag
 
 
 def main():
