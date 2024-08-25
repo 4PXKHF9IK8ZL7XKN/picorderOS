@@ -458,22 +458,22 @@ def lcars_element_elbow_half(device, draw,pos_x,pos_y,rotation,colore):
 	# This is wehen the Right is rounded
 	if rotation == 0:
 		# Main Shape
-		Rshape0 = [(pos_x, pos_y ), (pos_x+device.width*0.23, pos_y+device.height*0.05)]
+		Rshape0 = [(pos_x, pos_y ), (pos_x+device.width*0.23, pos_y+device.height*0.025)]
 		Rshape1 = [(pos_x+device.width*0.25/2, pos_y+radius/2), (pos_x+device.width*0.26, pos_y+device.height*0.1)]
 		shape0 = [(pos_x+device.width*0.2+radius/2,  pos_y), (pos_x+device.width*0.2+radius+radius/2, pos_y+radius)]
 	
 		# masking
-		shape1 = [(pos_x+device.width*0.25/2-radius/2,  pos_y+radius+device.height*0.01), (pos_x+device.width*0.25/2+radius, pos_y+radius*2+device.height*0.01)]
+		shape1 = [(pos_x+device.width*0.25/2-radius/2,  pos_y+radius-device.height*0.015), (pos_x+device.width*0.25/2+radius, pos_y+radius*2+device.height*0.01)]
 		Rshape2 = [(pos_x+device.width*0.25/2-radius/2,  pos_y+radius+device.height*0.03), (pos_x+device.width*0.25/2+radius, pos_y+radius*2)]
 	elif rotation == 1:
 		# Main Shape
-		Rshape0 = [(pos_x, pos_y+radius*1.5 ), (pos_x+device.width*0.23, pos_y+device.height*0.05+radius*1.5)]
+		Rshape0 = [(pos_x, pos_y+radius*2 ), (pos_x+device.width*0.23, pos_y+device.height*0.05+radius*1.5)]
 		Rshape1 = [(pos_x+device.width*0.25/2, pos_y+radius/2), (pos_x+device.width*0.26, pos_y+device.height*0.1)]
 		shape0 = [(pos_x+device.width*0.2+radius/2,  pos_y+radius*1.5), (pos_x+device.width*0.2+radius+radius/2, pos_y+radius+radius*1.5)]
 		
 	# this is when the shape0 got down	
 		# masking
-		shape1 = [(pos_x+device.width*0.25/2-radius/2,  pos_y+radius/2), (pos_x+device.width*0.25/2+radius, pos_y+radius+radius/3)]
+		shape1 = [(pos_x+device.width*0.25/2-radius/2,  pos_y+radius/2), (pos_x+device.width*0.25/2+radius, pos_y+radius+radius*0.9)]
 		Rshape2 = [(pos_x+device.width*0.25/2-radius/2,  pos_y+radius/2), (pos_x+device.width*0.25/2+radius, pos_y+radius)]
 
 	# This is wehen the left is rounded
@@ -491,7 +491,7 @@ def lcars_element_elbow_half(device, draw,pos_x,pos_y,rotation,colore):
 		shape0 = [(pos_x,  pos_y+radius*1.5), (pos_x+radius, pos_y+radius+radius*1.5)]
 	# this is when the shape0 got down	
 		# masking
-		shape1 = [(pos_x+device.width*0.25/2-radius/2,  pos_y+radius/2), (pos_x+device.width*0.25/2+radius, pos_y+radius+radius/3)]
+		shape1 = [(pos_x+device.width*0.25/2-radius/2,  pos_y+radius/2), (pos_x+device.width*0.25/2+radius, pos_y+radius+radius*0.9)]
 		Rshape2 = [(pos_x+device.width*0.25/2-radius/2,  pos_y+radius/2), (pos_x+device.width*0.25/2+radius, pos_y+radius)]
 
 
@@ -501,8 +501,8 @@ def lcars_element_elbow_half(device, draw,pos_x,pos_y,rotation,colore):
 	draw.ellipse(shape0, fill, outline = fill) 
 	
 	# masking
-	draw.ellipse(shape1, fill3, outline = fill3) 
-	draw.rectangle(Rshape2, fill3)
+	draw.ellipse(shape1, fill2, outline = fill2) 
+	draw.rectangle(Rshape2, fill2)
 
 
 def lcars_element_end(device, draw, pos_x,pos_y,rotation,colore):
@@ -574,9 +574,13 @@ def lcars_element_doublebar(device, draw, pos_x,pos_y, posb_x, posb_y,rotation,c
 
 	global animation_step
     # Load default font.
+    
+	radius = device.height*0.05
+	mid_value = (posb_y - pos_y) /2 
+	
 
-	Rshape_doublebar0 = [(pos_x, pos_y ), (posb_x, posb_y*0.5)]
-	Rshape_doublebar1 = [(pos_x, pos_y*4 ), (posb_x, posb_y)]
+	Rshape_doublebar0 = [(pos_x, pos_y ), (posb_x, pos_y+mid_value*0.8)]
+	Rshape_doublebar1 = [(pos_x, pos_y+mid_value*1.2 ), (posb_x, posb_y)]
 	
 	# main shape
 
@@ -768,7 +772,7 @@ def lcars_multi_graph_build():
 		radius = device.height*0.05
           
         #end locations
-		w0, h0 = device.width*0.015, device.height*0.41
+		w0, h0 = device.width*0.01, device.height*0.41
 		w1, h1 = device.width*0.22/2, device.height*0.865
         
 		Rshape0 = [(w0,  h0), (w1, h1)]
@@ -777,30 +781,30 @@ def lcars_multi_graph_build():
 		draw.rectangle(Rshape0, lcars_theme[lcars_theme_selection]["colore5"])
 
 		if sensor_animation == 3:
-			lcars_element_side_bar(device, draw, device.width*0.015,device.height*0.13 ,3,lcars_theme[lcars_theme_selection]["colore1"])
+			lcars_element_side_bar(device, draw, device.width*0.01,device.height*0.13 ,3,lcars_theme[lcars_theme_selection]["colore1"])
 		else:
-			lcars_element_side_bar(device, draw, device.width*0.015,device.height*0.13 ,3,lcars_theme[lcars_theme_selection]["colore2"])
+			lcars_element_side_bar(device, draw, device.width*0.01,device.height*0.13 ,3,lcars_theme[lcars_theme_selection]["colore2"])
 		
 		if sensor_animation == 2:
-			lcars_element_side_bar(device, draw, device.width*0.015,device.height*0.20 ,3,lcars_theme[lcars_theme_selection]["colore1"])
+			lcars_element_side_bar(device, draw, device.width*0.01,device.height*0.20 ,3,lcars_theme[lcars_theme_selection]["colore1"])
 		else:
-			lcars_element_side_bar(device, draw, device.width*0.015,device.height*0.20 ,3,lcars_theme[lcars_theme_selection]["colore2"])
+			lcars_element_side_bar(device, draw, device.width*0.01,device.height*0.20 ,3,lcars_theme[lcars_theme_selection]["colore2"])
 		
 		if sensor_animation == 1:
-			lcars_element_side_bar(device, draw, device.width*0.015,device.height*0.274 ,3,lcars_theme[lcars_theme_selection]["colore1"])
+			lcars_element_side_bar(device, draw, device.width*0.01,device.height*0.274 ,3,lcars_theme[lcars_theme_selection]["colore1"])
 		else:
-			lcars_element_side_bar(device, draw, device.width*0.015,device.height*0.274 ,3,lcars_theme[lcars_theme_selection]["colore2"])
+			lcars_element_side_bar(device, draw, device.width*0.01,device.height*0.274 ,3,lcars_theme[lcars_theme_selection]["colore2"])
 		
 		if sensor_animation == 0:
-			lcars_element_side_bar(device, draw, device.width*0.015,device.height*0.345 ,3,lcars_theme[lcars_theme_selection]["colore1"])
+			lcars_element_side_bar(device, draw, device.width*0.01,device.height*0.345 ,3,lcars_theme[lcars_theme_selection]["colore1"])
 		else:
-			lcars_element_side_bar(device, draw, device.width*0.015,device.height*0.345 ,3,lcars_theme[lcars_theme_selection]["colore2"])
+			lcars_element_side_bar(device, draw, device.width*0.01,device.height*0.345 ,3,lcars_theme[lcars_theme_selection]["colore2"])
 		
 		lcars_element_end(device, draw, device.width*0.93,device.height*0.015,3,lcars_theme[lcars_theme_selection]["colore0"])
 		lcars_element_end(device, draw, device.width*0.93,device.height*0.93,3,lcars_theme[lcars_theme_selection]["colore0"])
 		
-		lcars_element_doublebar(device, draw, device.width*0.27 ,device.height*0.01, device.width*0.5, device.height*0.055,0,lcars_theme[lcars_theme_selection]["colore0"],lcars_theme[lcars_theme_selection]["colore5"])
-		lcars_element_doublebar(device, draw, device.width*0.51 ,device.height*0.01, device.width*0.60, device.height*0.055,0,lcars_theme[lcars_theme_selection]["colore5"],lcars_theme[lcars_theme_selection]["colore0"])
+		lcars_element_doublebar(device, draw, device.width*0.27 ,device.height*0.01, device.width*0.5, device.height*0.06,0,lcars_theme[lcars_theme_selection]["colore0"],lcars_theme[lcars_theme_selection]["colore5"])
+		lcars_element_doublebar(device, draw, device.width*0.51 ,device.height*0.01, device.width*0.60, device.height*0.06,0,lcars_theme[lcars_theme_selection]["colore5"],lcars_theme[lcars_theme_selection]["colore0"])
 		
 		draw.rectangle((device.width*0.7 ,device.height*0.01, device.width*0.93, device.height*0.06), fill=lcars_theme[lcars_theme_selection]["colore5"], outline=lcars_theme[lcars_theme_selection]["colore5"])
 		
@@ -846,7 +850,7 @@ def lcars_termal_view_build():
 		radius = device.height*0.05
           
         #end locations
-		w0, h0 = device.width*0.015, device.height*0.41
+		w0, h0 = device.width*0.01, device.height*0.41
 		w1, h1 = device.width*0.22/2, device.height*0.865
         
 		Rshape0 = [(w0,  h0), (w1, h1)]
@@ -855,30 +859,30 @@ def lcars_termal_view_build():
 		draw.rectangle(Rshape0, lcars_theme[lcars_theme_selection]["colore5"])
 
 		if sensor_animation == 3:
-			lcars_element_side_bar(device, draw, device.width*0.015,device.height*0.13 ,3,lcars_theme[lcars_theme_selection]["colore1"])
+			lcars_element_side_bar(device, draw, device.width*0.01,device.height*0.13 ,3,lcars_theme[lcars_theme_selection]["colore1"])
 		else:
-			lcars_element_side_bar(device, draw, device.width*0.015,device.height*0.13 ,3,lcars_theme[lcars_theme_selection]["colore2"])
+			lcars_element_side_bar(device, draw, device.width*0.01,device.height*0.13 ,3,lcars_theme[lcars_theme_selection]["colore2"])
 		
 		if sensor_animation == 2:
-			lcars_element_side_bar(device, draw, device.width*0.015,device.height*0.20 ,3,lcars_theme[lcars_theme_selection]["colore1"])
+			lcars_element_side_bar(device, draw, device.width*0.01,device.height*0.20 ,3,lcars_theme[lcars_theme_selection]["colore1"])
 		else:
-			lcars_element_side_bar(device, draw, device.width*0.015,device.height*0.20 ,3,lcars_theme[lcars_theme_selection]["colore2"])
+			lcars_element_side_bar(device, draw, device.width*0.01,device.height*0.20 ,3,lcars_theme[lcars_theme_selection]["colore2"])
 		
 		if sensor_animation == 1:
-			lcars_element_side_bar(device, draw, device.width*0.015,device.height*0.274 ,3,lcars_theme[lcars_theme_selection]["colore1"])
+			lcars_element_side_bar(device, draw, device.width*0.01,device.height*0.274 ,3,lcars_theme[lcars_theme_selection]["colore1"])
 		else:
-			lcars_element_side_bar(device, draw, device.width*0.015,device.height*0.274 ,3,lcars_theme[lcars_theme_selection]["colore2"])
+			lcars_element_side_bar(device, draw, device.width*0.01,device.height*0.274 ,3,lcars_theme[lcars_theme_selection]["colore2"])
 		
 		if sensor_animation == 0:
-			lcars_element_side_bar(device, draw, device.width*0.015,device.height*0.345 ,3,lcars_theme[lcars_theme_selection]["colore1"])
+			lcars_element_side_bar(device, draw, device.width*0.01,device.height*0.345 ,3,lcars_theme[lcars_theme_selection]["colore1"])
 		else:
-			lcars_element_side_bar(device, draw, device.width*0.015,device.height*0.345 ,3,lcars_theme[lcars_theme_selection]["colore2"])
+			lcars_element_side_bar(device, draw, device.width*0.01,device.height*0.345 ,3,lcars_theme[lcars_theme_selection]["colore2"])
 		
 		lcars_element_end(device, draw, device.width*0.93,device.height*0.015,3,lcars_theme[lcars_theme_selection]["colore0"])
 		lcars_element_end(device, draw, device.width*0.93,device.height*0.93,3,lcars_theme[lcars_theme_selection]["colore0"])
 		
-		lcars_element_doublebar(device, draw, device.width*0.27 ,device.height*0.01, device.width*0.5, device.height*0.055,0,lcars_theme[lcars_theme_selection]["colore0"],lcars_theme[lcars_theme_selection]["colore5"])
-		lcars_element_doublebar(device, draw, device.width*0.51 ,device.height*0.01, device.width*0.60, device.height*0.055,0,lcars_theme[lcars_theme_selection]["colore5"],lcars_theme[lcars_theme_selection]["colore0"])
+		lcars_element_doublebar(device, draw, device.width*0.27 ,device.height*0.01, device.width*0.5, device.height*0.06,0,lcars_theme[lcars_theme_selection]["colore0"],lcars_theme[lcars_theme_selection]["colore5"])
+		lcars_element_doublebar(device, draw, device.width*0.51 ,device.height*0.01, device.width*0.60, device.height*0.06,0,lcars_theme[lcars_theme_selection]["colore5"],lcars_theme[lcars_theme_selection]["colore0"])
 		
 		draw.rectangle((device.width*0.7 ,device.height*0.01, device.width*0.94, device.height*0.06), fill=lcars_theme[lcars_theme_selection]["colore5"], outline=lcars_theme[lcars_theme_selection]["colore5"])
 		
@@ -925,7 +929,7 @@ def lcars_videoplayer_build():
 		radius = device.height*0.05
           
         #end locations
-		w0, h0 = device.width*0.015, device.height*0.41
+		w0, h0 = device.width*0.01, device.height*0.41
 		w1, h1 = device.width*0.22/2, device.height*0.865
         
 		Rshape0 = [(w0,  h0), (w1, h1)]
@@ -934,30 +938,30 @@ def lcars_videoplayer_build():
 		draw.rectangle(Rshape0, lcars_theme[lcars_theme_selection]["colore5"])
 
 		if sensor_animation == 3:
-			lcars_element_side_bar(device, draw, device.width*0.015,device.height*0.13 ,3,lcars_theme[lcars_theme_selection]["colore1"])
+			lcars_element_side_bar(device, draw, device.width*0.01,device.height*0.13 ,3,lcars_theme[lcars_theme_selection]["colore1"])
 		else:
-			lcars_element_side_bar(device, draw, device.width*0.015,device.height*0.13 ,3,lcars_theme[lcars_theme_selection]["colore2"])
+			lcars_element_side_bar(device, draw, device.width*0.01,device.height*0.13 ,3,lcars_theme[lcars_theme_selection]["colore2"])
 		
 		if sensor_animation == 2:
-			lcars_element_side_bar(device, draw, device.width*0.015,device.height*0.20 ,3,lcars_theme[lcars_theme_selection]["colore1"])
+			lcars_element_side_bar(device, draw, device.width*0.01,device.height*0.20 ,3,lcars_theme[lcars_theme_selection]["colore1"])
 		else:
-			lcars_element_side_bar(device, draw, device.width*0.015,device.height*0.20 ,3,lcars_theme[lcars_theme_selection]["colore2"])
+			lcars_element_side_bar(device, draw, device.width*0.01,device.height*0.20 ,3,lcars_theme[lcars_theme_selection]["colore2"])
 		
 		if sensor_animation == 1:
-			lcars_element_side_bar(device, draw, device.width*0.015,device.height*0.274 ,3,lcars_theme[lcars_theme_selection]["colore1"])
+			lcars_element_side_bar(device, draw, device.width*0.01,device.height*0.274 ,3,lcars_theme[lcars_theme_selection]["colore1"])
 		else:
-			lcars_element_side_bar(device, draw, device.width*0.015,device.height*0.274 ,3,lcars_theme[lcars_theme_selection]["colore2"])
+			lcars_element_side_bar(device, draw, device.width*0.01,device.height*0.274 ,3,lcars_theme[lcars_theme_selection]["colore2"])
 		
 		if sensor_animation == 0:
-			lcars_element_side_bar(device, draw, device.width*0.015,device.height*0.345 ,3,lcars_theme[lcars_theme_selection]["colore1"])
+			lcars_element_side_bar(device, draw, device.width*0.01,device.height*0.345 ,3,lcars_theme[lcars_theme_selection]["colore1"])
 		else:
-			lcars_element_side_bar(device, draw, device.width*0.015,device.height*0.345 ,3,lcars_theme[lcars_theme_selection]["colore2"])
+			lcars_element_side_bar(device, draw, device.width*0.01,device.height*0.345 ,3,lcars_theme[lcars_theme_selection]["colore2"])
 		
 		lcars_element_end(device, draw, device.width*0.93,device.height*0.015,3,lcars_theme[lcars_theme_selection]["colore0"])
 		lcars_element_end(device, draw, device.width*0.93,device.height*0.93,3,lcars_theme[lcars_theme_selection]["colore0"])
 		
-		lcars_element_doublebar(device, draw, device.width*0.27 ,device.height*0.01, device.width*0.5, device.height*0.055,0,lcars_theme[lcars_theme_selection]["colore0"],lcars_theme[lcars_theme_selection]["colore5"])
-		lcars_element_doublebar(device, draw, device.width*0.51 ,device.height*0.01, device.width*0.60, device.height*0.055,0,lcars_theme[lcars_theme_selection]["colore5"],lcars_theme[lcars_theme_selection]["colore0"])
+		lcars_element_doublebar(device, draw, device.width*0.27 ,device.height*0.01, device.width*0.5, device.height*0.06,0,lcars_theme[lcars_theme_selection]["colore0"],lcars_theme[lcars_theme_selection]["colore5"])
+		lcars_element_doublebar(device, draw, device.width*0.51 ,device.height*0.01, device.width*0.60, device.height*0.06,0,lcars_theme[lcars_theme_selection]["colore5"],lcars_theme[lcars_theme_selection]["colore0"])
 		
 		draw.rectangle((device.width*0.7 ,device.height*0.01, device.width*0.94, device.height*0.06), fill=lcars_theme[lcars_theme_selection]["colore5"], outline=lcars_theme[lcars_theme_selection]["colore5"])
 		
@@ -1000,45 +1004,61 @@ def wifi_band_view_build():
 		
 		
 		lcars_element_elbow_half(device, draw, device.width*0.01,device.height*0.30 ,3, lcars_theme[lcars_theme_selection]["colore0"])
-		lcars_element_elbow_half(device, draw, device.width*0.01,device.height*0.44,2,lcars_theme[lcars_theme_selection]["colore4"])			
+		lcars_element_elbow_half(device, draw, device.width*0.01,device.height*0.44,2,lcars_theme[lcars_theme_selection]["colore4"]) 		
            
 		radius = device.height*0.05
           
         #end locations
-		w0, h0 = device.width*0.015, device.height*0.41
-		w1, h1 = device.width*0.22/2, device.height*0.865
+		w0, h0 = device.width*0.01, device.height*0.13
+		w1, h1 = device.width*0.22/2, device.height*0.31
+		
+		w2, h2 = device.width*0.01, device.height*0.84
+		w3, h3 = device.width*0.22/2, device.height*0.87
         
 		Rshape0 = [(w0,  h0), (w1, h1)]
+		
+		Rshape1 = [(w2,  h2), (w3, h3)]
         
 		# the connecting from top to bottom
-		#draw.rectangle(Rshape0, lcars_theme[lcars_theme_selection]["colore5"])
+		draw.rectangle(Rshape0, lcars_theme[lcars_theme_selection]["colore5"])
+		
+		draw.rectangle(Rshape1, lcars_theme[lcars_theme_selection]["colore5"])
 
 		if sensor_animation == 3:
-			lcars_element_side_bar(device, draw, device.width*0.015,device.height*0.56 ,3,lcars_theme[lcars_theme_selection]["colore1"])
+			lcars_element_side_bar(device, draw, device.width*0.01,device.height*0.56 ,3,lcars_theme[lcars_theme_selection]["colore1"])
 		else:
-			lcars_element_side_bar(device, draw, device.width*0.015,device.height*0.56 ,3,lcars_theme[lcars_theme_selection]["colore2"])
+			lcars_element_side_bar(device, draw, device.width*0.01,device.height*0.56 ,3,lcars_theme[lcars_theme_selection]["colore2"])
 		
 		if sensor_animation == 2:
-			lcars_element_side_bar(device, draw, device.width*0.015,device.height*0.63 ,3,lcars_theme[lcars_theme_selection]["colore1"])
+			lcars_element_side_bar(device, draw, device.width*0.01,device.height*0.63 ,3,lcars_theme[lcars_theme_selection]["colore1"])
 		else:
-			lcars_element_side_bar(device, draw, device.width*0.015,device.height*0.63 ,3,lcars_theme[lcars_theme_selection]["colore2"])
+			lcars_element_side_bar(device, draw, device.width*0.01,device.height*0.63 ,3,lcars_theme[lcars_theme_selection]["colore2"])
 		
 		if sensor_animation == 1:
-			lcars_element_side_bar(device, draw, device.width*0.015,device.height*0.70 ,3,lcars_theme[lcars_theme_selection]["colore1"])
+			lcars_element_side_bar(device, draw, device.width*0.01,device.height*0.70 ,3,lcars_theme[lcars_theme_selection]["colore1"])
 		else:
-			lcars_element_side_bar(device, draw, device.width*0.015,device.height*0.70 ,3,lcars_theme[lcars_theme_selection]["colore2"])
+			lcars_element_side_bar(device, draw, device.width*0.01,device.height*0.70 ,3,lcars_theme[lcars_theme_selection]["colore2"])
 		
 		if sensor_animation == 0:
-			lcars_element_side_bar(device, draw, device.width*0.015,device.height*0.77 ,3,lcars_theme[lcars_theme_selection]["colore1"])
+			lcars_element_side_bar(device, draw, device.width*0.01,device.height*0.77 ,3,lcars_theme[lcars_theme_selection]["colore1"])
 		else:
-			lcars_element_side_bar(device, draw, device.width*0.015,device.height*0.77 ,3,lcars_theme[lcars_theme_selection]["colore2"])
+			lcars_element_side_bar(device, draw, device.width*0.01,device.height*0.77 ,3,lcars_theme[lcars_theme_selection]["colore2"])
 		
 		lcars_element_end(device, draw, device.width*0.93,device.height*0.015,3,lcars_theme[lcars_theme_selection]["colore0"])
 		lcars_element_end(device, draw, device.width*0.93,device.height*0.93,3,lcars_theme[lcars_theme_selection]["colore0"])
 		
-		lcars_element_doublebar(device, draw, device.width*0.27 ,device.height*0.01, device.width*0.5, device.height*0.055,0,lcars_theme[lcars_theme_selection]["colore0"],lcars_theme[lcars_theme_selection]["colore5"])
-		lcars_element_doublebar(device, draw, device.width*0.51 ,device.height*0.01, device.width*0.60, device.height*0.055,0,lcars_theme[lcars_theme_selection]["colore5"],lcars_theme[lcars_theme_selection]["colore0"])
+		lcars_element_doublebar(device, draw, device.width*0.27 ,device.height*0.01, device.width*0.5, device.height*0.06,0,lcars_theme[lcars_theme_selection]["colore0"],lcars_theme[lcars_theme_selection]["colore5"])
+		#lcars_element_doublebar(device, draw, device.width*0.51 ,device.height*0.01, device.width*0.60, device.height*0.06,0,lcars_theme[lcars_theme_selection]["colore5"],lcars_theme[lcars_theme_selection]["colore0"])
 		
+		
+		lcars_element_doublebar(device, draw, device.width*0.27 ,device.height*0.40, device.width*0.5, device.height*0.465,0,lcars_theme[lcars_theme_selection]["colore0"],lcars_theme[lcars_theme_selection]["colore5"])
+		lcars_element_doublebar(device, draw, device.width*0.51 ,device.height*0.40, device.width*0.60, device.height*0.465,0,lcars_theme[lcars_theme_selection]["colore5"],"black")
+		lcars_element_doublebar(device, draw, device.width*0.61 ,device.height*0.40, device.width*0.99, device.height*0.465,0,lcars_theme[lcars_theme_selection]["colore0"],lcars_theme[lcars_theme_selection]["colore5"])		
+		
+
+		
+		
+		# Top Edge
 		#draw.rectangle((device.width*0.7 ,device.height*0.01, device.width*0.94, device.height*0.06), fill=lcars_theme[lcars_theme_selection]["colore5"], outline=lcars_theme[lcars_theme_selection]["colore5"])
 		
 		bottom_line = [(device.width*0.27 , device.height*0.93), (device.width*0.93, device.height*0.93+radius)] 
@@ -1046,10 +1066,10 @@ def wifi_band_view_build():
 		draw.rectangle(bottom_line,lcars_theme[lcars_theme_selection]["colore5"])
 	
 		## Looks like i found my overlapping box
-		text = "EM BAND ANALYSIS"
+		text = "EM CHANNEL ANALYSIS"
 		left, top, right, bottom = draw.textbbox((0, 0), text)
 		w, h = right - left, bottom+5 - top
-		w3 = device.width*0.7
+		w3 = device.width*0.62
 
 		left = w3-radius*2.5
 		top = -2
@@ -1107,24 +1127,24 @@ def lcars_type3_build():
 		draw.rectangle(Rshape0, lcars_theme[lcars_theme_selection]["colore5"])
 
 		if sensor_animation == 3:
-			lcars_element_side_bar(device, draw, device.width*0.015,device.height*0.13 ,3,lcars_theme[lcars_theme_selection]["colore1"])
+			lcars_element_side_bar(device, draw, device.width*0.01,device.height*0.13 ,3,lcars_theme[lcars_theme_selection]["colore1"])
 		else:
-			lcars_element_side_bar(device, draw, device.width*0.015,device.height*0.13 ,3,lcars_theme[lcars_theme_selection]["colore2"])
+			lcars_element_side_bar(device, draw, device.width*0.01,device.height*0.13 ,3,lcars_theme[lcars_theme_selection]["colore2"])
 		
 		if sensor_animation == 2:
-			lcars_element_side_bar(device, draw, device.width*0.015,device.height*0.20 ,3,lcars_theme[lcars_theme_selection]["colore1"])
+			lcars_element_side_bar(device, draw, device.width*0.01,device.height*0.20 ,3,lcars_theme[lcars_theme_selection]["colore1"])
 		else:
-			lcars_element_side_bar(device, draw, device.width*0.015,device.height*0.20 ,3,lcars_theme[lcars_theme_selection]["colore2"])
+			lcars_element_side_bar(device, draw, device.width*0.01,device.height*0.20 ,3,lcars_theme[lcars_theme_selection]["colore2"])
 		
 		if sensor_animation == 1:
-			lcars_element_side_bar(device, draw, device.width*0.015,device.height*0.274 ,3,lcars_theme[lcars_theme_selection]["colore1"])
+			lcars_element_side_bar(device, draw, device.width*0.01,device.height*0.274 ,3,lcars_theme[lcars_theme_selection]["colore1"])
 		else:
-			lcars_element_side_bar(device, draw, device.width*0.015,device.height*0.274 ,3,lcars_theme[lcars_theme_selection]["colore2"])
+			lcars_element_side_bar(device, draw, device.width*0.01,device.height*0.274 ,3,lcars_theme[lcars_theme_selection]["colore2"])
 		
 		if sensor_animation == 0:
-			lcars_element_side_bar(device, draw, device.width*0.015,device.height*0.345 ,3,lcars_theme[lcars_theme_selection]["colore1"])
+			lcars_element_side_bar(device, draw, device.width*0.01,device.height*0.345 ,3,lcars_theme[lcars_theme_selection]["colore1"])
 		else:
-			lcars_element_side_bar(device, draw, device.width*0.015,device.height*0.345 ,3,lcars_theme[lcars_theme_selection]["colore2"])
+			lcars_element_side_bar(device, draw, device.width*0.01,device.height*0.345 ,3,lcars_theme[lcars_theme_selection]["colore2"])
 		
 		lcars_element_end(device, draw, device.width*0.93,device.height*0.015,3,lcars_theme[lcars_theme_selection]["colore0"])
 		lcars_element_end(device, draw, device.width*0.93,device.height*0.93,3,lcars_theme[lcars_theme_selection]["colore0"])
