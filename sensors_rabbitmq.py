@@ -30,6 +30,8 @@ meta_massage = ""
 
 local_gps = [37.7820885,-122.3045112,configure.rabbitmq_tag]
 
+DISPLAY_BL_PWM = 12
+
 # Delcares the IRQ Pins for Cap Touch 
 BUTTON_GPIOA = 17
 BUTTON_GPIOB = 27
@@ -873,6 +875,18 @@ if __name__ == "__main__":
 		
 	# setup GPIO IRQ
 	GPIO.setmode(GPIO.BCM)
+
+	# Set the PWM frequency (25 kHz)
+	pwm_frequency = 50
+
+	# Set the PWM duty cycle (75%)
+	pwm_duty_cycle = 50  # 75% of the range (0-1000000)
+
+	GPIO.setup(DISPLAY_BL_PWM, GPIO.OUT)
+	#GPIO.output(DISPLAY_BL_PWM, GPIO.HIGH)
+	pwm12 = GPIO.PWM(DISPLAY_BL_PWM, pwm_frequency)
+	pwm12.start(pwm_duty_cycle)
+
 	if configure.input_cap_mpr121:
 		GPIO.setup(BUTTON_GPIOA, GPIO.IN)
 		GPIO.setup(BUTTON_GPIOB, GPIO.IN)
