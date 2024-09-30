@@ -15,11 +15,11 @@ channel.exchange_declare(exchange='sensor_data', exchange_type='topic')
 result = channel.queue_declare('', exclusive=True)
 queue_name = result.method.queue
 
-channel.queue_bind(
-    exchange='sensor_data', queue='', routing_key='wifi_stats')
+#channel.queue_bind(
+#    exchange='sensor_data', queue='', routing_key='wifi_stats')
 
-channel.queue_bind(
-    exchange='sensor_data', queue='', routing_key='_empty')
+#channel.queue_bind(
+#    exchange='sensor_data', queue='', routing_key='_empty')
 
 #channel.queue_bind(
 #    exchange='sensor_data', queue='', routing_key='GPS_DATA')
@@ -32,6 +32,12 @@ channel.queue_bind(
 
 #channel.queue_bind(
 #    exchange='sensor_data', queue='', routing_key='keyboard')
+
+channel.queue_bind(
+    exchange='sensor_data', queue='', routing_key='scd4x')
+
+channel.queue_bind(
+    exchange='sensor_data', queue='', routing_key='bme680')
 
 
 
