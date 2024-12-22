@@ -3,15 +3,16 @@
 
 import serial
 import time
+import sys
 
 port = '/dev/serial0'
-baud = 9600
-#baud = 115200
+#baud = 9600
+baud = 115200
 stream = serial.Serial(port, baud, timeout=.1)
 stream.reset_input_buffer()
 
 def push_data():
-	data = 'mode=1\n'
+	data = sys.argv[1]
 	message = data.encode()
 	stream.write(message)
 	stream.flush()
@@ -19,4 +20,4 @@ def push_data():
 
 while True:
 	push_data()
-	time.sleep(1)
+	time.sleep(3)
