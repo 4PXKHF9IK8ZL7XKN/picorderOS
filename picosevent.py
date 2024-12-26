@@ -39,6 +39,11 @@ release_threshold = 2
 
 DEBUG = False
 
+SENSOR_MODE = 0
+SENSOR_MODE_LAST = 0
+
+ALERT_STATE = 0 # 0 = green, 1 = yellow, 2 = red, 3 = blue, 4 = black, 5 = grey, 6 = doublered
+
 configure.eventlist[0] = [0,0,0,0,0,0,0,0]
 
 if configure.rabbitmq_remote:
@@ -53,6 +58,9 @@ channel.exchange_declare(exchange='sensor_data', exchange_type='topic')
 
 result = channel.queue_declare('', exclusive=True)
 queue_name = result.method.queue
+
+channel.queue_bind(
+    exchange='sensor_data', queue='', routing_key='lcars')
 
 channel.queue_bind(
     exchange='sensor_data', queue='', routing_key='touch')
@@ -87,7 +95,10 @@ def publish(IN_routing_key,data):
 		print(f" {time_unix} [x] Sent {stack} {routing_key}:{message}")
 		
 def callback(ch, method, properties, body):
-	EVENT_MAP = { 'geo': False  , 'met': False, 'bio': False, 'lib': False, 'pwr': False, 'f1/f2': False, 'I': False, 'E': False, 'accpt/pool': False, 'intrship/tricrder': False, 'EMRG': False, 'fwd/input': False, 'rvs/erase': False, 'Ib': False, 'Eb': False, 'Id': False, 'Door_open': False, 'Door_close': False, 'LOW-POWER': False, 'next':False, 'ENTER':False, 'cancel/switch': False, 'SERIAL': False  }
+	global SENSOR_MODE
+	global SENSOR_MODE_LAST
+	global ALERT_STATE
+	EVENT_MAP = { 'geo': False  , 'met': False, 'bio': False, 'lib': False, 'pwr': False, 'f1/f2': False, 'I': False, 'E': False, 'accpt/pool': False, 'intrship/tricrder': False, 'EMRG': False, 'fwd/input': False, 'rvs/erase': False, 'Ib': False, 'Eb': False, 'Id': False, 'Door_open': False, 'Door_close': False, 'LOW-POWER': False, 'next':False, 'ENTER':False, 'cancel/switch': False, 'SERIAL': False, 'SENSOR_MODE': SENSOR_MODE, 'ALERT_STATE': ALERT_STATE }
 	# pcf8575 can map 16 inputs
 	configure.input_pcf8575
 	# mpr121 can map 12 inputs
@@ -147,8 +158,21 @@ def callback(ch, method, properties, body):
 						elif key == 2:
 							EVENT_MAP['EMRG'] = sensor_dict[key]
 							#configure.eventlist[0][10] =  sensor_dict[key]
+							if sensor_dict[key]:
+							  if ALERT_STATE != 2:
+							    ALERT_STATE = 2
+							    SENSOR_MODE = 2
+							  else:
+							    ALERT_STATE = 0
+							    SENSOR_MODE = SENSOR_MODE_LAST
 						elif key == 3:
 							EVENT_MAP['fwd/input'] = sensor_dict[key]
+							if sensor_dict[key]:
+							  SENSOR_MODE = SENSOR_MODE + 1
+							  SENSOR_MODE_LAST = SENSOR_MODE 
+							  if SENSOR_MODE > 8:
+							      SENSOR_MODE = 0
+							      SENSOR_MODE_LAST = 0
 							#configure.eventlist[0][11] =  sensor_dict[key]
 						elif key == 4:
 							EVENT_MAP['rvs/erase'] = sensor_dict[key]
@@ -192,7 +216,7 @@ def callback(ch, method, properties, body):
 	configure.input_cap1208
 	publish('EVENT',EVENT_MAP)
 	print("EVENT:", EVENT_MAP)
-	click = clicksound.play()
+	click = beepsound.play()
 	#print(f" [x] {method.routing_key}:{body}")
 
 if __name__ == '__main__':
