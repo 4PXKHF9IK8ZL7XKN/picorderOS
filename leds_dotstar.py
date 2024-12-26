@@ -193,11 +193,11 @@ def callback(ch, method, properties, body):
   print('EVENT')	
   print(DICT_CLEAN)   
   if DICT_CLEAN['SENSOR_MODE'] == 0:
-    scannerline1 = (10,10,0)
+    scannerline1 = (255,255,0)
     square_LB = (10,10,0)
     
     background = (0,0,0)
-    scannerline0 = (10,10,0)
+    scannerline0 = (255,255,0)
     square_RB = (10,10,0)
     square_TL = (10,10,0)
     flip_lights = (0,96,0)
@@ -209,7 +209,7 @@ def callback(ch, method, properties, body):
     square_LB = (0,10,0)
     
     background = (0,0,0)
-    scannerline0 = (10,10,0)
+    scannerline0 = (0,255,0)
     square_RB = (10,10,0)
     square_TL = (10,10,0)
     flip_lights = (0,96,0)
@@ -221,7 +221,7 @@ def callback(ch, method, properties, body):
     square_LB = (10,0,0)
     
     background = (0,0,0)
-    scannerline0 = (10,10,0)
+    scannerline0 = (255,0,0)
     square_RB = (10,10,0)
     square_TL = (10,10,0)
     flip_lights = (0,96,0)
@@ -234,7 +234,7 @@ def callback(ch, method, properties, body):
     square_LB = (0,0,10)
     
     background = (0,0,0)
-    scannerline0 = (10,10,0)
+    scannerline0 = (0,0,255)
     square_RB = (10,10,0)
     square_TL = (10,10,0)
     flip_lights = (0,96,0)
