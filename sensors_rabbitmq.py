@@ -30,7 +30,7 @@ meta_massage = ""
 
 local_gps = [37.7820885,-122.3045112,configure.rabbitmq_tag]
 
-DISPLAY_BL_PWM = 12
+DISPLAY_BL_PWM = 13
 
 # Delcares the IRQ Pins for Cap Touch 
 BUTTON_GPIOA = 17
