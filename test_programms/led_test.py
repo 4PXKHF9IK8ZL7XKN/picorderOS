@@ -2,18 +2,22 @@
 import time
 import adafruit_dotstar as dotstar
 import board
-import RPi.GPIO as GPIO
+import random
+#import neopixel
 
+background = (128,0,0)
 
-
-
-background = (0,0,0)
-
-dots = dotstar.DotStar(board.D20, board.D13, 128, brightness=0.01) 
+#dots = dotstar.DotStar(board.D20, board.D13, 128, brightness=0.01) 
+#dots = dotstar.DotStar(board.D6, board.D5, 128, brightness=0.02)
+dots = dotstar.DotStar(board.D21, board.D20, 128, brightness=0.01)
+#pixels = neopixel.NeoPixel(board.D12, 30)    # Feather wiring!
 
 n_dot = len(dots)
+
 # HELPERS
 # a random color 0 -> 192
+def random_color():
+    return random.randrange(0, 7) * 32
 
 # Reset (all LEDs off)
 def fn_dots_reset():
@@ -44,8 +48,10 @@ try:
         dots[63-scene+1] = (background)
         dots[120+scene-1] = (background)
         dots.show()
-        #time.sleep(0.3)
+        time.sleep(0.1)
     # reseting dot
+    dots.fill((random_color(), random_color(), random_color()))
+    #pixels.fill((random_color(), random_color(), random_color()))
     dots[56] = (background)
     dots[127] = (background)
 
@@ -54,7 +60,7 @@ try:
     #dots[96] = (0, 0, 0)
     #dots[97] = (0, 30, 0)
     dots.show()
-    #time.sleep(0.5)
+    time.sleep(0.5)
 
 except KeyboardInterrupt:
   fn_dots_unload()
