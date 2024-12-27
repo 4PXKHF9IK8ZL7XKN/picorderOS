@@ -30,7 +30,10 @@ BRB1 = (32,0,0)
 BRB2 = (32,32,0)
 BRB3 = (0,32,0)
 
-ORDER = neopixel.RGB
+ALERT_STATE_mem = 0
+SENSOR_MODE_mem = 0
+
+ORDER = neopixel.GRB
 
 pixels = neopixel.NeoPixel(board.D12, 39, pixel_order=ORDER)
 n_dot = 39
@@ -344,6 +347,8 @@ def callback(ch, method, properties, body):
   global BTL
   global sensor_animation_mode
   global background
+  global ALERT_STATE_mem
+  global SENSOR_MODE_mem
    
   if method.routing_key != 'EVENT':
     sensor_animation = sensor_animation + 0.5
@@ -354,75 +359,86 @@ def callback(ch, method, properties, body):
   
     DICT = body.decode()
     DICT_CLEAN = ast.literal_eval(DICT)
-    print('EVENT')	
-    print(DICT_CLEAN)   
+    #print('EVENT')	
+    #print(DICT_CLEAN)   
     
-    if DICT_CLEAN['ALERT_STATE'] == 0:
-      BTL = (0,32,0)
-    elif DICT_CLEAN['ALERT_STATE'] == 1:
-      BTL = (32,32,0)
-    elif DICT_CLEAN['ALERT_STATE'] == 2:
-      BTL = (32,0,0)
-    elif DICT_CLEAN['ALERT_STATE'] == 3:
-      BTL = (0,0,32)
-    elif DICT_CLEAN['ALERT_STATE'] == 4:
-      BTL = (10,10,32)
-    elif DICT_CLEAN['ALERT_STATE'] == 5:
-      BTL = (32,32,32)
-    else:
-      BTL = (0,64,0)
+    if ALERT_STATE_mem != DICT_CLEAN['ALERT_STATE']:
+    
+      if DICT_CLEAN['ALERT_STATE'] == 0:
+        BTL = (0,32,0)
+      elif DICT_CLEAN['ALERT_STATE'] == 1:
+        BTL = (32,32,0)
+      elif DICT_CLEAN['ALERT_STATE'] == 2:
+        BTL = (32,0,0)
+      elif DICT_CLEAN['ALERT_STATE'] == 3:
+        BTL = (0,0,32)
+      elif DICT_CLEAN['ALERT_STATE'] == 4:
+        BTL = (10,10,32)
+      elif DICT_CLEAN['ALERT_STATE'] == 5:
+        BTL = (32,32,32)
+      else:
+        BTL = (0,64,0)
+      fn_dots_static()  
+        
+      ALERT_STATE_mem = DICT_CLEAN['ALERT_STATE']
       
+    if SENSOR_MODE_mem != DICT_CLEAN['SENSOR_MODE']:
     
-    if DICT_CLEAN['SENSOR_MODE'] == 0:
-      Pattern = 0
-      background = (0,0,0)
-      BTL = (0,32,0)
-      sensor_animation_mode = False
-      fn_dots_static()
-    
-    elif DICT_CLEAN['SENSOR_MODE'] == 1:
-      Pattern = 0
-      BTL = (0,32,0)
-      sensor_animation_mode = True
-    
-    elif DICT_CLEAN['SENSOR_MODE'] == 2:
-      Pattern = 0
-      fn_dots_static()
-      sensor_animation_mode = False
+      if DICT_CLEAN['SENSOR_MODE'] == 0:
+        Pattern = 0
+        background = (0,0,0)
+        BTL = (0,32,0)
+        sensor_animation_mode = False
+        fn_dots_static()
       
-    elif DICT_CLEAN['SENSOR_MODE'] == 3:
-      Pattern = 0
-      BTL = (0,32,0)
-      fn_dots_static()    
-      sensor_animation_mode = True 
+      elif DICT_CLEAN['SENSOR_MODE'] == 1:
+        Pattern = 0
+        BTL = (0,32,0)
+        sensor_animation_mode = True
+      
+      elif DICT_CLEAN['SENSOR_MODE'] == 2:
+        Pattern = 0
+        fn_dots_static()
+        sensor_animation_mode = False
+        
+      elif DICT_CLEAN['SENSOR_MODE'] == 3:
+        Pattern = 0
+        BTL = (0,32,0)
+        fn_dots_static()    
+        sensor_animation_mode = True 
 
-    elif DICT_CLEAN['SENSOR_MODE'] == 4:
-      Pattern = 0
-      BTL = (0,32,0)
-      sensor_animation_mode = True 
+      elif DICT_CLEAN['SENSOR_MODE'] == 4:
+        Pattern = 0
+        BTL = (0,32,0)
+        sensor_animation_mode = True 
+        fn_dots_static()     
 
-    elif DICT_CLEAN['SENSOR_MODE'] == 5:
-      background = (96,96,96)
-      Pattern = 2
-      sensor_animation_mode = True 
-      
-    elif DICT_CLEAN['SENSOR_MODE'] == 6:
-      background = (0,0,0)
-      Pattern = 4
-      sensor_animation_mode = True 
-      
-    elif DICT_CLEAN['SENSOR_MODE'] == 7:
-      background = (0,0,0)
-      Pattern = 3
-      sensor_animation_mode = True 
-      
-    else:
-      Pattern = 2
-      background = (0,0,0)
-      scannerline1 = (0,0,0)
-      
-      
-    fn_dots_static()     
+      elif DICT_CLEAN['SENSOR_MODE'] == 5:
+        background = (96,96,96)
+        Pattern = 2
+        sensor_animation_mode = True
+        fn_dots_static()      
+        
+      elif DICT_CLEAN['SENSOR_MODE'] == 6:
+        background = (0,0,0)
+        Pattern = 4
+        sensor_animation_mode = True 
+        fn_dots_static()     
+        
+      elif DICT_CLEAN['SENSOR_MODE'] == 7:
+        background = (0,0,0)
+        Pattern = 3
+        sensor_animation_mode = True 
+        fn_dots_static()     
+        
+      else:
+        Pattern = 2
+        background = (0,0,0)
+        scannerline1 = (0,0,0)
+        fn_dots_static()        
+        
+      SENSOR_MODE_mem = DICT_CLEAN['SENSOR_MODE']
+
 
 if __name__ == "__main__":
 	channel.basic_consume(queue='',on_message_callback=callback, auto_ack=True)
