@@ -21,6 +21,8 @@ flip_lights1 = (0,96,0)
 top_right_in = (96,0,0)
 top_center_in = (96,0,0)
 
+SENSOR_MODE_mem = 0
+
 WAIT_TIME_SECONDS = 0.1
 
 devider0 = 0
@@ -201,7 +203,7 @@ def animation():
               dots[103-scene+3] = (background)   
                             
         for scene in range(0,8,1):
-             # scannerline0
+            # scannerline0
             dots[39-scene] = (scannerline0)
             dots[98] = (background)      
             time.sleep(0.02)
@@ -280,106 +282,109 @@ def callback(ch, method, properties, body):
   global top_center_in
   global Pattern
   global flip_lights1
+  global SENSOR_MODE_mem
   
   DICT = body.decode()
   DICT_CLEAN = ast.literal_eval(DICT)
-  print('EVENT')	
-  print(DICT_CLEAN)   
-  if DICT_CLEAN['SENSOR_MODE'] == 0:
-    Pattern = 0
-    scannerline1 = (255,255,0)
-    square_LB = (10,10,0)
-    
-    flip_lights0 = (0,96,0)
-    flip_lights1 = (0,96,0)
-    background = (0,0,0)
-    scannerline0 = (255,255,0)
-    square_RB = (10,10,0)
-    square_TL = (10,10,0)
-    flip_lights = (0,96,0)
-    top_right_in = (96,0,0)
-    top_center_in = (96,0,0)
-  
-  elif DICT_CLEAN['SENSOR_MODE'] == 1:
-    Pattern = 0
-    scannerline1 = (255,255,0)
-    square_LB = (0,0,255)   
-    
-    flip_lights0 = (0,96,0)
-    flip_lights1 = (96,0,0)
-    background = (0,0,0)
-    scannerline0 = (255,255,0)
-    square_RB = (10,10,0)
-    square_TL = (0,0,255)
-    flip_lights = (0,96,0)
-    top_right_in = (96,0,0)
-    top_center_in = (96,0,0)
-  
-  elif DICT_CLEAN['SENSOR_MODE'] == 2:
-    Pattern = 0
-    scannerline1 = (255,0,0)
-    square_LB = (10,0,0)
-    
-    flip_lights0 = (96,0,0)
-    flip_lights1 = (0,96,0)
-    background = (0,0,0)
-    scannerline0 = (255,0,0)
-    square_RB = (10,10,0)
-    square_TL = (10,10,0)
-    top_right_in = (96,0,0)
-    top_center_in = (96,0,0)
-    
-    
-  elif DICT_CLEAN['SENSOR_MODE'] == 3:
-    Pattern = 0
-    scannerline1 = (0,0,255)
-    square_LB = (0,0,255)
-    
-    flip_lights0 = (0,96,0)
-    flip_lights1 = (96,0,0)
-    background = (0,0,0)
-    scannerline0 = (0,0,255)
-    square_RB = (10,10,0)
-    square_TL = (0,0,255)
-    top_right_in = (96,0,0)
-    top_center_in = (96,0,0)
-  elif DICT_CLEAN['SENSOR_MODE'] == 4:
-    Pattern = 1  
-    flip_lights0 = (0,0,0)
-    flip_lights1 = (0,0,0)
-    scannerline1 = (0,0,0)
-    square_LB = (0,0,0)
-    background = (0,0,0)
-    scannerline0 = (255,0,0)
-    square_RB = (0,0,0)
-    square_TL = (0,0,0)
-    top_right_in = (0,0,0)
-    top_center_in = (0,0,0)
-  elif DICT_CLEAN['SENSOR_MODE'] == 5:
-    background = (96,96,96)
-    Pattern = 2
-  elif DICT_CLEAN['SENSOR_MODE'] == 6:
-    background = (0,0,0)
-    Pattern = 4
-  elif DICT_CLEAN['SENSOR_MODE'] == 7:
-    background = (0,0,0)
-    Pattern = 3
-  else:
-    Pattern = 2
-    
-    flip_lights0 = (0,0,0)
-    flip_lights1 = (0,0,0)
-    scannerline1 = (0,0,0)
-    square_LB = (0,0,0)
-    background = (0,0,0)
-    scannerline0 = (0,0,0)
-    square_RB = (0,0,0)
-    square_TL = (0,0,0)
-    top_right_in = (0,0,0)
-    top_center_in = (0,0,0)
-  # update background once
-  dots.fill((background))
 
+  if SENSOR_MODE_mem != DICT_CLEAN['SENSOR_MODE']:
+
+    if DICT_CLEAN['SENSOR_MODE'] == 0:
+      Pattern = 0
+      scannerline1 = (255,255,0)
+      square_LB = (10,10,0)
+      
+      flip_lights0 = (0,96,0)
+      flip_lights1 = (0,96,0)
+      background = (0,0,0)
+      scannerline0 = (255,255,0)
+      square_RB = (10,10,0)
+      square_TL = (10,10,0)
+      flip_lights = (0,96,0)
+      top_right_in = (96,0,0)
+      top_center_in = (96,0,0)
+    
+    elif DICT_CLEAN['SENSOR_MODE'] == 1:
+      Pattern = 0
+      scannerline1 = (255,255,0)
+      square_LB = (0,0,255)   
+      
+      flip_lights0 = (0,96,0)
+      flip_lights1 = (96,0,0)
+      background = (0,0,0)
+      scannerline0 = (255,255,0)
+      square_RB = (10,10,0)
+      square_TL = (0,0,255)
+      flip_lights = (0,96,0)
+      top_right_in = (96,0,0)
+      top_center_in = (96,0,0)
+    
+    elif DICT_CLEAN['SENSOR_MODE'] == 2:
+      Pattern = 0
+      scannerline1 = (255,0,0)
+      square_LB = (10,0,0)
+      
+      flip_lights0 = (96,0,0)
+      flip_lights1 = (0,96,0)
+      background = (0,0,0)
+      scannerline0 = (255,0,0)
+      square_RB = (10,10,0)
+      square_TL = (10,10,0)
+      top_right_in = (96,0,0)
+      top_center_in = (96,0,0)
+      
+      
+    elif DICT_CLEAN['SENSOR_MODE'] == 3:
+      Pattern = 0
+      scannerline1 = (0,0,255)
+      square_LB = (0,0,255)
+      
+      flip_lights0 = (0,96,0)
+      flip_lights1 = (96,0,0)
+      background = (0,0,0)
+      scannerline0 = (0,0,255)
+      square_RB = (10,10,0)
+      square_TL = (0,0,255)
+      top_right_in = (96,0,0)
+      top_center_in = (96,0,0)
+    elif DICT_CLEAN['SENSOR_MODE'] == 4:
+      Pattern = 1  
+      flip_lights0 = (0,0,0)
+      flip_lights1 = (0,0,0)
+      scannerline1 = (0,0,0)
+      square_LB = (0,0,0)
+      background = (0,0,0)
+      scannerline0 = (255,0,0)
+      square_RB = (0,0,0)
+      square_TL = (0,0,0)
+      top_right_in = (0,0,0)
+      top_center_in = (0,0,0)
+    elif DICT_CLEAN['SENSOR_MODE'] == 5:
+      background = (96,96,96)
+      Pattern = 2
+    elif DICT_CLEAN['SENSOR_MODE'] == 6:
+      background = (0,0,0)
+      Pattern = 4
+    elif DICT_CLEAN['SENSOR_MODE'] == 7:
+      background = (0,0,0)
+      Pattern = 3
+    else:
+      Pattern = 2
+      
+      flip_lights0 = (0,0,0)
+      flip_lights1 = (0,0,0)
+      scannerline1 = (0,0,0)
+      square_LB = (0,0,0)
+      background = (0,0,0)
+      scannerline0 = (0,0,0)
+      square_RB = (0,0,0)
+      square_TL = (0,0,0)
+      top_right_in = (0,0,0)
+      top_center_in = (0,0,0)
+    # update background once
+    dots.fill((background))
+    SENSOR_MODE_mem = DICT_CLEAN['SENSOR_MODE']
+  
 if __name__ == "__main__":
 	channel.basic_consume(queue='',on_message_callback=callback, auto_ack=True)
 	# setup the thread with timer and start the IRQ reset function
