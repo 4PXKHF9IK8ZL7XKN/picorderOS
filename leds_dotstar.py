@@ -16,7 +16,8 @@ scannerline1 = (10,10,0)
 square_RB = (10,10,0)
 square_LB = (10,10,0)
 square_TL = (10,10,0)
-flip_lights = (0,96,0)
+flip_lights0 = (0,96,0)
+flip_lights1 = (0,96,0)
 top_right_in = (96,0,0)
 top_center_in = (96,0,0)
 
@@ -35,7 +36,7 @@ connection = pika.BlockingConnection(
 channel = connection.channel()
 
 channel.exchange_declare(exchange='sensor_data', exchange_type='topic')
-
+(0,96,0)
 result = channel.queue_declare('', exclusive=True)
 queue_name = result.method.queue
 
@@ -59,8 +60,13 @@ def fn_dots_initial():
   dots.fill(background)
   dots.show()
   
-  for pixel in range(0,n_dot,1):
-    Rainbow.append((math.ceil(pixel/32),math.ceil((n_dot-pixel)/32),pixel*2))
+  pixr,pixg,pixb = 0,0,0
+  for firstPixelHue in range(0,128,1):
+    for pixel in range( 1, n_dot, 3):
+      pixelHuer = firstPixelHue + ((pixel-1)  / n_dot)
+      pixelHueg = firstPixelHue + (pixel / n_dot)
+      pixelHueb = firstPixelHue + ((pixel+1) / n_dot)
+      Rainbow.append((math.ceil(pixelHuer/3),math.ceil(pixelHueg),math.ceil(pixelHueb)))
   
 def rotate_array(n):
   global Rainbow
@@ -148,8 +154,8 @@ def animation():
             # Flip Lights Top
             if scene >= 4:
                 # on
-                dots[64] = (flip_lights)
-                dots[72] = (flip_lights)
+                dots[64] = (flip_lights0)
+                dots[72] = (flip_lights0)
                 # off
                 time.sleep(0.02)
                 dots[65] = (background)
@@ -159,23 +165,19 @@ def animation():
                 dots[64] = (background)
                 dots[72] = (background)
                 # on
-                dots[65] = (flip_lights)
-                dots[73] = (flip_lights)
+                dots[65] = (flip_lights1)
+                dots[73] = (flip_lights1)
             dots.show()
             time.sleep(0.02)
         # reseting dot
-        #dots.fill((random_color(), random_color(), random_color()))
         fn_dots_static()
         dots[103] = (background)
         dots[32] = (background)
 
-        #dots[127] = (background)
-        #dots[56] = (background)
-
         dots.show()
         time.sleep(0.01)
       elif Pattern == 1:
-        print("knight Rider")
+        #print("knight Rider")
         for scene in range(0,8,1):
              # scannerline0
             dots[96+scene] = (scannerline0)
@@ -227,21 +229,23 @@ def animation():
          
 
             dots.show()
+            
         # reseting dot
-        #dots.fill((random_color(), random_color(), random_color()))
         fn_dots_static()
         dots[103] = (background)
         dots[32] = (background)
         
       elif Pattern == 2:
-        print("Funzel")
         dots.fill((background))
         time.sleep(1.0)
       elif Pattern == 3:
-        print("Rainbow")
+        #print("Rainbow")
         for step in range(0,n_dot,1):
           dots[step] = Rainbow[step]
         rotate_array(-1)
+      elif Pattern == 4:  
+        dots.fill((random_color(),random_color(),random_color()))
+        time.sleep(1.0)
       else:
         time.sleep(1.0)
 
@@ -271,10 +275,11 @@ def callback(ch, method, properties, body):
   global background
   global square_RB
   global square_TL
-  global flip_lights
+  global flip_lights0
   global top_right_in
   global top_center_in
   global Pattern
+  global flip_lights1
   
   DICT = body.decode()
   DICT_CLEAN = ast.literal_eval(DICT)
@@ -285,6 +290,8 @@ def callback(ch, method, properties, body):
     scannerline1 = (255,255,0)
     square_LB = (10,10,0)
     
+    flip_lights0 = (0,96,0)
+    flip_lights1 = (0,96,0)
     background = (0,0,0)
     scannerline0 = (255,255,0)
     square_RB = (10,10,0)
@@ -295,13 +302,15 @@ def callback(ch, method, properties, body):
   
   elif DICT_CLEAN['SENSOR_MODE'] == 1:
     Pattern = 0
-    scannerline1 = (0,255,0)
-    square_LB = (0,10,0)
+    scannerline1 = (255,255,0)
+    square_LB = (0,0,255)   
     
+    flip_lights0 = (0,96,0)
+    flip_lights1 = (96,0,0)
     background = (0,0,0)
-    scannerline0 = (0,255,0)
+    scannerline0 = (255,255,0)
     square_RB = (10,10,0)
-    square_TL = (10,10,0)
+    square_TL = (0,0,255)
     flip_lights = (0,96,0)
     top_right_in = (96,0,0)
     top_center_in = (96,0,0)
@@ -311,11 +320,12 @@ def callback(ch, method, properties, body):
     scannerline1 = (255,0,0)
     square_LB = (10,0,0)
     
+    flip_lights0 = (96,0,0)
+    flip_lights1 = (0,96,0)
     background = (0,0,0)
     scannerline0 = (255,0,0)
     square_RB = (10,10,0)
     square_TL = (10,10,0)
-    flip_lights = (0,96,0)
     top_right_in = (96,0,0)
     top_center_in = (96,0,0)
     
@@ -323,24 +333,26 @@ def callback(ch, method, properties, body):
   elif DICT_CLEAN['SENSOR_MODE'] == 3:
     Pattern = 0
     scannerline1 = (0,0,255)
-    square_LB = (0,0,10)
+    square_LB = (0,0,255)
     
+    flip_lights0 = (0,96,0)
+    flip_lights1 = (96,0,0)
     background = (0,0,0)
     scannerline0 = (0,0,255)
     square_RB = (10,10,0)
-    square_TL = (10,10,0)
-    flip_lights = (0,96,0)
+    square_TL = (0,0,255)
     top_right_in = (96,0,0)
     top_center_in = (96,0,0)
   elif DICT_CLEAN['SENSOR_MODE'] == 4:
-    Pattern = 1
+    Pattern = 1  
+    flip_lights0 = (0,0,0)
+    flip_lights1 = (0,0,0)
     scannerline1 = (0,0,0)
     square_LB = (0,0,0)
     background = (0,0,0)
     scannerline0 = (255,0,0)
     square_RB = (0,0,0)
     square_TL = (0,0,0)
-    flip_lights = (0,0,0)
     top_right_in = (0,0,0)
     top_center_in = (0,0,0)
   elif DICT_CLEAN['SENSOR_MODE'] == 5:
@@ -348,17 +360,21 @@ def callback(ch, method, properties, body):
     Pattern = 2
   elif DICT_CLEAN['SENSOR_MODE'] == 6:
     background = (0,0,0)
+    Pattern = 4
+  elif DICT_CLEAN['SENSOR_MODE'] == 7:
+    background = (0,0,0)
     Pattern = 3
-
   else:
     Pattern = 2
+    
+    flip_lights0 = (0,0,0)
+    flip_lights1 = (0,0,0)
     scannerline1 = (0,0,0)
     square_LB = (0,0,0)
     background = (0,0,0)
     scannerline0 = (0,0,0)
     square_RB = (0,0,0)
     square_TL = (0,0,0)
-    flip_lights = (0,0,0)
     top_right_in = (0,0,0)
     top_center_in = (0,0,0)
   # update background once
