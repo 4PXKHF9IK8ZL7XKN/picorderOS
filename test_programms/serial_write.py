@@ -7,8 +7,9 @@ import sys
 
 port = '/dev/serial0'
 #baud = 9600
-baud = 115200
-stream = serial.Serial(port, baud, timeout=.1)
+#baud = 115200
+baud =  1000000
+stream = serial.Serial(port, baud, timeout=.01)
 stream.reset_input_buffer()
 
 def push_data():
@@ -20,4 +21,4 @@ def push_data():
 
 while True:
 	push_data()
-	time.sleep(3)
+	time.sleep(1)
