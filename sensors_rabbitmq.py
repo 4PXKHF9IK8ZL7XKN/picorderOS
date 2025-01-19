@@ -57,44 +57,63 @@ if configure.gps:
 
 if not configure.pc:
 	import os
-	
-	
+
+
 if configure.input_cap_mpr121:
 	import adafruit_mpr121
 	import board
 	import busio
 	import signal
-	
+
 	try:
-	
+
 		# Note you can optionally change the address of the device:
 		mpr121A = adafruit_mpr121.MPR121(i2c, address=0x5A)
-		mpr121B = adafruit_mpr121.MPR121(i2c, address=0x5B)	
-	
+		mpr121B = adafruit_mpr121.MPR121(i2c, address=0x5B)
+
 	except OSError as e:
 		print("Error in Sensors Rabbitmq by request I2C", e)
 		sys.exit(1)
-	
+		
+		
+if configure.input_cap1188:
+	from adafruit_cap1188.i2c import CAP1188_I2C
+	import board
+	import busio
+	import signal
+
+	try:
+		cap1188A = CAP1188_I2C(i2c, address=0x29)
+		cap1188B = CAP1188_I2C(i2c, address=0x28)
+				
+		cap1188A.sensitivity = configure.CAPSENSITIVITY
+		cap1188B.sensitivity = configure.CAPSENSITIVITY
+
+	except OSError as e:
+		print("Error in Sensors Rabbitmq by request I2C", e)
+		sys.exit(1)		
+		
+
 if configure.bme:
 	import adafruit_bme680
-	
-	
+
+
 if configure.bmp280:
 	import adafruit_bmp280
-	
+
 if configure.LSM6DS3TR:
 	from adafruit_lsm6ds.lsm6ds3 import LSM6DS3
-	
+
 if configure.LIS3MDL:
 	import adafruit_lis3mdl
-		
+
 if configure.APDS9960:
 	import adafruit_apds9960.apds9960
-	
+
 if configure.SHT30:
 	import adafruit_sht31d
-	
-	
+
+
 if configure.sensehat:
 	# instantiates and defines paramaters for the sensehat
 
@@ -146,7 +165,7 @@ else:
 	channel = connection.channel()
     
 def declare_channel():
-	# Setup Channels for Sensors
+	# Setup Channels for Sensorscap1188A
 	channel.exchange_declare(exchange='sensor_data', exchange_type='topic')
     
 def publish(IN_routing_key,data):
@@ -170,37 +189,56 @@ def publish(IN_routing_key,data):
 		finally:
 			disconnect()
 			sys.exit(1)
-		
-		
-		
+
+
+
 	if DEBUG:
 		print(f" {time_unix} [x] Sent {stack} {routing_key}:{message}")
- 
-    
+
+
 def disconnect():
     connection.close()
-    	
+
 def button_callbackA(channel):
 	global softbreak_flag
 	global term_signal
+	
 	touchA_dict = {"DICT":"A",0:False,1:False,2:False,3:False,4:False,5:False,6:False,7:False,8:False,9:False,10:False,11:False}
 	softbreak_flag = True
-	for i in range(12):
-		touchA_dict[i] = mpr121A[i].value
-	publish("touch",touchA_dict)	
-	softbreak_flag = False	
+
+	if configure.input_cap_mpr121:	
+		for i in range(12):
+			touchA_dict[i] = mpr121A[i].value
+			
+	if configure.input_cap1188:
+		for i in range(0,7,1):
+			touchA_dict[i] = cap1188A[i+1].value
+			#print("valueA", cap1188A[i].value)
+	
+	publish("touch",touchA_dict)
+	softbreak_flag = False
 
 
 def button_callbackB(channel):
 	global softbreak_flag
 	global term_signal
+	
 	touchB_dict = {"DICT":"B",0:False,1:False,2:False,3:False,4:False,5:False,6:False,7:False,8:False,9:False,10:False,11:False}
 	softbreak_flag = True
-	for i in range(12):
-		touchB_dict[i] = mpr121B[i].value
-	publish("touch",touchB_dict)
-	softbreak_flag = False	
 	
+	if configure.input_cap_mpr121:	
+		for i in range(12):
+			touchB_dict[i] = mpr121B[i].value
+			
+	if configure.input_cap1188:
+		for i in range(0,7,1):
+			touchB_dict[i] = cap1188B[i+1].value
+			#print("valueB", cap1188B[i].value)
+	
+	
+	publish("touch",touchB_dict)
+	softbreak_flag = False
+
 
 def reset():
 	if configure.input_cap_mpr121:
@@ -243,7 +281,7 @@ def decode(coord):
 def GPS_function(select):
 
 	if select:
-		mode = 1 
+		mode = 1
 	else:
 		mode = 0
 
@@ -893,6 +931,14 @@ if __name__ == "__main__":
 
 		GPIO.add_event_detect(BUTTON_GPIOA, GPIO.RISING, callback=button_callbackA, bouncetime=10)
 		GPIO.add_event_detect(BUTTON_GPIOB, GPIO.RISING, callback=button_callbackB, bouncetime=10) 
+		
+	if configure.input_cap1188:
+		GPIO.setup(BUTTON_GPIOA, GPIO.IN, pull_up_down=GPIO.PUD_UP)
+		GPIO.setup(BUTTON_GPIOB, GPIO.IN, pull_up_down=GPIO.PUD_UP)
+
+		GPIO.add_event_detect(BUTTON_GPIOA, GPIO.FALLING, callback=button_callbackA, bouncetime=10)
+		GPIO.add_event_detect(BUTTON_GPIOB, GPIO.FALLING, callback=button_callbackB, bouncetime=10) 
+	
     
 	while True:
 		try:
