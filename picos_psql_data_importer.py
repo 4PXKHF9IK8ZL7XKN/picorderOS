@@ -114,13 +114,19 @@ def table_create_gps(con, table_str):
     except psycopg2.Error as e:
         print( e )
     return ret  
-    
-def table_create_termalframe(con, table_str):
+        
+def table_create_termalframe_adv(con, table_str, lenght):
+    construct = 'CREATE TABLE "' + table_str + '" (id serial PRIMARY KEY,'
+    end = "timestamp numeric,latitude numeric ,longitude numeric);"
+    for i in range(lenght):
+    	construct = construct + "val" + str(i) + " real, "
+    construct = construct + end
+    print(construct)
 
     ret = False
     try:
         cur = con.cursor()
-        cur.execute('CREATE TABLE "' + table_str + '" (id serial PRIMARY KEY, val0 real, val1 real, val2 real, val3 real, val4 real, val5 real, val6 real, val7 real, val8 real, val9 real, val10 real, val11 real, val12 real, val13 real, val14 real, val15 real, val16 real, val17 real, val18 real, val19 real, val20 real, val21 real, val22 real, val23 real, val24 real, val25 real, val26 real, val27 real, val28 real, val29 real, val30 real, val31 real, val32 real, val33 real, val34 real, val35 real, val36 real, val37 real, val38 real, val39 real, val40 real, val41 real, val42 real, val43 real, val44 real, val45 real, val46 real, val47 real, val48 real, val49 real, val50 real, val51 real, val52 real, val53 real, val54 real, val55 real, val56 real, val57 real, val58 real, val59 real, val60 real, val61 real, val62 real, val63 real, timestamp numeric,latitude numeric ,longitude numeric);')
+        cur.execute(construct)
         ret = table_exists(con, table_str)
         if ret is True:
         	print("TABLE: ", table_str ,"CREATED")
@@ -128,8 +134,6 @@ def table_create_termalframe(con, table_str):
     except psycopg2.Error as e:
         print( e )
     return ret  
-    
-    
     
 
 def table_drop(con, table_str):
@@ -736,10 +740,12 @@ def callback(ch, method, properties, body):
 		
 		# creates a new dataframe to add new data
 		table_string = '%s_%s_%s' % (TERMALFRAME[67],'TERMALFRAME','ARRAY')
+		
+		#table_drop(psql_connection, table_string)
 
 		ret = table_exists(psql_connection, table_string)
 		if ret is False:
-			table_create_termalframe(psql_connection,  table_string)
+			table_create_termalframe_adv(psql_connection,  table_string, 64)
 			
 		ret, ent_id = insert_data_termal(psql_connection,  table_string, TERMALFRAME[0], TERMALFRAME[1], TERMALFRAME[2], TERMALFRAME[3], TERMALFRAME[4], TERMALFRAME[5], TERMALFRAME[6], TERMALFRAME[7],	TERMALFRAME[8], TERMALFRAME[9], TERMALFRAME[10], TERMALFRAME[11], TERMALFRAME[12], TERMALFRAME[13], TERMALFRAME[14], TERMALFRAME[15], TERMALFRAME[16], TERMALFRAME[17], TERMALFRAME[18], TERMALFRAME[19], TERMALFRAME[20], TERMALFRAME[21], TERMALFRAME[22], TERMALFRAME[23], TERMALFRAME[24], TERMALFRAME[25],
 TERMALFRAME[26], TERMALFRAME[27], TERMALFRAME[28], TERMALFRAME[29], TERMALFRAME[30], TERMALFRAME[31], TERMALFRAME[32], TERMALFRAME[33], TERMALFRAME[34], TERMALFRAME[35],

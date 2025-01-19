@@ -40,7 +40,7 @@ queue_name = result.method.queue
 #    exchange='sensor_data', queue='', routing_key='bme680')
 
 channel.queue_bind(
-    exchange='sensor_data', queue='', routing_key='touch')
+    exchange='sensor_data', queue='', routing_key='thermal_frame_MLX90640')
 
 
 print(' [*] Waiting for logs. To exit press CTRL+C')
@@ -56,3 +56,4 @@ def callback(ch, method, properties, body):
 channel.basic_consume(queue='',on_message_callback=callback, auto_ack=True)
 
 channel.start_consuming()
+

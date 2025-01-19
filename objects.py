@@ -65,6 +65,8 @@ class preferences(object):
 							'LIS3MDL':'no',
 							'# Light + Gesture + Proximity':None,
 							'APDS9960':'no',
+							'# MLX90640 Thermal Camera':None,
+							'MLX90640':'yes',
 							'# Humidity':None,
 							'SHT30':'no'					
 							}										
@@ -252,6 +254,7 @@ class preferences(object):
 		self.LSM6DS3TR = self.str2bool(config['SENSORS']['LSM6DS3TR'])
 		self.LIS3MDL = self.str2bool(config['SENSORS']['LIS3MDL'])
 		self.APDS9960 = self.str2bool(config['SENSORS']['APDS9960'])
+		self.MLX90640 = self.str2bool(config['SENSORS']['MLX90640'])
 		self.SHT30 = self.str2bool(config['SENSORS']['SHT30'])
 
 # INPUT MODULE-----------------------------------------------------------------#

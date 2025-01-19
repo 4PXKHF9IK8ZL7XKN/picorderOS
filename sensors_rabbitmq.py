@@ -135,7 +135,7 @@ if configure.sensehat:
 if configure.envirophat:
 	from envirophat import light, weather, motion, analog
 
-# support for the MLX90614 IR Thermoif SCD4X:
+# support for the MLX90614 IR Thermo:
 if configure.ir_thermo:
 	import busio as io
 	import adafruit_mlx90614
@@ -152,6 +152,13 @@ if configure.amg8833:
 	import adafruit_amg88xx
 	import busio
 	amg = adafruit_amg88xx.AMG88XX(i2c)
+	
+if configure.MLX90640:
+	import adafruit_mlx90640
+	import busio
+	MLX90640 = adafruit_mlx90640.MLX90640(i2c)
+	MLX90640.refresh_rate = adafruit_mlx90640.RefreshRate.REFRESH_2_HZ
+
 
 if configure.EM:
 	from modulated_em import *
@@ -342,7 +349,7 @@ def GPS_function(select):
 				NMEA_DICT.append(data_array)
 		#stopping the serial read when i detect the last sentence from a NEMA block 
 		if mode == 0:
-			if data_array[0] == '$GPGLL':
+			if data_array[0] == '$GPG_mlx90640LL':
 				break
 		if mode == 1:
 			if data_array[0] == '$GNVTG':
@@ -488,7 +495,8 @@ class sensor(object):
 		if configure.ir_thermo:
 			self.mlx = adafruit_mlx90614.MLX90614(i2c)
 			
-			
+		if configure.MLX90640:
+			self.thermal_frame_mlx90640 = [0] * 768
 
 		if configure.envirophat: 
 	
@@ -601,6 +609,23 @@ class sensor(object):
 		timestamp = time.time()
 		
 		return self.thermal_frame , timestamp ,local_gps[0], local_gps[1] ,configure.rabbitmq_tag
+		
+	def get_thermal_frame_MLX90640(self):
+		global local_gps
+		try:
+			MLX90640.getFrame(self.thermal_frame_mlx90640)
+			data = numpy.array(self.thermal_frame_mlx90640)
+			high = numpy.max(data)
+			low = numpy.min(data)
+		except OSError as e:
+			print("Error in Sensors Rabbitmq by request I2C", e)
+			disconnect()
+			GPIO.cleanup()  
+			sys.exit(1)
+
+		timestamp = time.time()
+		
+		return self.thermal_frame_mlx90640 , timestamp ,local_gps[0], local_gps[1] ,configure.rabbitmq_tag
 
 
 	def get_bme680(self):
@@ -1020,6 +1045,11 @@ if __name__ == "__main__":
 			if configure.ir_thermo:		
 				ir_thermo_data = sensors.get_ir_thermo()	
 				publish("ir_thermo",ir_thermo_data)
+				
+			if configure.MLX90640:
+				thermal_frame_MLX90640 = sensors.get_thermal_frame_MLX90640()	
+				publish("thermal_frame_MLX90640",thermal_frame_MLX90640)
+			
 			    
 			soft_break()
 			
