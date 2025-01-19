@@ -5,8 +5,9 @@ import serial
 import time
 
 port = '/dev/serial0'
-baud = 9600
+#baud = 9600
 #baud = 115200
+baud = 4000000
 stream = serial.Serial(port, baud, timeout=.1)
 stream.reset_input_buffer()
 
