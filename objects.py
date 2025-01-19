@@ -75,9 +75,9 @@ class preferences(object):
 							'cap_mpr121':'no',
 							'pcf8575':'no',
 							'sensehat_joystick':'no',
-							'cap1208':'no',
-							'# Capacitive touch threshold':None,
-							'capsensitivity':'50',
+							'cap1188':'yes',
+							'# Capacitive touch threshold Sensitivty must be one of: (128, 64, 32, 16, 8, 4, 2, 1)':None,
+							'capsensitivity':'64',
 							'# Manual control allows the front end to provide its own operator input handling':None,
 							'manual_input':'no',
 							'# Keyboard Input - configures the /dev/input/event as lisener and sends this keyboard inputs via rabbitmq':None,
@@ -124,8 +124,8 @@ class preferences(object):
 							'HALLPIN1':'12',						# Hall effect sensor pins, for door open and close
 							'HALLPIN2':'4',
 
-							'# Cap1208 Alert Pin':None,
-							'ALERTPIN':'0',							# Cap1208 Alert Pin
+							'# Cap1188 Alert Pin':None,
+							'ALERTPIN':'0',							# Cap1188 Alert Pin
 
 							'# Power Supply Low Power Alert Pin':None,
 							'LOW_POWER_PIN':'5',					# Power supply charge state alert pin
@@ -264,8 +264,8 @@ class preferences(object):
 		self.input_joystick = self.str2bool(config['INPUT']['sensehat_joystick'])
 		self.manual_input = self.str2bool(config['INPUT']['manual_input'])
 
-		# CAP1208 and sensitivity settings
-		self.input_cap1208 = self.str2bool(config['INPUT']['cap1208'])
+		# Cap1188 and sensitivity settings
+		self.input_cap1188 = self.str2bool(config['INPUT']['cap1188'])
 		self.CAPSENSITIVITY = int(config['INPUT']['capsensitivity'])
 
 		self.keyboard_input = self.str2bool(config['INPUT']['keyboard_input'])
@@ -309,10 +309,10 @@ class preferences(object):
 		self.HALLPIN1 = int(config['PIN ASSIGNMENTS']['hallpin1'])
 		self.HALLPIN2 = int(config['PIN ASSIGNMENTS']['hallpin2'])
 
-		# CAP1208 alert pin
+		# Cap1188 alert pin
 		self.ALERTPIN = int(config['PIN ASSIGNMENTS']['alertpin'])
 
-		# CAP1208 alert pin
+		# Cap1188 alert pin
 		self.LOW_POWER_PIN = int(config['PIN ASSIGNMENTS']['LOW_POWER_PIN'])
 
 		# PocketGeiger Pins
