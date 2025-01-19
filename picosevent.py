@@ -106,7 +106,9 @@ def callback(ch, method, properties, body):
 	#print("array:", configure.eventlist[0])
 	print("CALLBACK",method.routing_key)
 	if method.routing_key == 'touch':
-		if configure.input_cap_mpr121:
+		print("CALL")
+		if configure.input_cap_mpr121 or configure.input_cap1188:
+			print("SETUP")
 			sensor_dict_unclean = body.decode()
 			sensor_dict = ast.literal_eval(sensor_dict_unclean)
 			print(sensor_dict)
@@ -212,8 +214,7 @@ def callback(ch, method, properties, body):
 	configure.input_gpio
 	# 3 inputs for kb
 	configure.input_kb
-	# cap1208 can handel 8 inputs
-	configure.input_cap1208
+
 	publish('EVENT',EVENT_MAP)
 	print("EVENT:", EVENT_MAP)
 	click = beepsound.play()
