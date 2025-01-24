@@ -54,7 +54,10 @@ channel.queue_bind(
 
 channel.queue_bind(
     exchange='sensor_data', queue='', routing_key='thermal_frame')
-    
+  
+channel.queue_bind(
+    exchange='sensor_data', queue='', routing_key='thermal_frame_MLX90640') 
+  
 channel.queue_bind(
     exchange='sensor_data', queue='', routing_key='system_vitals')
    
@@ -121,7 +124,7 @@ def table_create_termalframe_adv(con, table_str, lenght):
     for i in range(lenght):
     	construct = construct + "val" + str(i) + " real, "
     construct = construct + end
-    print(construct)
+    #print(construct)
 
     ret = False
     try:
@@ -246,14 +249,27 @@ def insert_data_gps(con, table_str, speed, altitude, track, sats, stamp, lat, lo
 		print( e )
 	return ret, ret_id 
  
-def insert_data_termal(con, table_str, val0, val1, val2, val3, val4, val5, val6, val7, val8, val9, val10, val11, val12, val13, val14, val15, val16, val17, val18, val19, val20, val21, val22, val23, val24, val25, val26, val27, val28, val29, val30, val31, val32, val33, val34, val35, val36, val37, val38, val39, val40, val41, val42, val43, val44, val45, val46, val47, val48, val49, val50, val51, val52, val53, val54, val55, val56, val57, val58, val59, val60, val61, val62, val63, stamp, lat, lon, tag):
-	#print("DEBUG:",table_str, val0, val1, val2, val3, val4, val5, val6, val7, val8, val9, val10, val11, val12, val13, val14, val15, val16, val17, val18, val19, val20, val21, val22, val23, val24, val25, val26, val27, val28, val29, val30, val31, val32, val33, val34, val35, val36, val37, val38, val39, val40, val41, val42, val43, val44, val45, val46, val47, val48, val49, val50, val51, val52, val53, val54, val55, val56, val57, val58, val59, val60, val61, val62, val63, stamp, lat, lon, tag)
+
+def insert_data_termal_adv(con, table_str, array_var, lenght, stamp, lat, lon, tag):
 	check_table = empty_tablecheck(con, table_str)
 	ret = False
 	ret_id = "Test"
+	
+	construct = 'INSERT INTO "' + table_str + '" ('
+	mid = "timestamp, latitude, longitude) VALUES ("
+	end = "'" + str(stamp) + "' , '" + str(lat) + "' , '" + str(lon) + "') RETURNING id;"
+	for i in range(lenght):
+		construct = construct + "val" + str(i) + ", "
+	construct = construct + mid
+	for i2 in range(lenght):
+		construct = construct + "  " + str(array_var[i2]) + " ," 
+	construct = construct + end
+	
+	#print(construct)
+		
 	try:
 		cur = con.cursor()
-		cur.execute('INSERT INTO "' + table_str + '" (val0, val1, val2, val3, val4, val5, val6, val7, val8, val9, val10, val11, val12, val13, val14, val15, val16, val17, val18, val19, val20, val21, val22, val23, val24, val25, val26, val27, val28, val29, val30, val31, val32, val33, val34, val35, val36, val37, val38, val39, val40, val41, val42, val43, val44, val45, val46, val47, val48, val49, val50, val51, val52, val53, val54, val55, val56, val57, val58, val59, val60, val61, val62, val63, timestamp, latitude, longitude) VALUES ( '+ str(val0) + ' , ' + str(val1) + ' , ' + str(val2) + ' , ' + str(val3) + ' , ' + str(val4) + ' , ' + str(val5) + ' , ' + str(val6) + ' , ' + str(val7) + ' , ' + str(val8) + ' , ' + str(val9) + ' , ' + str(val10) + ' , ' + str(val11) + ' , ' + str(val12) + ' , ' + str(val13) + ' , ' + str(val14) + ' , ' + str(val15) + ' , ' + str(val16) + ' , ' + str(val17) + ' , ' + str(val18) + ' , ' + str(val19) + ' , ' + str(val20) + ' , ' + str(val21) + ' , ' + str(val22) + ' , ' + str(val23) + ' , ' + str(val24) + ' , ' + str(val25) + ' , ' + str(val26) + ' , ' + str(val27) + ' , ' + str(val28) + ' , ' + str(val29) + ' , ' + str(val30) + ' , ' + str(val31) + ' , ' + str(val32) + ' , ' + str(val33) + ' , ' + str(val34) + ' , ' + str(val35) + ' , ' + str(val36) + ' , ' + str(val37) + ' , ' + str(val38) + ' , ' + str(val39) + ' , ' + str(val40) + ' , ' + str(val41) + ' , ' + str(val42) + ' , ' + str(val43) + ' , ' + str(val44) + ' , ' + str(val45) + ' , ' + str(val46) + ' , ' + str(val47) + ' , ' + str(val48) + ' , ' + str(val49) + ' , ' + str(val50) + ' , ' + str(val51) + ' , ' + str(val52) + ' , ' + str(val53) + ' , ' + str(val54) + ' , ' + str(val55) + ' , ' + str(val56) + ' , ' + str(val57) + ' , ' + str(val58) + ' , ' + str(val59) + ' , ' + str(val60) + ' , ' + str(val61) + ' , ' + str(val62) + ' , ' + str(val63) + ' , ' + str(stamp) + ' , ' + str(lat) + ' , ' + str(lon) + ') RETURNING id;')
+		cur.execute(construct)
 		getback = cur.fetchall()
 		if len(getback) != 0:
 			# did unpacking the Tuple 
@@ -262,7 +278,10 @@ def insert_data_termal(con, table_str, val0, val1, val2, val3, val4, val5, val6,
 		cur.close()
 	except psycopg2.Error as e:
 		print( e )
-	return ret, ret_id   
+	return ret, ret_id      
+    
+    
+    
     
 def connect_psql(config):
     """ Connect to the PostgreSQL database server """
@@ -284,6 +303,7 @@ def callback(ch, method, properties, body):
 	global GENERATORS
 	global SENSEHAT
 	global TERMALFRAME
+	global TERMALFRAME_MLX90640
 	global selected_sensor_values
 	
 	timestamp = time.time()
@@ -731,28 +751,57 @@ def callback(ch, method, properties, body):
 				TERMALFRAME[index] = float(datapoint)
 				index = index + 1
 	
-		TERMALFRAME[64] = sensortimestamp
-		TERMALFRAME[65] = longitude
-		TERMALFRAME[66] = latitude
-		TERMALFRAME[67] = origin_tag
-
 		#print("MATRIX", TERMALFRAME)
 		
 		# creates a new dataframe to add new data
-		table_string = '%s_%s_%s' % (TERMALFRAME[67],'TERMALFRAME','ARRAY')
+		table_string = '%s_%s_%s' % (origin_tag,'TERMALFRAME','ARRAY')
 		
 		#table_drop(psql_connection, table_string)
 
 		ret = table_exists(psql_connection, table_string)
 		if ret is False:
 			table_create_termalframe_adv(psql_connection,  table_string, 64)
+
 			
-		ret, ent_id = insert_data_termal(psql_connection,  table_string, TERMALFRAME[0], TERMALFRAME[1], TERMALFRAME[2], TERMALFRAME[3], TERMALFRAME[4], TERMALFRAME[5], TERMALFRAME[6], TERMALFRAME[7],	TERMALFRAME[8], TERMALFRAME[9], TERMALFRAME[10], TERMALFRAME[11], TERMALFRAME[12], TERMALFRAME[13], TERMALFRAME[14], TERMALFRAME[15], TERMALFRAME[16], TERMALFRAME[17], TERMALFRAME[18], TERMALFRAME[19], TERMALFRAME[20], TERMALFRAME[21], TERMALFRAME[22], TERMALFRAME[23], TERMALFRAME[24], TERMALFRAME[25],
-TERMALFRAME[26], TERMALFRAME[27], TERMALFRAME[28], TERMALFRAME[29], TERMALFRAME[30], TERMALFRAME[31], TERMALFRAME[32], TERMALFRAME[33], TERMALFRAME[34], TERMALFRAME[35],
-TERMALFRAME[36], TERMALFRAME[37], TERMALFRAME[38], TERMALFRAME[39], TERMALFRAME[40], TERMALFRAME[41], TERMALFRAME[42], TERMALFRAME[43], TERMALFRAME[44], TERMALFRAME[45],
-TERMALFRAME[46], TERMALFRAME[47], TERMALFRAME[48], TERMALFRAME[49], TERMALFRAME[50], TERMALFRAME[51], TERMALFRAME[52], TERMALFRAME[53], TERMALFRAME[54], TERMALFRAME[55],
-TERMALFRAME[56], TERMALFRAME[57], TERMALFRAME[58], TERMALFRAME[59], TERMALFRAME[60], TERMALFRAME[61], TERMALFRAME[62], TERMALFRAME[63], TERMALFRAME[64], TERMALFRAME[65], TERMALFRAME[66] ,TERMALFRAME[67])
-		print("Termal",ret, ent_id)
+		ret, ent_id = insert_data_termal_adv(psql_connection,  table_string, TERMALFRAME, 64, sensortimestamp, latitude, longitude,  origin_tag )
+		#print("Termal",ret, ent_id)
+		if ret is False:
+			os.exit("SQL Write Faild")
+			
+		purge_data_totime(psql_connection,  table_string, keep_data_lengh)
+		
+		
+		
+	elif method.routing_key == 'thermal_frame_MLX90640':
+	    # decodes data byte stream and splits the values by comma
+		sensor_values = body.decode()
+		sensor_frame = ast.literal_eval(sensor_values)			
+				
+		origin_tag = sensor_frame[4]
+		longitude = sensor_frame[3]
+		latitude = sensor_frame[2]
+		sensortimestamp = sensor_frame[1]
+
+		index = 0		
+		for datapoint in sensor_frame[0]:
+			#print(index)
+			TERMALFRAME_MLX90640[index] = float(datapoint)
+			index = index + 1
+	
+		#print("MATRIX", TERMALFRAME_MLX90640)
+		
+		# creates a new dataframe to add new data
+		table_string = '%s_%s_%s' % (origin_tag,'TERMALFRAME_MLX90640','ARRAY')
+		
+		#table_drop(psql_connection, table_string)
+
+		ret = table_exists(psql_connection, table_string)
+		if ret is False:
+			table_create_termalframe_adv(psql_connection,  table_string, 768)
+
+			
+		ret, ent_id = insert_data_termal_adv(psql_connection,  table_string, TERMALFRAME_MLX90640, 768, sensortimestamp, latitude, longitude,  origin_tag )
+		#print("Termal_MLX90640",ret, ent_id)
 		if ret is False:
 			os.exit("SQL Write Faild")
 			
