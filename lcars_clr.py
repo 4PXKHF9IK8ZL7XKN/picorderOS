@@ -70,6 +70,12 @@ lcars_titlefont = None
 lcars_bigfont = None
 lcars_giantfont = None
 
+def rnd_colore():
+	r = random.randint(0, 254)
+	g = random.randint(0, 254)
+	b = random.randint(0, 254)
+	return (r,g,b)
+
 def lcars_element_videoframe(device, draw, pos_ax,pos_ay,pos_bx,pos_by,filename,option):
 	# this element needs to be on top so no canvase can be used here
 
@@ -327,8 +333,6 @@ def lcars_element_termal_array(device, draw,pos_ax,pos_ay,pos_bx,pos_by):
 	points = [(math.floor(ix / 8), (ix % 8)) for ix in range(0, 64)]
 	grid_x, grid_y = np.mgrid[0:7:32j, 0:7:32j]
 	
-	points = [(math.floor(ix / 8), (ix % 8)) for ix in range(0, 64)]
-	grid_x, grid_y = np.mgrid[0:7:32j, 0:7:32j]
 	
 	blue = Color("indigo")
 	colors = list(blue.range_to(Color("red"), COLORDEPTH))
@@ -368,6 +372,117 @@ def lcars_element_termal_array(device, draw,pos_ax,pos_ay,pos_bx,pos_by):
 				pos_ax+index1_X*displayPixelWidth+displayPixelWidth ,
 				pos_ay+index2_Y*displayPixelHeight+displayPixelHeight),
 				colors[constrain(int(pixel), 0, COLORDEPTH - 1)])
+				
+				
+def lcars_element_termal_array_MLX90640(device, draw,pos_ax,pos_ay,pos_bx,pos_by):
+	""" 
+	# SPDX-FileCopyrightText: 2021 ladyada for Adafruit Industries
+	# SPDX-License-Identifier: MIT
+    Function is nearly a copy of amg88xx_rpi_thermal_cam.py from https://learn.adafruit.com/ written from tekktrik for Adafruit.
+    https://github.com/adafruit/Adafruit_CircuitPython_AMG88xx/blob/main/examples/amg88xx_rpi_thermal_cam.py
+    https://github.com/tekktrik
+	"""
+
+	global lcars_microfont
+	
+	location_tag = 'local'
+	sensor_dev = 'TERMALFRAME'
+	sensor_dsc = 'MLX90640_ARRAY'
+	
+	termal_matrix = []
+	value_list = []
+	
+	MINTEMP = 26.0
+	MAXTEMP = 45.0
+	
+	COLORDEPTH = 1024
+	INTERPOLATE = 4
+		
+	RES_X = 32
+	RES_Y = 24
+	
+	grid_OPX = 288j
+	grid_OPY = 288j
+	
+	
+	#RES_POINTS = RES_X*RES_Y
+	RES_POINTS = 672
+	
+	points = [(math.floor(ix / 24), (ix % 24)) for ix in range(0, RES_POINTS )]
+	grid_x, grid_y = np.mgrid[0:7:grid_OPX, 0:7:grid_OPY]
+	
+	#grid_x, grid_y = np.mgrid[0:7:32j, 0:7:32j]
+		
+	#print("POINTS:", len(points))
+	
+	blue = Color("indigo")
+	colors = list(blue.range_to(Color("red"), COLORDEPTH))
+	# create the array of colors
+	colors = [(int(c.red * 255), int(c.green * 255), int(c.blue * 255)) for c in colors]
+		
+	# Cacluate the element lengh we interpolate a frame in between	
+	displayPixelWidth = ( pos_bx - pos_ax ) / 30
+	displayPixelHeight = ( pos_by - pos_ay ) / 30
+	
+	#print("Display",displayPixelWidth,displayPixelHeight)
+
+	#bounding box
+	box_element_graph = [(pos_ax , pos_ay), (pos_bx, pos_by)] 
+	draw.rectangle(box_element_graph,fill="blue", outline=lcars_theme[lcars_theme_selection]["colore5"])
+	
+	result, elements_forgieventime = get_recent_termal(location_tag, sensor_dev, sensor_dsc)
+	#print("result",result,len(result),elements_forgieventime)
+	if type(result) != bool and len(result) != 0:
+		for value in result:
+			value_list.append(value)
+		termal_matrix = list(chunks(value_list, RES_X))
+		
+		#print("termal_matrix")
+		#print(termal_matrix)
+		
+		
+		
+		pixels = []
+		for row in termal_matrix:
+			row.pop(31)
+			row.pop(30)
+			row.pop(29)
+			row.pop(28)
+
+			pixels = pixels + row
+		pixels = [map_value(p, MINTEMP, MAXTEMP, 0, COLORDEPTH - 1) for p in pixels]
+		#print(pixels, len (pixels))
+		
+		# perform interpolation
+		bicubic = griddata(points, pixels, (grid_x, grid_y), method="cubic")
+    	
+		# draw everything
+		#for index1_Y, row in enumerate(bicubic):
+		#	for index2_X, pixel in enumerate(row):
+				#print("drawing row", index1_Y,"zeile", index2_X," row data" , row, "pixel" , pixel )
+		#		if math.isnan(pixel):
+		#			pixel = 0
+		#		draw.rectangle((
+		#		pos_ax+index1_Y*displayPixelWidth , 
+		#		pos_ay+index2_X*displayPixelHeight,
+		#		pos_ax+index1_Y*displayPixelWidth+displayPixelWidth ,
+		#		pos_ay+index2_X*displayPixelHeight+displayPixelHeight),
+				#rnd_colore())
+				#(0,index1_X,index2_Y))
+		#		colors[constrain(int(pixel), 0, COLORDEPTH - 1)])
+				
+				
+		# draw everything
+		for index1_Y, row in enumerate(termal_matrix):
+			for index2_X, pixel in enumerate(row):
+		#		print("index:", index1_Y,index2_X,termal_matrix[index1_Y][index2_X]*3  )
+				draw.rectangle((
+				pos_ax+index2_X*displayPixelWidth , 
+				pos_ay+index1_Y*displayPixelHeight,
+				pos_ax+index2_X*displayPixelWidth+displayPixelWidth ,
+				pos_ay+index1_Y*displayPixelHeight+displayPixelHeight),
+				#colors[constrain(int(pixel), 0, COLORDEPTH - 1)])
+				(0,int(termal_matrix[index1_Y][index2_X]*4),0))
 
 
 def lcars_element_elbow(device, draw,pos_x,pos_y,rotation,colore):
@@ -845,7 +960,8 @@ def lcars_termal_view_build():
 		lcars_element_elbow(device, draw, device.width*0.01,device.height*0.01,2,lcars_theme[lcars_theme_selection]["colore4"])
 		lcars_element_elbow(device, draw, device.width*0.01,device.height*0.86 ,3, lcars_theme[lcars_theme_selection]["colore0"])	
 		
-		lcars_element_termal_array(device, draw,device.width*0.15,device.height*0.12,device.width*0.95,device.height*0.85)
+		#lcars_element_termal_array(device, draw,device.width*0.15,device.height*0.12,device.width*0.95,device.height*0.85)
+		lcars_element_termal_array_MLX90640(device, draw,device.width*0.15,device.height*0.12,device.width*0.95,device.height*0.85)
            
 		radius = device.height*0.05
           
@@ -900,6 +1016,9 @@ def lcars_termal_view_build():
 		top = -2
 		draw.rectangle((left - 1, top, left + w + 6, top + h), fill="black", outline="black")
 		draw.text((left + 1, top), text=text, font=lcars_littlefont, fill=lcars_theme[lcars_theme_selection]["font0"])		
+			
+
+		
 		
 def lcars_videoplayer_build():
 	global animation_step
@@ -1232,7 +1351,7 @@ def get_recent_termal(tag, dsc, dev):
 	array_data = False
 
 	table_string = '%s_%s_%s' % (tag,dsc,dev)
-	table_data = return_data_from_sql_termal(psql_connection_lcars, table_string)	
+	table_data = return_data_from_sql_termal_adv(psql_connection_lcars, table_string, dev)	
 	if type(table_data) != bool and len(table_data) != 0:
 		array_data = ast.literal_eval(str(table_data[0]).strip("( )"))
 		items_count = len(array_data)
@@ -1333,16 +1452,34 @@ def return_data_from_sql(con, table_str, time_lengh_sec):
 		if e == "no results to fetch":
 			print( e )
 	return ret	
-	
-	
-def return_data_from_sql_termal(con, table_str):
+		
+
+def return_data_from_sql_termal_adv(con, table_str, dev):
 	ret = False
 	now_time = time.time()
 	time_past = now_time - 30
 	
+	if dev == "MLX90640_ARRAY":
+		lenght = 768
+	elif dev == "ARRAY":
+		lenght = 64
+	else:
+		return ret
+	
+	construct = 'select '
+	end = " order by timestamp desc LIMIT 1"
+	mid = 'from "' + table_str + '"  where timestamp > ' + str(time_past) 
+	for i in range(lenght-1):
+		construct = construct + "val" + str(i) + ", "
+	construct = construct + "val" + str(lenght-1) + " "
+	construct = construct + mid
+	construct = construct + end
+
+	#print("construct", construct)
+	
 	try:
 		cur = con.cursor()
-		cur.execute('select val0, val1, val2, val3, val4, val5, val6, val7, val8, val9, val10, val11, val12, val13, val14, val15, val16, val17, val18, val19, val20, val21, val22, val23, val24, val25, val26, val27, val28, val29, val30, val31, val32, val33, val34, val35, val36, val37, val38, val39, val40, val41, val42, val43, val44, val45, val46, val47, val48, val49, val50, val51, val52, val53, val54, val55, val56, val57, val58, val59, val60, val61, val62, val63 from "' + table_str + '"  where timestamp > '+ str(time_past) + ' order by timestamp desc LIMIT 1')
+		cur.execute(construct)
 
 		values = cur.fetchall()
 		ret = values
@@ -1351,8 +1488,14 @@ def return_data_from_sql_termal(con, table_str):
 		if e == "no results to fetch":
 			print( e )
 	return ret	
-	
-	
+
+
+
+
+
+
+
+
 		
 def connect_psql(config):
     """ Connect to the PostgreSQL database server """
