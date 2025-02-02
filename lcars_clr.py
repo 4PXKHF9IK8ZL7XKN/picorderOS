@@ -43,7 +43,8 @@ bme680_temp = [0]
 #styles = [ "multi_graph","termal_view"]
 #styles = ["type1", "multi_graph", "termal_view", "video_playback","type3", "type4"]
 styles = ["termal_view","multi_graph","wifi_band_view"]
-style = "type1"
+#style = "type1"
+style = "termal_view"
 i = 0
 i2 = 0
 
@@ -326,10 +327,13 @@ def lcars_element_termal_array(device, draw,pos_ax,pos_ay,pos_bx,pos_by):
 	termal_matrix = []
 	value_list = []
 	
-	MINTEMP = 26.0
-	MAXTEMP = 32.0
+	#MINTEMP = 26.0
+	#MAXTEMP = 32.0
 	
-	COLORDEPTH = 1024
+	MINTEMP = 0.0
+	MAXTEMP = 80.0
+	
+	COLORDEPTH = 256
 	
 	points = [(math.floor(ix / 8), (ix % 8)) for ix in range(0, 64)]
 	grid_x, grid_y = np.mgrid[0:7:32j, 0:7:32j]
@@ -392,11 +396,14 @@ def lcars_element_termal_array_MLX90640(device, draw,pos_ax,pos_ay,pos_bx,pos_by
 	
 	termal_matrix = []
 	value_list = []
+		
+	MINTEMP = -40.0
+	MAXTEMP = 300.0
 	
-	MINTEMP = 26.0
-	MAXTEMP = 45.0
-	
-	COLORDEPTH = 1024
+	#MINTEMP = 26.0
+	#MAXTEMP = 32.0
+		
+	COLORDEPTH = 128
 	INTERPOLATE = 4
 		
 	RES_X = 32
@@ -454,46 +461,33 @@ def lcars_element_termal_array_MLX90640(device, draw,pos_ax,pos_ay,pos_bx,pos_by
 		
 		# perform interpolation
 		bicubic = griddata(points, pixels, (grid_x, grid_y), method="cubic")
-    	
-		# draw everything
-		#for index1_Y, row in enumerate(bicubic):
-		#	for index2_X, pixel in enumerate(row):
-				#print("drawing row", index1_Y,"zeile", index2_X," row data" , row, "pixel" , pixel )
-		#		if math.isnan(pixel):
-		#			pixel = 0
-		#		draw.rectangle((
-		#		pos_ax+index1_Y*displayPixelWidth , 
-		#		pos_ay+index2_X*displayPixelHeight,
-		#		pos_ax+index1_Y*displayPixelWidth+displayPixelWidth ,
-		#		pos_ay+index2_X*displayPixelHeight+displayPixelHeight),
-				#rnd_colore())
-				#(0,index1_X,index2_Y))
-		#		colors[constrain(int(pixel), 0, COLORDEPTH - 1)])
-				
+    			
 				
 		# draw everything
 		for index1_Y, row in enumerate(termal_matrix):
 			if index1_Y <= RES_Y:
 				for index2_X, pixel in enumerate(row):
-			#		print("index:", index1_Y,index2_X,termal_matrix[index1_Y][index2_X]*3  )
+					print("index:", index1_Y,index2_X,colors[constrain(int(pixel), 0, COLORDEPTH - 1)] , termal_matrix[index1_Y][index2_X], termal_matrix[index1_Y][index2_X]*3 )
 					draw.rectangle((
 					pos_ax+index2_X*displayPixelWidth , 
 					pos_ay+index1_Y*displayPixelHeight,
 					pos_ax+index2_X*displayPixelWidth+displayPixelWidth ,
 					pos_ay+index1_Y*displayPixelHeight+displayPixelHeight),
-					#colors[constrain(int(pixel), 0, COLORDEPTH - 1)])
-					(0,int(termal_matrix[index1_Y][index2_X]*4),0))
+					colors[constrain(int(pixel), 0, COLORDEPTH - 1)])
+					#0,int(termal_matrix[index1_Y][index2_X]*4),0))
 			else:
+				if index1_Y <= RES_Y+1:
 				#overscan Section
-				for index2_X, pixel in enumerate(row):
-			#		print("index:", index1_Y,index2_X,termal_matrix[index1_Y][index2_X]*3  )
-					draw.rectangle((
-					pos_ax+index2_X*displayPixelWidth , 
-					pos_ay+index1_Y*displayPixelHeight,
-					pos_ax+index2_X*displayPixelWidth+displayPixelWidth ,
-					pos_ay+index1_Y*displayPixelHeight+displayPixelHeight),
-					#colors[constrain(int(pixel), 0, COLORDEPTH - 1)])
-					(255,255,0))
+					for index2_X, pixel in enumerate(row):
+				#		print("index:", index1_Y,index2_X,termal_matrix[index1_Y][index2_X]*3  )
+						
+						draw.rectangle((
+						pos_ax+index2_X*displayPixelWidth , 
+						pos_ay+index1_Y*displayPixelHeight,
+						pos_ax+index2_X*displayPixelWidth+displayPixelWidth ,
+						pos_ay+index1_Y*displayPixelHeight+displayPixelHeight),
+						colors[int((len(colors)/32)*index2_X)])
+						#(255,255,0))
 
 def lcars_element_elbow(device, draw,pos_x,pos_y,rotation,colore):
 # element needs x,y position
