@@ -333,6 +333,7 @@ def lcars_element_termal_array(device, draw,pos_ax,pos_ay,pos_bx,pos_by,sensor,m
 	RES_Y = 0
 	
 	COLORDEPTH = 128
+	COLORDEPTH = 96
 	
 	# choosing Sensor Description
 	
@@ -397,6 +398,20 @@ def lcars_element_termal_array(device, draw,pos_ax,pos_ay,pos_bx,pos_by,sensor,m
 		for value in result:
 			value_list.append(value)
 		termal_matrix = list(chunks(value_list, RES_X))
+		
+		# Adapting to Sensor Mode
+		ret_max = max(result)
+		ret_min = min(result)
+		ret_avg = statistics.mean(result)
+		
+		if mode == 'static_range':
+			print("static")
+		elif mode == 'dynamic_range':
+			print("dynamic_range")
+			MINTEMP = ret_min
+			MAXTEMP = ret_max
+		
+		print("min_max",MINTEMP,  MAXTEMP, ret_avg)
 	
 	#### meeds check on amd8833	
 	for overscanline in range(len(termal_matrix),RES_X,1):
@@ -432,15 +447,6 @@ def lcars_element_termal_array(device, draw,pos_ax,pos_ay,pos_bx,pos_by,sensor,m
 					pos_ay+index1_Y*displayPixelHeight+displayPixelHeight),
 					colors[int((len(colors)/32)*index2_X)])
 	
-	
-	# choosing Sensor Mode
-
-	if mode == 'static_range':
-		print("static")
-	elif mode == 'dynamic_range':
-		print("dynamic_range")
-
-
 	
 
 
@@ -919,8 +925,8 @@ def lcars_termal_view_build():
 		lcars_element_elbow(device, draw, device.width*0.01,device.height*0.01,2,lcars_theme[lcars_theme_selection]["colore4"])
 		lcars_element_elbow(device, draw, device.width*0.01,device.height*0.86 ,3, lcars_theme[lcars_theme_selection]["colore0"])	
 		
-		#lcars_element_termal_array(device, draw,device.width*0.15,device.height*0.12,device.width*0.95,device.height*0.85)
-		lcars_element_termal_array(device, draw,device.width*0.15,device.height*0.12,device.width*0.95,device.height*0.85,'amg8833','static')
+		#lcars_element_termal_array(device, draw,device.width*0.15,device.height*0.12,device.width*0.95,device.height*0.85,'mlx90640','static')
+		lcars_element_termal_array(device, draw,device.width*0.15,device.height*0.12,device.width*0.95,device.height*0.85,'mlx90640','dynamic_range')
            
 		radius = device.height*0.05
           
