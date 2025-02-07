@@ -290,7 +290,7 @@ def lcars_element_graph(device, draw,pos_ax,pos_ay,pos_bx,pos_by, sensors_dict,m
 						sensor_legende = '{0}{1}'.format(round(sensor_avr,decimal),mysensor_array[4])
 					else:
 						vaule_unpacking = recent[-1:]
-						sensor_legende = '{0}{1}'.format(round(vaule_unpacking[0],decimal),mysensor_array[4])
+						sensor_legende = '{0}{1}'.format(round(vaule_unpacking[0],decimal),mysensor_array[4],fill=lcars_theme[lcars_theme_selection]["colore5"])
 
 					# This Displays the Sensor Legende Bottom
 					draw.text((pos_ax+index_a*(device.height * 0.25), pos_by), text=str(sensor_legende), font=lcars_microfont, fill=lcars_colores[index_a]['value'])
@@ -309,7 +309,7 @@ def chunks(lst, n):
         yield lst[i:i + n]
   
   
-def lcars_element_termal_array(device, draw,pos_ax,pos_ay,pos_bx,pos_by,sensor,mode):
+def lcars_element_termal_array(device, draw,pos_ax,pos_ay,pos_bx,pos_by,sensor,mode,legend):
 	""" 
 	# SPDX-FileCopyrightText: 2021 ladyada for Adafruit Industries
 	# SPDX-License-Identifier: MIT
@@ -329,10 +329,14 @@ def lcars_element_termal_array(device, draw,pos_ax,pos_ay,pos_bx,pos_by,sensor,m
 	MINTEMP = 0.0
 	MAXTEMP = 0.0
 	
+	META_MIN = 0.0
+	META_MAX = 0.0
+	percentage_range = 0
+	
 	RES_X = 0
 	RES_Y = 0
 	
-	COLORDEPTH = 128
+	#COLORDEPTH = 128
 	COLORDEPTH = 96
 	
 	# choosing Sensor Description
@@ -346,6 +350,10 @@ def lcars_element_termal_array(device, draw,pos_ax,pos_ay,pos_bx,pos_by,sensor,m
 		# Setting Sensor Specific Min max values
 		MINTEMP = 0.0
 		MAXTEMP = 80.0
+		
+		META_MIN = 0.0
+		META_MAX = 80.0
+		percentage_range = 80
 		
 		RES_X = 8
 		RES_Y = 8		
@@ -362,6 +370,10 @@ def lcars_element_termal_array(device, draw,pos_ax,pos_ay,pos_bx,pos_by,sensor,m
 		# Setting Sensor Specific Min max values		
 		MINTEMP = -40.0
 		MAXTEMP = 300.0
+		
+		META_MIN = -40.0
+		META_MAX = 300.0
+		percentage_range = 340
 		
 		# carefull with X_Y, i managed them seperrate but the functions to calculate the array working only with a square
 		RES_X = 32
@@ -385,7 +397,9 @@ def lcars_element_termal_array(device, draw,pos_ax,pos_ay,pos_bx,pos_by,sensor,m
 	colors = list(blue.range_to(Color("red"), COLORDEPTH))
 	# create the array of colors
 	colors = [(int(c.red * 255), int(c.green * 255), int(c.blue * 255)) for c in colors]
-
+	
+	# Calculate percentage for Display
+	percentage_multi = displayPixelWidth / 100 
 
 	#bounding box
 	box_element_graph = [(pos_ax , pos_ay), (pos_bx, pos_by)] 
@@ -404,14 +418,12 @@ def lcars_element_termal_array(device, draw,pos_ax,pos_ay,pos_bx,pos_by,sensor,m
 		ret_min = min(result)
 		ret_avg = statistics.mean(result)
 		
-		if mode == 'static_range':
-			print("static")
-		elif mode == 'dynamic_range':
-			print("dynamic_range")
+		if mode == 'dynamic_range':
+			#print("dynamic_range")
 			MINTEMP = ret_min
 			MAXTEMP = ret_max
 		
-		print("min_max",MINTEMP,  MAXTEMP, ret_avg)
+		#print("min_max",MINTEMP,  MAXTEMP, ret_avg)
 	
 	#### meeds check on amd8833	
 	for overscanline in range(len(termal_matrix),RES_X,1):
@@ -446,8 +458,36 @@ def lcars_element_termal_array(device, draw,pos_ax,pos_ay,pos_bx,pos_by,sensor,m
 					pos_ax+index2_X*displayPixelWidth+displayPixelWidth ,
 					pos_ay+index1_Y*displayPixelHeight+displayPixelHeight),
 					colors[int((len(colors)/32)*index2_X)])
+					
+	if legend == True:
+		# This Displays the Sensor Legende Bottom
+		draw.text((pos_ax+0*(device.height * 0.25), pos_by*0.95), text=str(ret_min), font=lcars_microfont, fill=lcars_theme[lcars_theme_selection]["colore5"])
+		draw.text((pos_ax+1.35*(device.height * 0.25), pos_by*0.95), text=str(ret_avg), font=lcars_microfont, fill=lcars_theme[lcars_theme_selection]["colore5"])
+		draw.text((pos_ax+3.49*(device.height * 0.25), pos_by*0.95), text=str(ret_max), font=lcars_microfont, fill=lcars_theme[lcars_theme_selection]["colore5"])
+				
+		draw.text((pos_ax+0*(device.height * 0.25), pos_by*0.87), text=str(META_MIN), font=lcars_microfont, fill=lcars_theme[lcars_theme_selection]["colore4"])
+		draw.text((pos_ax+3.8*(device.height * 0.25), pos_by*0.87), text=str(META_MAX), font=lcars_microfont, fill=lcars_theme[lcars_theme_selection]["colore4"])
+		
+		per_ret_min = round((ret_min/(percentage_range/100)),2)*(percentage_multi/2)
+		per_ret_max = round((ret_max/(percentage_range/100)),2)*(percentage_multi/2)
+		per_ret_avg = round((ret_avg/(percentage_range/100)),2)*(percentage_multi/2)
+			
+		marker_line1 = [(pos_bx*per_ret_max,pos_by*1),(pos_bx*per_ret_max,pos_by*1.06)] 
+		draw.line(marker_line1,fill=lcars_theme[lcars_theme_selection]["colore5"])
+		
+		marker_line2 = [(pos_bx*per_ret_min,pos_by*1),(pos_bx*per_ret_min,pos_by*1.06)] 
+		draw.line(marker_line2,fill=lcars_theme[lcars_theme_selection]["colore5"])
+						
+		marker_line3 = [(pos_bx*per_ret_avg,pos_by*1),(pos_bx*per_ret_avg,pos_by*1.06)] 
+		draw.line(marker_line3,fill=lcars_theme[lcars_theme_selection]["colore5"])
+					
+					
+					
+					
+					
+					
 	
-	
+	return META_MIN, META_MAX ,ret_min, ret_max, ret_avg
 
 
 def lcars_element_elbow(device, draw,pos_x,pos_y,rotation,colore):
@@ -924,9 +964,9 @@ def lcars_termal_view_build():
 					
 		lcars_element_elbow(device, draw, device.width*0.01,device.height*0.01,2,lcars_theme[lcars_theme_selection]["colore4"])
 		lcars_element_elbow(device, draw, device.width*0.01,device.height*0.86 ,3, lcars_theme[lcars_theme_selection]["colore0"])	
-		
+		#'dynamic_range'
 		#lcars_element_termal_array(device, draw,device.width*0.15,device.height*0.12,device.width*0.95,device.height*0.85,'mlx90640','static')
-		lcars_element_termal_array(device, draw,device.width*0.15,device.height*0.12,device.width*0.95,device.height*0.85,'mlx90640','dynamic_range')
+		lcars_element_termal_array(device, draw,device.width*0.15,device.height*0.12,device.width*0.95,device.height*0.85,'mlx90640','dynamic_range',True)
            
 		radius = device.height*0.05
           
