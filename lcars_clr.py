@@ -44,7 +44,7 @@ bme680_temp = [0]
 #styles = ["type1", "multi_graph", "termal_view", "video_playback","type3", "type4"]
 styles = ["termal_view","multi_graph","wifi_band_view"]
 #style = "type1"
-style = "termal_view"
+style = "wifi_band_view"
 i = 0
 i2 = 0
 
