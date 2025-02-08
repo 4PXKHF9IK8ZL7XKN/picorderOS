@@ -67,18 +67,95 @@ class sensor_functions(object):
 	def get_wifi_stats(self):
 		GPS_DATA = picosglobals.GPS_DATA
 		timestamp = time.time()
+		matrix = {}
+		connection_ID = 0
 
-		return_code = subprocess.run(["sudo", "iw", "wlan0", "scan"]) 
-		lines = str(return_code).split('\n')
-		for line in lines:
-			print(line)
+		process = subprocess.Popen(["sudo","iw", "wlan0", "scan"], stdout=subprocess.PIPE)
+		
+		mac = ""
+		interface = ""
+		
+		
+		for line in process.stdout:
+			clean_line = line.decode().strip()
+			
+			#print("PARSING", clean_line)
+			
+			
+			if clean_line.startswith("BSS Load:"):
+				variable = "nop"	
+			elif clean_line.startswith("BSS"):
+				bss_line = clean_line.split(" ")
+				mac, _ = bss_line[1].split("(")
+				interface, _ = bss_line[2].split(")")
+				if len(bss_line) == 5:
+					status = bss_line[4]
+				else:
+					status = ""
+				
+				if len(matrix) == 0:	
+					matrix[interface] = []
+				matrix[interface].append({mac: {"status" : status}})
+				connection_ID = connection_ID + 1
+			
+			if clean_line.startswith("freq:"):
+				k,v = clean_line.split(" ")
+				matrix[interface][connection_ID-1][mac][k] = v
+				#print(mac, " " , interface, " ", status, connection_ID, v)
+				
+			if clean_line.startswith("signal:"):
+				k,v,t = clean_line.split(" ")
+				matrix[interface][connection_ID-1][mac][k] = v, t
+			
+			if clean_line.startswith("SSID:"):
+				k,v = clean_line.split(":")
+				matrix[interface][connection_ID-1][mac][k] = v
+				
+			if clean_line.startswith("DS Parameter set:"):
+				k,v = clean_line.split(":")
+				matrix[interface][connection_ID-1][mac][k] = v.strip()
+			
+			if clean_line.startswith("RSN:"):
+				k,v,t = clean_line.split(":")
+				_,v = v.split("*")
+				matrix[interface][connection_ID-1][mac][k.strip()] = {v.strip(): t.strip()}
+				
+			if clean_line.startswith("* Group cipher:"):
+				k,v = clean_line.split(":")
+				_,k = k.split("*")
+				print("T ",matrix[interface][connection_ID-1][mac]['RSN'])
+				matrix[interface][connection_ID-1][mac]['RSN'][k.strip()] =  v.strip()
+				
+			if clean_line.startswith("* Pairwise ciphers:"):
+				k,v = clean_line.split(":")
+				_,k = k.split("*")
+				print("T ",matrix[interface][connection_ID-1][mac]['RSN'])
+				matrix[interface][connection_ID-1][mac]['RSN'][k.strip()] =  v.strip()
+				
+			if clean_line.startswith("* Authentication suites:"):
+				k,v = clean_line.split(":")
+				_,k = k.split("*")
+				print("T ",matrix[interface][connection_ID-1][mac]['RSN'])
+				matrix[interface][connection_ID-1][mac]['RSN'][k.strip()] =  v.strip()
+
+			if clean_line.startswith("* Capabilities:"):
+				k,v = clean_line.split(":")
+				_,k = k.split("*")
+				print("T ",matrix[interface][connection_ID-1][mac]['RSN'])
+				matrix[interface][connection_ID-1][mac]['RSN'][k.strip()] =  v.strip()
+
+
+				
+				
+		print(matrix)
+			    
 		
 
 		
 
 		
 		
-		self.sinewav = "static"
+		self.sinewav = matrix
 	
 		return self.sinewav ,timestamp, GPS_DATA[0], GPS_DATA[1], configure.rabbitmq_tag
 
@@ -93,7 +170,7 @@ if __name__ == "__main__":
 
 			#while True:	
 			wifi_stats = sensors.get_wifi_stats()	
-			#publish_wifi_stats('wifi_stats',wifi_stats)
+			publish_wifi_stats('wifi_stats',wifi_stats)
 			#time.sleep(1)
 			sys.exit(1)
 
