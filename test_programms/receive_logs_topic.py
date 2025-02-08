@@ -15,8 +15,8 @@ channel = connection.channel()
 result = channel.queue_declare('', exclusive=True)
 queue_name = result.method.queue
 
-#channel.queue_bind(
-#    exchange='sensor_data', queue='', routing_key='wifi_stats')
+channel.queue_bind(
+    exchange='sensor_data', queue='', routing_key='wifi_stats')
 
 #channel.queue_bind(
 #    exchange='sensor_data', queue='', routing_key='_empty')
@@ -39,8 +39,8 @@ queue_name = result.method.queue
 #channel.queue_bind(
 #    exchange='sensor_data', queue='', routing_key='bme680')
 
-channel.queue_bind(
-    exchange='sensor_data', queue='', routing_key='thermal_frame_MLX90640')
+#channel.queue_bind(
+#    exchange='sensor_data', queue='', routing_key='thermal_frame_MLX90640')
 
 
 print(' [*] Waiting for logs. To exit press CTRL+C')
