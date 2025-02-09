@@ -63,6 +63,10 @@ channel.queue_bind(
    
 channel.queue_bind(
     exchange='sensor_data', queue='', routing_key='generators')
+    
+channel.queue_bind(
+    exchange='sensor_data', queue='', routing_key='wifi_stats')
+
 
 
 def table_list(con):
@@ -305,6 +309,7 @@ def callback(ch, method, properties, body):
 	global TERMALFRAME
 	global TERMALFRAME_MLX90640
 	global selected_sensor_values
+	global WIFI_STATS
 	
 	timestamp = time.time()
 	fragdata = []
@@ -806,6 +811,56 @@ def callback(ch, method, properties, body):
 			os.exit("SQL Write Faild")
 			
 		purge_data_totime(psql_connection,  table_string, keep_data_lengh)
+		
+		
+	elif method.routing_key == 'wifi_stats':
+		# decodes data byte stream and splits the values by comma
+		sensor_values_raw = body.decode().lstrip("(").rstrip(")")
+		sensor_values_array = sensor_values_raw.split(",")
+		
+		origin_tag = sensor_values_array[-1:]
+		del sensor_values_array[-1]	
+		sensor_values_raw = sensor_values_raw.rstrip(origin_tag[0])
+		sensor_values_raw = sensor_values_raw.rstrip(",")
+		
+		longitude = sensor_values_array[-1:]
+		del sensor_values_array[-1]	
+		sensor_values_raw = sensor_values_raw.rstrip(longitude[0])
+		sensor_values_raw = sensor_values_raw.rstrip(",")
+		
+		latitude = sensor_values_array[-1:]
+		del sensor_values_array[-1]
+		sensor_values_raw = sensor_values_raw.rstrip(latitude[0])
+		sensor_values_raw = sensor_values_raw.rstrip(",")		
+		
+		sensortimestamp = sensor_values_array[-1:]
+		del sensor_values_array[-1]		
+		sensor_values_raw = sensor_values_raw.rstrip(sensortimestamp[0])
+		sensor_values_raw = sensor_values_raw.rstrip(",")	
+				
+		index = 0	
+		#print("WIFI_STATS:", str(value))
+		WIFI_STATS[index][0] = str(sensor_values_raw)					
+		WIFI_STATS[index][6] = sensortimestamp[0]
+		WIFI_STATS[index][7] = latitude[0]
+		WIFI_STATS[index][8] = longitude[0]
+		WIFI_STATS[index][9] = origin_tag[0].strip("' '")
+		print("MATRIX", WIFI_STATS[index])
+
+		# creates a new dataframe to add new data
+		table_string = '%s_%s_%s' % (WIFI_STATS[index][9],WIFI_STATS[index][5],WIFI_STATS[index][3])
+
+		ret = table_exists(psql_connection, table_string)
+		if ret is False:
+			table_create(psql_connection,  table_string)
+		
+		ret, ent_id = insert_data(psql_connection,  table_string, WIFI_STATS[index][0], WIFI_STATS[index][6], WIFI_STATS[index][7], WIFI_STATS[index][8],WIFI_STATS[index][9])
+		if ret is False:
+			os.exit("SQL Write Faild")
+		
+		purge_data_totime(psql_connection,  table_string, keep_data_lengh)
+		
+		
 
 			
 	return
