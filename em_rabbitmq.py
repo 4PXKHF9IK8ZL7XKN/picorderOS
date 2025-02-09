@@ -79,11 +79,10 @@ class sensor_functions(object):
 		for line in process.stdout:
 			clean_line = line.decode().strip()
 			
-			#print("PARSING", clean_line)
-			
-			
 			if clean_line.startswith("BSS Load:"):
-				variable = "nop"	
+				if 'BSS Load' not in matrix[interface][connection_ID-1][mac]:
+					matrix[interface][connection_ID-1][mac]['BSS Load'] = []		
+
 			elif clean_line.startswith("BSS"):
 				bss_line = clean_line.split(" ")
 				mac, _ = bss_line[1].split("(")
@@ -92,8 +91,8 @@ class sensor_functions(object):
 					status = bss_line[4]
 				else:
 					status = ""
-				
-				if len(matrix) == 0:	
+
+				if interface not in matrix:	
 					matrix[interface] = []
 				matrix[interface].append({mac: {"status" : status}})
 				connection_ID = connection_ID + 1
@@ -101,63 +100,150 @@ class sensor_functions(object):
 			if clean_line.startswith("freq:"):
 				k,v = clean_line.split(" ")
 				matrix[interface][connection_ID-1][mac][k] = v
-				#print(mac, " " , interface, " ", status, connection_ID, v)
 				
 			if clean_line.startswith("signal:"):
 				k,v,t = clean_line.split(" ")
 				matrix[interface][connection_ID-1][mac][k] = v, t
+				
+			if clean_line.startswith("capability:"):
+				k,v = clean_line.split(":")
+				list_capability = v.strip().split(" ")
+				matrix[interface][connection_ID-1][mac][k.strip()] = list_capability
+				
+			if clean_line.startswith("Supported rates:"):
+				k,v = clean_line.split(":")
+				list_rates = v.strip().split(" ")
+				matrix[interface][connection_ID-1][mac][k.strip()] = list_rates		
+				
+			if clean_line.startswith("Country:"):
+				k,v,t = clean_line.split(":")
+				matrix[interface][connection_ID-1][mac][k.strip()] = v.strip('Environment').strip(), {"Environment": t.strip()}
+				
+			if clean_line.startswith("TPC report:"):
+				k,v,t = clean_line.split(":")
+				matrix[interface][connection_ID-1][mac][k.strip()] = {"TX power": t.strip()}			
 			
 			if clean_line.startswith("SSID:"):
 				k,v = clean_line.split(":")
 				matrix[interface][connection_ID-1][mac][k] = v
+				
+			if clean_line.startswith("Power constraint:"):
+				k,v = clean_line.split(":")
+				matrix[interface][connection_ID-1][mac][k] = v.strip()
+				
 				
 			if clean_line.startswith("DS Parameter set:"):
 				k,v = clean_line.split(":")
 				matrix[interface][connection_ID-1][mac][k] = v.strip()
 			
 			if clean_line.startswith("RSN:"):
-				k,v,t = clean_line.split(":")
+				k,v,t = clean_line.split(":")				
 				_,v = v.split("*")
 				matrix[interface][connection_ID-1][mac][k.strip()] = {v.strip(): t.strip()}
+				
+			if clean_line.startswith("Channels"):
+				k,v0,v1,v2,v3,v4,v5 = clean_line.split(" ")
+				if k.strip() not in matrix[interface][connection_ID-1][mac]:
+					matrix[interface][connection_ID-1][mac][k.strip()] = []
+				matrix[interface][connection_ID-1][mac][k.strip()].append([v0.strip('['),v2.strip(']'),v4,v5])				
 				
 			if clean_line.startswith("* Group cipher:"):
 				k,v = clean_line.split(":")
 				_,k = k.split("*")
-				print("T ",matrix[interface][connection_ID-1][mac]['RSN'])
 				matrix[interface][connection_ID-1][mac]['RSN'][k.strip()] =  v.strip()
 				
 			if clean_line.startswith("* Pairwise ciphers:"):
 				k,v = clean_line.split(":")
 				_,k = k.split("*")
-				print("T ",matrix[interface][connection_ID-1][mac]['RSN'])
 				matrix[interface][connection_ID-1][mac]['RSN'][k.strip()] =  v.strip()
 				
 			if clean_line.startswith("* Authentication suites:"):
 				k,v = clean_line.split(":")
 				_,k = k.split("*")
-				print("T ",matrix[interface][connection_ID-1][mac]['RSN'])
 				matrix[interface][connection_ID-1][mac]['RSN'][k.strip()] =  v.strip()
 
 			if clean_line.startswith("* Capabilities:"):
 				k,v = clean_line.split(":")
 				_,k = k.split("*")
-				print("T ",matrix[interface][connection_ID-1][mac]['RSN'])
 				matrix[interface][connection_ID-1][mac]['RSN'][k.strip()] =  v.strip()
 
-
+			if clean_line.startswith("* station count:"):
+				k,v = clean_line.split(":")
+				_,k = k.split("*")
+				matrix[interface][connection_ID-1][mac]['BSS Load'].append({k.strip() :  v.strip()} )
 				
+			if clean_line.startswith("* channel utilisation:"):
+				k,v = clean_line.split(":")
+				_,k = k.split("*")
+				matrix[interface][connection_ID-1][mac]['BSS Load'].append({k.strip() :  v.strip()} )
 				
-		print(matrix)
-			    
-		
+			if clean_line.startswith("* available admission capacity:"):
+				k,v = clean_line.split(":")
+				_,k = k.split("*")
+				matrix[interface][connection_ID-1][mac]['BSS Load'].append({k.strip() :  v.strip()} )
+				
+			if clean_line.startswith("Extended capabilities:"):
+				if 'Extended capabilities' not in matrix[interface][connection_ID-1][mac]:
+					matrix[interface][connection_ID-1][mac]['Extended capabilities'] = []	
+					
+			if clean_line.startswith("* Extended Channel Switching"):
+				v = clean_line.strip("*")
+				matrix[interface][connection_ID-1][mac]['Extended capabilities'].append(v.strip())
+				
+			if clean_line.startswith("* Event"):
+				v = clean_line.strip("*")
+				matrix[interface][connection_ID-1][mac]['Extended capabilities'].append(v.strip())
+				
+			if clean_line.startswith("* BSS Transition"):
+				v = clean_line.strip("*")
+				matrix[interface][connection_ID-1][mac]['Extended capabilities'].append(v.strip())
+				
+			if clean_line.startswith("* Interworking"):
+				v = clean_line.strip("*")
+				matrix[interface][connection_ID-1][mac]['Extended capabilities'].append(v.strip())
+				
+			if clean_line.startswith("* Operating Mode Notification"):
+				v = clean_line.strip("*")
+				matrix[interface][connection_ID-1][mac]['Extended capabilities'].append(v.strip())
+				
+			if clean_line.startswith("* Channel Schedule Management"):
+				v = clean_line.strip("*")
+				matrix[interface][connection_ID-1][mac]['Extended capabilities'].append(v.strip())
+				
+			if clean_line.startswith("* 6"):
+				v = clean_line.strip("*")
+				matrix[interface][connection_ID-1][mac]['Extended capabilities'].append(v.strip())
+				
+							
+			if clean_line.startswith("* Max Number Of MSDUs In A-MSDU is"):
+				v = clean_line.strip("*")
+				matrix[interface][connection_ID-1][mac]['Extended capabilities'].append(v.strip())
+				
+			if clean_line.startswith("802."):
+				if 'IEEE 802 Options' not in matrix[interface][connection_ID-1][mac]:
+					matrix[interface][connection_ID-1][mac]['IEEE 802 Options'] = []	
+				matrix[interface][connection_ID-1][mac]['IEEE 802 Options'].append(clean_line.strip(':'))
 
-		
-
-		
-		
-		self.sinewav = matrix
+			if clean_line.startswith("WPS:"):
+				k,v,t = clean_line.split(":")				
+				_,v = v.split("*")
+				matrix[interface][connection_ID-1][mac][k.strip()] = {v.strip(): t.strip()}
+				
+			if clean_line.startswith("* Wi-Fi Protected Setup State:"):
+				k,v = clean_line.split(":")
+				_,k = k.split("*")
+				matrix[interface][connection_ID-1][mac]['WPS'][k.strip()] =  v.strip()
+				
+			if clean_line.startswith("* Version2:"):
+				k,v = clean_line.split(":")
+				_,k = k.split("*")
+				matrix[interface][connection_ID-1][mac]['WPS'][k.strip()] =  v.strip()
 	
-		return self.sinewav ,timestamp, GPS_DATA[0], GPS_DATA[1], configure.rabbitmq_tag
+			#print(matrix[interface][connection_ID-1][mac]["Channels"])
+			
+		#print(matrix)
+	
+		return matrix ,timestamp, GPS_DATA[0], GPS_DATA[1], configure.rabbitmq_tag
 
 
 
@@ -168,10 +254,10 @@ if __name__ == "__main__":
 			timed = timer()
 			sensors = sensor_functions()
 
-			#while True:	
-			wifi_stats = sensors.get_wifi_stats()	
-			publish_wifi_stats('wifi_stats',wifi_stats)
-			#time.sleep(1)
+			while True:	
+				wifi_stats = sensors.get_wifi_stats()	
+				publish_wifi_stats('wifi_stats',wifi_stats)
+				time.sleep(3)
 			sys.exit(1)
 
 			signal.signal(signal.SIGINT, signal_handler)
