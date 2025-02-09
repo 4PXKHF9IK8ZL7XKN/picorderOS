@@ -17,3 +17,4 @@ LSM6DS3 = [[0,-2500,2500,'accel_X','G','LSM6DS3','timestamp','latitude','longitu
 SCD4X = [[0,400,5000,'CO2','ppm','SCD4X','timestamp','latitude','longitude','rabbitmq_tag'],[0,-10,60,'Thermometer','\xB0','SCD4X','timestamp','latitude','longitude','rabbitmq_tag'],[0,0,100,'Hygrometer','%','SCD4X','timestamp','latitude','longitude','rabbitmq_tag']]
 SHT30 = [[0,-40,85,'Thermometer','\xB0','SHT30','timestamp','latitude','longitude','rabbitmq_tag'],[0,0,100,'Hygrometer','%','SHT30','timestamp','latitude','longitude','rabbitmq_tag']]
 BMP280 = [[0,-40,85,'Thermometer','\xB0','BMP280','timestamp','latitude','longitude','rabbitmq_tag'],[0,300,1100,'Barometer','hPa','BMP280','timestamp','latitude','longitude','rabbitmq_tag'],[0,-50,1100,'ALT','m','BMP280','timestamp','latitude','longitude','rabbitmq_tag']]
+WIFI_STATS = [["DATA_OBJECT",None,None,'OBJECT','None','wifi','timestamp','latitude','longitude','rabbitmq_tag']]
