@@ -35,6 +35,7 @@ DISPLAY_BL_PWM = 13
 # Delcares the IRQ Pins for Cap Touch 
 BUTTON_GPIOA = 17
 BUTTON_GPIOB = 27
+BUTTON_GPIOA_RST = 22
 
 # set the BUS Freq
 I2C_FRQ = 100000
@@ -83,11 +84,21 @@ if configure.input_cap1188:
 	import signal
 
 	try:
-		cap1188A = CAP1188_I2C(i2c, address=0x29)
-		cap1188B = CAP1188_I2C(i2c, address=0x28)
-				
-		cap1188A.sensitivity = configure.CAPSENSITIVITY
-		cap1188B.sensitivity = configure.CAPSENSITIVITY
+
+                #GPIO.setup(BUTTON_GPIOA_RST, GPIO.OUT, initial=GPIO.LOW)
+                time.sleep(0.1)
+                #GPIO.output(BUTTON_GPIOA_RST,GPIO.HIGH)
+                time.sleep(0.1)
+                #GPIO.output(BUTTON_GPIOA_RST,GPIO.LOW)
+                cap1188A = CAP1188_I2C(i2c, address=0x28)
+                #################cap1188B = CAP1188_I2C(i2c, address=0x29)
+                cap1188A.sensitivity = configure.CAPSENSITIVITY
+                #########cap1188B.sensitivity = configure.CAPSENSITIVITY
+                #GPIO.setup(BUTTON_GPIOA_RST, GPIO.OUT, initial=GPIO.HIGH)
+                #time.sleep(0.01)
+                #GPIO.output(BUTTON_GPIOA_RST,GPIO.LOW)
+                #time.sleep(0.01)
+                #GPIO.output(BUTTON_GPIOA_RST,GPIO.HIGH)
 
 	except OSError as e:
 		print("Error in Sensors Rabbitmq by request I2C", e)
@@ -928,7 +939,7 @@ def soft_break():
 
 
 if __name__ == "__main__":
-	declare_channel()
+	open_channel = declare_channel()
 
 	sensors = sensor()
 	timed = timer()
@@ -940,10 +951,10 @@ if __name__ == "__main__":
 	GPIO.setmode(GPIO.BCM)
 
 	# Set the PWM frequency (25 kHz)
-	pwm_frequency = 50
+	pwm_frequency = 75
 
 	# Set the PWM duty cycle (75%)
-	pwm_duty_cycle = 50  # 75% of the range (0-1000000)
+	pwm_duty_cycle = 75  # 75% of the range (0-1000000)
 
 	GPIO.setup(DISPLAY_BL_PWM, GPIO.OUT)
 	#GPIO.output(DISPLAY_BL_PWM, GPIO.HIGH)
@@ -956,15 +967,22 @@ if __name__ == "__main__":
 
 		GPIO.add_event_detect(BUTTON_GPIOA, GPIO.RISING, callback=button_callbackA, bouncetime=10)
 		GPIO.add_event_detect(BUTTON_GPIOB, GPIO.RISING, callback=button_callbackB, bouncetime=10) 
-		
-	if configure.input_cap1188:
-		GPIO.setup(BUTTON_GPIOA, GPIO.IN, pull_up_down=GPIO.PUD_UP)
-		GPIO.setup(BUTTON_GPIOB, GPIO.IN, pull_up_down=GPIO.PUD_UP)
 
+	if configure.input_cap1188:
+		GPIO.setup(BUTTON_GPIOA, GPIO.IN)
+		GPIO.setup(BUTTON_GPIOB, GPIO.IN)
+
+		#GPIO.setup(BUTTON_GPIOA, GPIO.IN, pull_up_down=GPIO.PUD_UP)
+		#GPIO.setup(BUTTON_GPIOB, GPIO.IN, pull_up_down=GPIO.PUD_UP)
+		#GPIO.setup(BUTTON_GPIOA_RST, GPIO.OUT, initial=GPIO.HIGH)
+		#time.sleep(0.01)
+		#GPIO.output(BUTTON_GPIOA_RST,GPIO.LOW)
 		GPIO.add_event_detect(BUTTON_GPIOA, GPIO.FALLING, callback=button_callbackA, bouncetime=10)
-		GPIO.add_event_detect(BUTTON_GPIOB, GPIO.FALLING, callback=button_callbackB, bouncetime=10) 
-	
-    
+		######GPIO.add_event_detect(BUTTON_GPIOB, GPIO.FALLING, callback=button_callbackB, bouncetime=10)
+
+		button_callbackA(open_channel)
+		#####button_callbackB(open_channel)
+
 	while True:
 		try:
 
