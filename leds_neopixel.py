@@ -18,17 +18,17 @@ WAIT_TIME_SECONDS = 0.1
 
 Pattern = 0
 
-bio = (0,32,0)
-met = (0,32,0)
-geo = (0,32,0)
-pwr = (32,0,0)
-BTL = (0,32,0)
-DDOT = (32,0,0)
-BLTR = (0,32,0)
-ABGD = (0,32,0)
-BRB1 = (32,0,0)
-BRB2 = (32,32,0)
-BRB3 = (0,32,0)
+bio = (0,16,0)
+met = (0,16,0)
+geo = (0,16,0)
+pwr = (16,0,0)
+BTL = (0,16,0)
+DDOT = (16,0,0)
+BLTR = (0,16,0)
+ABGD = (0,16,0)
+BRB1 = (16,0,0)
+BRB2 = (16,16,0)
+BRB3 = (0,16,0)
 
 ALERT_STATE_mem = 0
 SENSOR_MODE_mem = 0
