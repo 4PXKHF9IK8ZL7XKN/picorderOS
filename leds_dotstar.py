@@ -29,7 +29,7 @@ devider0 = 0
 Pattern = 0
 Rainbow = []
 
-dots = dotstar.DotStar(board.D21, board.D20, 128, brightness=0.5)
+dots = dotstar.DotStar(board.D21, board.D20, 128, brightness=0.1)
 n_dot = len(dots)
 
 # Init rabbitmq connection
