@@ -128,6 +128,13 @@ def callback(ch, method, properties, body):
 						elif key == 3:
 							EVENT_MAP['lib'] = sensor_dict[key]
 							configure.eventlist[0][3] =  sensor_dict[key]
+							if sensor_dict[key]:
+								SENSOR_MODE = SENSOR_MODE + 1
+								SENSOR_MODE_LAST = SENSOR_MODE 
+								if SENSOR_MODE > 8:
+									SENSOR_MODE = 0
+									SENSOR_MODE_LAST = 0
+
 						elif key == 4:
 							EVENT_MAP['pwr'] = sensor_dict[key]
 							configure.eventlist[0][4] =  sensor_dict[key]
@@ -137,6 +144,13 @@ def callback(ch, method, properties, body):
 						elif key == 6:
 							EVENT_MAP['I'] = sensor_dict[key]
 							configure.eventlist[0][6] =  sensor_dict[key]
+							if sensor_dict[key]:
+								if ALERT_STATE != 2:
+									ALERT_STATE = 2
+									SENSOR_MODE = 2
+								else:
+									ALERT_STATE = 0
+									SENSOR_MODE = SENSOR_MODE_LAST
 						elif key == 7:
 							EVENT_MAP['E'] = sensor_dict[key]
 							configure.eventlist[0][7] =  sensor_dict[key]
@@ -160,21 +174,9 @@ def callback(ch, method, properties, body):
 						elif key == 2:
 							EVENT_MAP['EMRG'] = sensor_dict[key]
 							#configure.eventlist[0][10] =  sensor_dict[key]
-							if sensor_dict[key]:
-							  if ALERT_STATE != 2:
-							    ALERT_STATE = 2
-							    SENSOR_MODE = 2
-							  else:
-							    ALERT_STATE = 0
-							    SENSOR_MODE = SENSOR_MODE_LAST
+
 						elif key == 3:
 							EVENT_MAP['fwd/input'] = sensor_dict[key]
-							if sensor_dict[key]:
-							  SENSOR_MODE = SENSOR_MODE + 1
-							  SENSOR_MODE_LAST = SENSOR_MODE 
-							  if SENSOR_MODE > 8:
-							      SENSOR_MODE = 0
-							      SENSOR_MODE_LAST = 0
 							#configure.eventlist[0][11] =  sensor_dict[key]
 						elif key == 4:
 							EVENT_MAP['rvs/erase'] = sensor_dict[key]
