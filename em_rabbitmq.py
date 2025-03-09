@@ -257,7 +257,7 @@ if __name__ == "__main__":
 			while True:	
 				wifi_stats = sensors.get_wifi_stats()	
 				publish_wifi_stats('wifi_stats',wifi_stats)
-				time.sleep(3)
+				time.sleep(30)
 			sys.exit(1)
 
 			signal.signal(signal.SIGINT, signal_handler)
