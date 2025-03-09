@@ -19,6 +19,8 @@ import ast
 import statistics
 import vlc
 import numpy as np
+import base64
+import collections
 
 from picoscolores import *
 from picosglobals import *
@@ -43,9 +45,9 @@ bme680_temp = [0]
 #styles = [ "multi_graph","termal_view"]
 #styles = ["type1", "multi_graph", "termal_view", "video_playback","type3", "type4"]
 styles = ["termal_view","multi_graph","wifi_band_view"]
-style = "multi_graph"
+#style = "multi_graph"
 #style = "type1"
-#style = "wifi_band_view"
+style = "wifi_band_view"
 #style = "termal_view"
 i = 0
 i2 = 0
@@ -108,6 +110,58 @@ def lcars_element_videoframe(device, draw, pos_ax,pos_ay,pos_bx,pos_by,filename,
 		
 		videoplayer_frame(device, draw, pos_ax,pos_ay,pos_bx,pos_by,filename)
 		player.release()
+		
+		
+def lcars_element_wifi_signal_list(device, draw,pos_ax,pos_ay,pos_bx,pos_by, location_tag):
+	fill = "yellow"
+	fill2 = "red"
+	time_lengh = 60
+	index_a = 0
+	hirachie_of_signals = {}
+	sorted_dict = {}
+    
+	#bounding box
+	#box_element_graph = [(pos_ax , pos_ay), (pos_bx, pos_by)] 
+	#draw.rectangle(box_element_graph,fill="black", outline=lcars_theme[lcars_theme_selection]["colore5"])
+	result, elements_forgieventime = get_recent_text(location_tag, "wifi", "OBJECT", time_lengh)
+	#print("result",result[0],len(result),elements_forgieventime)
+	#print("decode",base64.b64decode(result[0]).decode())
+	#wifi_data_object = ast.literal_eval(base64.b64decode(result[0]).decode())
+	wifi_data_object = base64.b64decode(result[0]).decode()
+	wifi_data_object = ast.literal_eval(wifi_data_object)
+
+	#for signal in wifi_data_object['wlan0']:
+	for  indexof ,dict_of_signals in enumerate(wifi_data_object['wlan0']):
+		for signal in dict_of_signals:
+			hirachie_of_signals[indexof] = dict_of_signals[signal]['signal:'][0]
+		    
+	#print("my_list",hirachie_of_signals)
+	for key in sorted(hirachie_of_signals, key=hirachie_of_signals.get, reverse=True):
+		sorted_dict[key] = hirachie_of_signals[key]
+	#print("my_sorted_list",sorted_dict)
+	for items in sorted_dict:
+		signal_object = wifi_data_object['wlan0'][items]
+		#print(signal)
+		for signal in signal_object:
+			text_block = '%s  -  %s  %s  %s ' % ( signal, signal_object[signal]['freq:'], signal_object[signal]['signal:'][0], signal_object[signal]['SSID'][:8] )
+			if pos_ay+index_a*(device.height * 0.058) < pos_by-device.height * 0.07:
+				if animation_step == index_a:
+					draw.text((pos_ax, pos_ay+index_a*(device.height * 0.070)), text=str(text_block), font=lcars_littlefont, fill=lcars_theme[lcars_theme_selection]["colore5"])
+				else:
+					draw.text((pos_ax, pos_ay+index_a*(device.height * 0.070)), text=str(text_block), font=lcars_littlefont, fill=lcars_theme[lcars_theme_selection]["colore4"])
+			index_a = index_a + 1
+			#print(text_block)
+	
+
+def lcars_element_wifi_signal_spectrum(device, draw,pos_ax,pos_ay,pos_bx,pos_by, sensors):
+	fill = "yellow"
+	fill2 = "red"
+	
+	#bounding box
+	box_element_graph = [(pos_ax , pos_ay), (pos_bx, pos_by)] 
+	draw.rectangle(box_element_graph,fill="black", outline=lcars_theme[lcars_theme_selection]["colore5"])
+
+
 
 def lcars_element_graph(device, draw,pos_ax,pos_ay,pos_bx,pos_by, sensors_dict,mode):
 	# mode is auto scalling depending on min max
@@ -1128,9 +1182,12 @@ def wifi_band_view_build():
 		lcars_element_elbow(device, draw, device.width*0.01,device.height*0.01,2,lcars_theme[lcars_theme_selection]["colore4"])
 		lcars_element_elbow(device, draw, device.width*0.01,device.height*0.86 ,3, lcars_theme[lcars_theme_selection]["colore0"])	
 		
-		
 		lcars_element_elbow_half(device, draw, device.width*0.01,device.height*0.30 ,3, lcars_theme[lcars_theme_selection]["colore0"])
-		lcars_element_elbow_half(device, draw, device.width*0.01,device.height*0.44,2,lcars_theme[lcars_theme_selection]["colore4"]) 		
+		lcars_element_elbow_half(device, draw, device.width*0.01,device.height*0.44,2,lcars_theme[lcars_theme_selection]["colore4"]) 	
+		
+		lcars_element_wifi_signal_list(device, draw,device.width*0.15,device.height*0.52,device.width*0.95,device.height*0.85, "local")
+		#lcars_element_wifi_signal_spectrum(device, draw,device.width*0.15,device.height*0.12,device.width*0.95,device.height*0.35, "local_wifi_OBJECT")
+		#lcars_element_termal_array(device, draw,device.width*0.15,device.height*0.12,device.width*0.95,device.height*0.85,'mlx90640','dynamic_range',True)
            
 		radius = device.height*0.05
           
@@ -1351,6 +1408,22 @@ def get_recent(tag, dsc, dev, time_ing):
 			clean_slices.append(item_clean)
 		slices = clean_slices
 	return slices, timelength    
+	
+def get_recent_text(tag, dsc, dev, time_ing):	
+	timelength = 0
+	clean_slices = []
+	slices = False
+
+	table_string = '%s_%s_%s' % (tag,dsc,dev)
+	table_data = return_data_from_sql(psql_connection_lcars, table_string, time_ing)
+	slices = table_data
+	if type(table_data) != bool:
+		timelength = len(table_data)
+		for item in table_data:
+			item_clean = str(str(item).strip("(, )"))
+			clean_slices.append(item_clean)
+		slices = clean_slices
+	return slices, timelength  
 	
 def get_recent_termal(tag, dsc, dev):	
 	items_count = 0
