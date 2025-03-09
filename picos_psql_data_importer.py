@@ -3,6 +3,8 @@ import pika
 import sys
 import ast
 import os
+import base64
+
 from objects import *
 from picosglobals import *
 
@@ -100,6 +102,19 @@ def table_create(con, table_str):
 	try:
 		cur = con.cursor()
 		cur.execute('CREATE TABLE "' + table_str + '" (id serial PRIMARY KEY, value real,timestamp numeric,latitude numeric,longitude numeric);')
+		ret = table_exists(con, table_str)
+		if ret is True:
+			print("TABLE: ", table_str ,"CREATED")
+		cur.close()
+	except psycopg2.Error as e:
+		print( e )
+	return ret  
+	
+def table_create_text(con, table_str):
+	ret = False
+	try:
+		cur = con.cursor()
+		cur.execute('CREATE TABLE "' + table_str + '" (id serial PRIMARY KEY, value text,timestamp numeric,latitude numeric,longitude numeric);')
 		ret = table_exists(con, table_str)
 		if ret is True:
 			print("TABLE: ", table_str ,"CREATED")
@@ -220,7 +235,7 @@ def purge_data_totime(con, table_str, time_lengh_sec):
 
 
 def insert_data(con, table_str, value, stamp, lat, lon, tag):
-	#print("DEBUG:",table_str, value, stamp, lat, lon, tag)
+	print("DEBUG:",table_str, value, stamp, lat, lon, tag)
 	check_table = empty_tablecheck(con, table_str)
 	ret = False
 	try:
@@ -235,7 +250,7 @@ def insert_data(con, table_str, value, stamp, lat, lon, tag):
 	except psycopg2.Error as e:
 		print( e )
 	return ret, ret_id
-    
+	    
 def insert_data_gps(con, table_str, speed, altitude, track, sats, stamp, lat, lon, tag):
 	#print("DEBUG:",table_str, speed, altitude, track, sats, stamp, lat, lon, tag)
 	check_table = empty_tablecheck(con, table_str)
@@ -845,16 +860,19 @@ def callback(ch, method, properties, body):
 		WIFI_STATS[index][7] = latitude[0]
 		WIFI_STATS[index][8] = longitude[0]
 		WIFI_STATS[index][9] = origin_tag[0].strip("' '")
-		print("MATRIX", WIFI_STATS[index])
+		#print("MATRIX", WIFI_STATS[index])
 
 		# creates a new dataframe to add new data
 		table_string = '%s_%s_%s' % (WIFI_STATS[index][9],WIFI_STATS[index][5],WIFI_STATS[index][3])
+		
+		print(table_string)
 
 		ret = table_exists(psql_connection, table_string)
 		if ret is False:
-			table_create(psql_connection,  table_string)
+			table_create_text(psql_connection,  table_string)
 		
-		ret, ent_id = insert_data(psql_connection,  table_string, WIFI_STATS[index][0], WIFI_STATS[index][6], WIFI_STATS[index][7], WIFI_STATS[index][8],WIFI_STATS[index][9])
+		prepare_byte_object = '%s' % base64.b64encode(WIFI_STATS[index][0].encode('utf8'))
+		ret, ent_id = insert_data(psql_connection, table_string, prepare_byte_object[1:], WIFI_STATS[index][6], WIFI_STATS[index][7], WIFI_STATS[index][8],WIFI_STATS[index][9])
 		if ret is False:
 			os.exit("SQL Write Faild")
 		
