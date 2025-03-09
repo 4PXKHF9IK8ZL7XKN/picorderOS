@@ -136,7 +136,7 @@ def lcars_element_wifi_signal_list(device, draw,pos_ax,pos_ay,pos_bx,pos_by, loc
 			hirachie_of_signals[indexof] = dict_of_signals[signal]['signal:'][0]
 		    
 	#print("my_list",hirachie_of_signals)
-	for key in sorted(hirachie_of_signals, key=hirachie_of_signals.get, reverse=True):
+	for key in sorted(hirachie_of_signals, key=hirachie_of_signals.get):
 		sorted_dict[key] = hirachie_of_signals[key]
 	#print("my_sorted_list",sorted_dict)
 	for items in sorted_dict:
@@ -149,9 +149,62 @@ def lcars_element_wifi_signal_list(device, draw,pos_ax,pos_ay,pos_bx,pos_by, loc
 					draw.text((pos_ax, pos_ay+index_a*(device.height * 0.070)), text=str(text_block), font=lcars_littlefont, fill=lcars_theme[lcars_theme_selection]["colore5"])
 				else:
 					draw.text((pos_ax, pos_ay+index_a*(device.height * 0.070)), text=str(text_block), font=lcars_littlefont, fill=lcars_theme[lcars_theme_selection]["colore4"])
+					
+				if signal_object[signal]['status'] == 'associated':
+					draw.text((pos_ax, pos_ay+index_a*(device.height * 0.070)), text=str(text_block), font=lcars_littlefont, fill=lcars_theme[lcars_theme_selection]["colore1"])
+					
 			index_a = index_a + 1
 			#print(text_block)
+			
+	return len(hirachie_of_signals)
 	
+def lcars_element_wifi_signal_activ(device, draw,pos_ax,pos_ay,pos_bx,pos_by, location_tag):
+	fill = "yellow"
+	fill2 = "red"
+	time_lengh = 60
+	index_a = 0
+	associated = False
+	hirachie_of_signals = {}
+	sorted_dict = {}
+	
+	#bounding box
+	#box_element_graph = [(pos_ax , pos_ay), (pos_bx, pos_by)] 
+	#draw.rectangle(box_element_graph,fill="black", outline=lcars_theme[lcars_theme_selection]["colore5"])
+	
+	result, elements_forgieventime = get_recent_text(location_tag, "wifi", "OBJECT", time_lengh)
+	#print("result",result[0],len(result),elements_forgieventime)
+	#print("decode",base64.b64decode(result[0]).decode())
+	#wifi_data_object = ast.literal_eval(base64.b64decode(result[0]).decode())
+	wifi_data_object = base64.b64decode(result[0]).decode()
+	wifi_data_object = ast.literal_eval(wifi_data_object)
+	
+	#for signal in wifi_data_object['wlan0']:
+	for  indexof ,dict_of_signals in enumerate(wifi_data_object['wlan0']):
+		for signal in dict_of_signals:
+			if dict_of_signals[signal]['status'] == 'associated':
+				text_block = '%s - %s  %s  ' % ( dict_of_signals[signal]['SSID'][:8], "associated", dict_of_signals[signal]['freq:']  )
+				draw.text((pos_ax, pos_ay+index_a*(device.height * 0.070)), text=str(text_block), font=lcars_font, fill=lcars_theme[lcars_theme_selection]["colore1"])
+				associated = True
+	
+	if associated == False:
+		#for signal in wifi_data_object['wlan0']:
+		for  indexof ,dict_of_signals in enumerate(wifi_data_object['wlan0']):
+			for signal in dict_of_signals:
+				hirachie_of_signals[indexof] = dict_of_signals[signal]['signal:'][0]
+				
+		#print("my_list",hirachie_of_signals)
+		for key in sorted(hirachie_of_signals, key=hirachie_of_signals.get):
+			sorted_dict[key] = hirachie_of_signals[key]
+
+		for items in sorted_dict:
+			signal_object = wifi_data_object['wlan0'][next(iter(sorted_dict))]
+			for indexof2, signal in enumerate(signal_object):
+				if indexof2 == 0:
+					text_block = '%s - %s      %s %s' % (signal_object[signal]['SSID'][:8], "Strong" , signal_object[signal]['signal:'][0], signal_object[signal]['signal:'][1] )
+					draw.text((pos_ax, pos_ay+index_a*(device.height * 0.070)), text=str(text_block), font=lcars_font, fill=lcars_theme[lcars_theme_selection]["colore1"])
+			
+
+
 
 def lcars_element_wifi_signal_spectrum(device, draw,pos_ax,pos_ay,pos_bx,pos_by, sensors):
 	fill = "yellow"
@@ -160,6 +213,7 @@ def lcars_element_wifi_signal_spectrum(device, draw,pos_ax,pos_ay,pos_bx,pos_by,
 	#bounding box
 	box_element_graph = [(pos_ax , pos_ay), (pos_bx, pos_by)] 
 	draw.rectangle(box_element_graph,fill="black", outline=lcars_theme[lcars_theme_selection]["colore5"])
+
 
 
 
@@ -1185,7 +1239,8 @@ def wifi_band_view_build():
 		lcars_element_elbow_half(device, draw, device.width*0.01,device.height*0.30 ,3, lcars_theme[lcars_theme_selection]["colore0"])
 		lcars_element_elbow_half(device, draw, device.width*0.01,device.height*0.44,2,lcars_theme[lcars_theme_selection]["colore4"]) 	
 		
-		lcars_element_wifi_signal_list(device, draw,device.width*0.15,device.height*0.52,device.width*0.95,device.height*0.85, "local")
+		wifi_activ = lcars_element_wifi_signal_activ(device, draw,device.width*0.15,device.height*0.50,device.width*0.95,device.height*0.59, "local")
+		wifi_nodes = lcars_element_wifi_signal_list(device, draw,device.width*0.15,device.height*0.60,device.width*0.95,device.height*0.85, "local")
 		#lcars_element_wifi_signal_spectrum(device, draw,device.width*0.15,device.height*0.12,device.width*0.95,device.height*0.35, "local_wifi_OBJECT")
 		#lcars_element_termal_array(device, draw,device.width*0.15,device.height*0.12,device.width*0.95,device.height*0.85,'mlx90640','dynamic_range',True)
            
