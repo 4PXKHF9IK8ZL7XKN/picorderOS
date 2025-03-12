@@ -131,32 +131,33 @@ def lcars_element_wifi_signal_list(device, draw,pos_ax,pos_ay,pos_bx,pos_by, loc
 	wifi_data_object = ast.literal_eval(wifi_data_object)
 
 	#for signal in wifi_data_object['wlan0']:
-	for  indexof ,dict_of_signals in enumerate(wifi_data_object['wlan0']):
-		for signal in dict_of_signals:
-			hirachie_of_signals[indexof] = dict_of_signals[signal]['signal:'][0]
-		    
-	#print("my_list",hirachie_of_signals)
-	for key in sorted(hirachie_of_signals, key=hirachie_of_signals.get):
-		sorted_dict[key] = hirachie_of_signals[key]
-	#print("my_sorted_list",sorted_dict)
-	for items in sorted_dict:
-		signal_object = wifi_data_object['wlan0'][items]
-		#print(signal)
-		for signal in signal_object:
-			text_block = '%s  -  %s  %s  %s ' % ( signal, signal_object[signal]['freq:'], signal_object[signal]['signal:'][0], signal_object[signal]['SSID'][:8] )
-			if pos_ay+index_a*(device.height * 0.058) < pos_by-device.height * 0.07:
-				if animation_step == index_a:
-					draw.text((pos_ax, pos_ay+index_a*(device.height * 0.070)), text=str(text_block), font=lcars_littlefont, fill=lcars_theme[lcars_theme_selection]["colore5"])
-				else:
-					draw.text((pos_ax, pos_ay+index_a*(device.height * 0.070)), text=str(text_block), font=lcars_littlefont, fill=lcars_theme[lcars_theme_selection]["colore4"])
-					
-				if signal_object[signal]['status'] == 'associated':
-					draw.text((pos_ax, pos_ay+index_a*(device.height * 0.070)), text=str(text_block), font=lcars_littlefont, fill=lcars_theme[lcars_theme_selection]["colore1"])
-					
-			index_a = index_a + 1
-			#print(text_block)
+	if 'wlan0' in wifi_data_object:
+		for  indexof ,dict_of_signals in enumerate(wifi_data_object['wlan0']):
+			for signal in dict_of_signals:
+				hirachie_of_signals[indexof] = dict_of_signals[signal]['signal:'][0]
+				
+		#print("my_list",hirachie_of_signals)
+		for key in sorted(hirachie_of_signals, key=hirachie_of_signals.get):
+			sorted_dict[key] = hirachie_of_signals[key]
+		#print("my_sorted_list",sorted_dict)
+		for items in sorted_dict:
+			signal_object = wifi_data_object['wlan0'][items]
+			#print(signal)
+			for signal in signal_object:
+				text_block = '%s  -  %s  %s  %s ' % ( signal, signal_object[signal]['freq:'], signal_object[signal]['signal:'][0], signal_object[signal]['SSID'][:8] )
+				if pos_ay+index_a*(device.height * 0.058) < pos_by-device.height * 0.07:
+					if animation_step == index_a:
+						draw.text((pos_ax, pos_ay+index_a*(device.height * 0.070)), text=str(text_block), font=lcars_littlefont, fill=lcars_theme[lcars_theme_selection]["colore5"])
+					else:
+						draw.text((pos_ax, pos_ay+index_a*(device.height * 0.070)), text=str(text_block), font=lcars_littlefont, fill=lcars_theme[lcars_theme_selection]["colore4"])
+						
+					if signal_object[signal]['status'] == 'associated':
+						draw.text((pos_ax, pos_ay+index_a*(device.height * 0.070)), text=str(text_block), font=lcars_littlefont, fill=lcars_theme[lcars_theme_selection]["colore1"])
+						
+				index_a = index_a + 1
+				#print(text_block)
 			
-	return len(hirachie_of_signals)
+		return len(hirachie_of_signals)
 	
 def lcars_element_wifi_signal_activ(device, draw,pos_ax,pos_ay,pos_bx,pos_by, location_tag):
 	fill = "yellow"
@@ -178,31 +179,32 @@ def lcars_element_wifi_signal_activ(device, draw,pos_ax,pos_ay,pos_bx,pos_by, lo
 	wifi_data_object = base64.b64decode(result[0]).decode()
 	wifi_data_object = ast.literal_eval(wifi_data_object)
 	
-	#for signal in wifi_data_object['wlan0']:
-	for  indexof ,dict_of_signals in enumerate(wifi_data_object['wlan0']):
-		for signal in dict_of_signals:
-			if dict_of_signals[signal]['status'] == 'associated':
-				text_block = '%s - %s  %s  ' % ( dict_of_signals[signal]['SSID'][:8], "associated", dict_of_signals[signal]['freq:']  )
-				draw.text((pos_ax, pos_ay+index_a*(device.height * 0.070)), text=str(text_block), font=lcars_font, fill=lcars_theme[lcars_theme_selection]["colore1"])
-				associated = True
-	
-	if associated == False:
-		#for signal in wifi_data_object['wlan0']:
-		for  indexof ,dict_of_signals in enumerate(wifi_data_object['wlan0']):
-			for signal in dict_of_signals:
-				hirachie_of_signals[indexof] = dict_of_signals[signal]['signal:'][0]
-				
-		#print("my_list",hirachie_of_signals)
-		for key in sorted(hirachie_of_signals, key=hirachie_of_signals.get):
-			sorted_dict[key] = hirachie_of_signals[key]
+	if 'wlan0' in wifi_data_object:
+	    #for signal in wifi_data_object['wlan0']:
+	    for  indexof ,dict_of_signals in enumerate(wifi_data_object['wlan0']):
+		    for signal in dict_of_signals:
+			    if dict_of_signals[signal]['status'] == 'associated':
+				    text_block = '%s - %s  %s  ' % ( dict_of_signals[signal]['SSID'][:8], "associated", dict_of_signals[signal]['freq:']  )
+				    draw.text((pos_ax, pos_ay+index_a*(device.height * 0.070)), text=str(text_block), font=lcars_font, fill=lcars_theme[lcars_theme_selection]["colore1"])
+				    associated = True
+	    
+	    if associated == False:
+		    #for signal in wifi_data_object['wlan0']:
+		    for  indexof ,dict_of_signals in enumerate(wifi_data_object['wlan0']):
+			    for signal in dict_of_signals:
+				    hirachie_of_signals[indexof] = dict_of_signals[signal]['signal:'][0]
+				    
+		    #print("my_list",hirachie_of_signals)
+		    for key in sorted(hirachie_of_signals, key=hirachie_of_signals.get):
+			    sorted_dict[key] = hirachie_of_signals[key]
 
-		for items in sorted_dict:
-			signal_object = wifi_data_object['wlan0'][next(iter(sorted_dict))]
-			for indexof2, signal in enumerate(signal_object):
-				if indexof2 == 0:
-					text_block = '%s - %s      %s %s' % (signal_object[signal]['SSID'][:8], "Strong" , signal_object[signal]['signal:'][0], signal_object[signal]['signal:'][1] )
-					draw.text((pos_ax, pos_ay+index_a*(device.height * 0.070)), text=str(text_block), font=lcars_font, fill=lcars_theme[lcars_theme_selection]["colore1"])
-			
+		    for items in sorted_dict:
+			    signal_object = wifi_data_object['wlan0'][next(iter(sorted_dict))]
+			    for indexof2, signal in enumerate(signal_object):
+				    if indexof2 == 0:
+					    text_block = '%s - %s      %s %s' % (signal_object[signal]['SSID'][:8], "Strong" , signal_object[signal]['signal:'][0], signal_object[signal]['signal:'][1] )
+					    draw.text((pos_ax, pos_ay+index_a*(device.height * 0.070)), text=str(text_block), font=lcars_font, fill=lcars_theme[lcars_theme_selection]["colore1"])
+			    
 
 
 
