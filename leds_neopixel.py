@@ -1,6 +1,5 @@
 #!/bin/python3
 import time
-import neopixel
 import board
 import random
 import sys
@@ -9,6 +8,16 @@ import threading
 from datetime import timedelta
 import ast
 import math
+import adafruit_pixelbuf
+from adafruit_raspberry_pi5_neopixel_write import neopixel_write
+
+class Pi5Pixelbuf(adafruit_pixelbuf.PixelBuf):
+    def __init__(self, pin, size, **kwargs):
+        self._pin = pin
+        super().__init__(size=size, **kwargs)
+
+    def _transmit(self, buf):
+        neopixel_write(self._pin, buf)
 
 background = (0,0,0)
 sensor_animation = 0
@@ -29,13 +38,15 @@ ABGD = (0,16,0)
 BRB1 = (16,0,0)
 BRB2 = (16,16,0)
 BRB3 = (0,16,0)
+black =(0,0,0)
 
 ALERT_STATE_mem = 0
 SENSOR_MODE_mem = 0
 
-ORDER = neopixel.GRB
+ORDER = "GRB"
 
-pixels = neopixel.NeoPixel(board.D12, 39, pixel_order=ORDER)
+pixels = Pi5Pixelbuf(board.D12, 39, auto_write=True, byteorder=ORDER)
+#pixels = neopixel.NeoPixel(board.D12, 39, pixel_order=ORDER)
 n_dot = 39
 
 # Init rabbitmq connection
@@ -64,7 +75,7 @@ def random_color():
 # Reset (all LEDs off)
 def fn_dots_reset():
   global n_dot
-  pixels.fill((0, 0, 0))
+  pixels.fill(black)
   pixels.show()
 
 def fn_dots_initial():
@@ -76,8 +87,8 @@ def fn_dots_initial():
 def fn_dots_unload():
   global n_dot
   pixels.fill((0, 0, 0))
-  
-  
+
+ 
 def wheel(pos):
     # Input a value 0 to 255 to get a color value.
     # The colours are a transition r - g - b - back to r.
