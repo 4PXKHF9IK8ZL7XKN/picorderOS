@@ -181,63 +181,52 @@ def animation():
         dots.show()
         time.sleep(0.01)
       elif Pattern == 1:
+        fix_leds = [87,86,85,84,83,82,81,80,23,22,21,20,19,18,17,16 ] 
+        fix_leds_rev = [16,17,18,19,20,21,22,23,80,81,82,83,84,85,86,87 ]
+        r,g,b = scannerline0 
+        
         #print("knight Rider")
-        for scene in range(0,8,1):
-             # scannerline0
-            dots[96+scene] = (scannerline0)
-            dots[37] = (background)
-            time.sleep(0.02)
-            # prevent overscanning
-            if scene > 0:
-              dots[97+scene-4] = (background)
-              dots[38] = (background)
-            if scene > 1:
-              dots[39] = (background)
-            if scene > 2:
-              dots[40] = (background)
-                      
-        for scene in range(0,8,1):
-            # scannerline0
-            dots[103-scene] = (scannerline0)
-            time.sleep(0.02)
-            # prevent overscanning
-            if scene > 0:
-              dots[103-scene+3] = (background)   
-                            
-        for scene in range(0,8,1):
-            # scannerline0
-            dots[39-scene] = (scannerline0)
-            dots[98] = (background)      
-            time.sleep(0.02)
-            # prevent overscanning
-            if scene > 0:
-              dots[38-scene+4] = (background)
-              dots[97] = (background)
-            if scene > 2:
-              dots[96] = (background)
-              
-              
-        for scene in range(0,8,1):
-            # scannerline0
-            dots[32+scene] = (scannerline0)
-            time.sleep(0.02)
-            # prevent overscanning
-            if scene > 0:
-              dots[32+scene-3] = (background)
-            if scene > 6:
-              dots[96] = (scannerline0)
-            if scene > 7:
-              dots[97] = (scannerline0)
-            if scene > 8:
-              dots[98] = (scannerline0)
-         
+        for scene in range(0,16,1):
+          # scannerline0
+          dots[fix_leds[scene]] = (scannerline0)
+          dots[fix_leds[scene-1]] = (background)
+          dots[fix_leds[scene-2]] = (background)
+          dots[fix_leds[scene-3]] = (background)
+          dots[fix_leds[scene-4]] = (background)
+          if scene > 0:
+            dots[fix_leds[scene-1]] = (round(r*0.5),round(g*0.5),round(b*0.5))
+          if scene > 1:
+            dots[fix_leds[scene-2]] = (round(r*0.25),round(g*0.25),round(b*0.25))
+          if scene > 2:
+            dots[fix_leds[scene-2]] = (round(r*0.1),round(g*0.1),round(b*0.1))
+          
 
-            dots.show()
+          time.sleep(0.02)
+
+          dots.show()
+
+        for scene in range(0,16,1):
+          # scannerline0
+          dots[fix_leds_rev[scene]] = (scannerline0)
+          dots[fix_leds_rev[scene-1]] = (background)
+          dots[fix_leds_rev[scene-2]] = (background)
+          dots[fix_leds_rev[scene-3]] = (background)
+          dots[fix_leds_rev[scene-4]] = (background)
+          if scene > 0:
+            dots[fix_leds_rev[scene-1]] = (round(r*0.5),round(g*0.5),round(b*0.5))
+          if scene > 1:
+            dots[fix_leds_rev[scene-2]] = (round(r*0.25),round(g*0.25),round(b*0.25))
+          if scene > 2:
+            dots[fix_leds_rev[scene-2]] = (round(r*0.1),round(g*0.1),round(b*0.1))
+          
+
+          time.sleep(0.02)
+          
+          dots.show()
+
             
         # reseting dot
         fn_dots_static()
-        dots[103] = (background)
-        dots[32] = (background)
         
       elif Pattern == 2:
         dots.fill((background))

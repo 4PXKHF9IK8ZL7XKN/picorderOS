@@ -90,9 +90,9 @@ if configure.input_cap1188:
                 #GPIO.output(BUTTON_GPIOA_RST,GPIO.HIGH)
                 time.sleep(0.1)
                 #GPIO.output(BUTTON_GPIOA_RST,GPIO.LOW)
-                cap1188A = CAP1188_I2C(i2c, address=0x28)
+                cap1188A = CAP1188_I2C(i2c, address=0x29)
                 #################cap1188B = CAP1188_I2C(i2c, address=0x29)
-                cap1188A.sensitivity = configure.CAPSENSITIVITY
+                #cap1188A.sensitivity = configure.CAPSENSITIVITY
                 #########cap1188B.sensitivity = configure.CAPSENSITIVITY
                 #GPIO.setup(BUTTON_GPIOA_RST, GPIO.OUT, initial=GPIO.HIGH)
                 #time.sleep(0.01)
