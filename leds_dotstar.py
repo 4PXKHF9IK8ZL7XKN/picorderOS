@@ -13,6 +13,7 @@ import math
 background = (0,0,0)
 scannerline0 = (10,10,0)
 scannerline1 = (10,10,0)
+scannerlinedebug = (20,20,20)
 square_RB = (10,10,0)
 square_LB = (10,10,0)
 square_TL = (10,10,0)
@@ -83,23 +84,22 @@ def fn_dots_unload():
 
 def fn_dots_static():
 # static Right Bottom Square
-  dots[48] = (square_RB)
-  dots[49] = (square_RB)
-  dots[40] = (square_RB)
-  dots[41] = (square_RB)
+  dots[33] = (square_RB)
+  dots[34] = (square_RB)
+
 # static Left Bottom Square
-  for static0 in range(104,120,1):
+  for static0 in range(96,104,1):
     dots[static0] = (square_LB)
-  dots[47] = (square_LB)
-  dots[55] = (square_LB)
+  dots[39] = (square_LB)
+#  dots[47] = (square_LB)
+#  for static1 in range(104,120,1):
+#    dots[static1] = (square_LB)
 # static Left Top Square
-  for static1 in range(104,120,1):
-    dots[static1] = (square_LB)
-  for static2 in range(76,80,1):
+  for static2 in range(68,72,1):
     dots[static2] = (square_TL)
 # static Top Right
   dots[2] = (top_right_in)
-  dots[10] = (top_right_in)
+  #dots[10] = (top_right_in)
 # static Top Center
   dots[5] = (top_center_in)
   dots[13] = (top_center_in)
@@ -135,13 +135,13 @@ def animation():
             if devider0 == 8:
                devider0 = 0
             # scannerline0
-            dots[96+scene] = (scannerline0)
-            dots[39-scene] = (scannerline0)
+            dots[80+scene] = (scannerline0)
+            dots[23-scene] = (scannerline0)
             time.sleep(0.02)
             # prevent overscanning
             if scene > 0:
-              dots[38-scene+2] = (background)
-              dots[97+scene-2] = (background)
+              dots[22-scene+2] = (background)
+              dots[81+scene-2] = (background)
             # scannerline1
             # check if sequenz is even to prevent overscanning
             if scene % 2 == 0:
@@ -154,27 +154,29 @@ def animation():
               dots[127] = (background)
               dots[56] = (background)
             # Flip Lights Top
+            # This sequenz is the switching dots
             if scene >= 4:
                 # on
                 dots[64] = (flip_lights0)
-                dots[72] = (flip_lights0)
+                #dots[72] = (flip_lights0)
                 # off
                 time.sleep(0.02)
                 dots[65] = (background)
-                dots[73] = (background)
+                #dots[73] = (background)
             else:
+                # This sequenz is the switching dots
                 # off
                 dots[64] = (background)
-                dots[72] = (background)
+                #dots[72] = (background)
                 # on
                 dots[65] = (flip_lights1)
-                dots[73] = (flip_lights1)
+                #dots[73] = (flip_lights1)
             dots.show()
             time.sleep(0.02)
         # reseting dot
         fn_dots_static()
-        dots[103] = (background)
-        dots[32] = (background)
+        dots[87] = (background)
+        dots[16] = (background)
 
         dots.show()
         time.sleep(0.01)
