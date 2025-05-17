@@ -90,7 +90,7 @@ if configure.input_cap1188:
                 #GPIO.output(BUTTON_GPIOA_RST,GPIO.HIGH)
                 time.sleep(0.1)
                 #GPIO.output(BUTTON_GPIOA_RST,GPIO.LOW)
-                cap1188A = CAP1188_I2C(i2c, address=0x29)
+                cap1188A = CAP1188_I2C(i2c, address=0x28)
                 #################cap1188B = CAP1188_I2C(i2c, address=0x29)
                 #cap1188A.sensitivity = configure.CAPSENSITIVITY
                 #########cap1188B.sensitivity = configure.CAPSENSITIVITY
@@ -734,7 +734,7 @@ class sensor(object):
 
 		timestamp = time.time()
 		
-		return self.apds9960_proximity, self.apds9960_gesture, self.apds9960_colore_r ,self.apds9960_colore_g ,self.apds9960_colore_b ,self.apds9960_colore_c, configure.rabbitmq_tag
+		return self.apds9960_proximity, self.apds9960_gesture, self.apds9960_colore_r ,self.apds9960_colore_g ,self.apds9960_colore_b ,self.apds9960_colore_c, timestamp ,local_gps[0], local_gps[1] ,configure.rabbitmq_tag
 		
 		
 	def get_scd4x(self):

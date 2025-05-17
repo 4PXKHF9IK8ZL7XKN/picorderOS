@@ -393,6 +393,7 @@ def callback(ch, method, properties, body):
 		sensor_values = [0,1,2,3,4,5,6,7]
 		#decodes data byte stream and splits the values by comma
 		sensor_array_unclean = body.decode().strip("()").split(",")		
+		
 		origin_tag = sensor_array_unclean[-1:]
 		del sensor_array_unclean[-1]				
 		longitude = sensor_array_unclean[-1:]
@@ -401,7 +402,6 @@ def callback(ch, method, properties, body):
 		del sensor_array_unclean[-1]
 		sensortimestamp = sensor_array_unclean[-1:]
 		del sensor_array_unclean[-1]
-	
 		cleanup_index = 0
 		for value4555 in sensor_array_unclean:
 			if cleanup_index == 0:
@@ -410,24 +410,23 @@ def callback(ch, method, properties, body):
 			elif cleanup_index == 1:
 				# CPU Load Overall last min
 				sensor_values[1] = float(value4555.strip('( '))
+				cpu_percalc = (sensor_values[1]*100)
+				sensor_values[3] = float(cpu_percalc)
 			elif cleanup_index == 5:
 				# CPU Temperatur
 				array2541 = value4555.rsplit('=')
 				sensor_values[2] = float(array2541[1])
-			elif cleanup_index == 8:
-				# CPU Load in Percentage
-				sensor_values[3] = float(value4555)
-			elif cleanup_index == 9:
+			elif cleanup_index == 13:
 				# virtual mem
 				sensor_values[4] = float(value4555)
-			elif cleanup_index == 13:
+			elif cleanup_index == 17:
 				# diskussage in percentage i skipped bytes
 				array56461 = value4555.rsplit('=')			
 				sensor_values[5] = float(array56461[1].strip(' )'))
-			elif cleanup_index == 14:
+			elif cleanup_index == 18:
 				# bytes send bytes
 				sensor_values[6] = float(value4555)
-			elif cleanup_index == 15:
+			elif cleanup_index == 19:
 				# bytes rec 
 				sensor_values[7] = float(value4555)
 			cleanup_index = cleanup_index + 1
