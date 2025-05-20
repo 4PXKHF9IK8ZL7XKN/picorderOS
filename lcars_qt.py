@@ -3,7 +3,7 @@ import sys
 
 from PyQt6.QtWidgets import QGraphicsBlurEffect, QGraphicsOpacityEffect, QHBoxLayout,QListWidget, QListWidgetItem, QLabel, QLineEdit, QGridLayout, QFormLayout, QGraphicsProxyWidget, QGraphicsItem, QGraphicsRectItem, QGraphicsScene, QGraphicsView, QToolBar, QWidget, QVBoxLayout, QApplication, QMainWindow, QTabWidget, QPushButton, QLCDNumber, QStylePainter
 
-from PyQt6.QtGui import QColor
+from PyQt6.QtGui import QColor, QBrush
 
 from PyQt6.QtCore import Qt, QPropertyAnimation, QPoint, QParallelAnimationGroup, QSequentialAnimationGroup
 
@@ -11,20 +11,25 @@ from layout_colorwidget import Color
 
 _placeholder = "Ganz statisch text weil im tutorial etwas verlinkt wurde, was es in der welt von python ohne einen editor dazu einfach nicht giebt"
 
-class element_elbow_widget(QWidget):    
-    def __init__(self, parent):
-        super(QWidget, self).__init__(parent)
+
+def draw_elbow_scene(posx,posy,lengh,hight):
+
+        scene = QGraphicsScene(posx,posy,lengh,hight)
+        scene.setBackgroundBrush(QBrush(QColor(255,255, 255)))
+
+        rect = QGraphicsRectItem(0, 0, 200, 50)
+        rect_2 = QGraphicsRectItem(0, 0, 200, 50)
         
+        rect.setPos(50, 20)
+        rect_2.setPos(80, 40)
+
+        scene.addItem(rect)
+        scene.addItem(rect_2)
+        
+        return scene
 
         
-
-
-class costume_tab_widget(QTabWidget):
-    def __init__(self, parent):
-        super(QWidget, self).__init__(parent)
-    def addTab_rotatet(self,layout,name):
-        self.addTab(layout,name)
-        print(name)
+        
 
 class tab_form_widget(QWidget):
     def __init__(self, parent):
@@ -65,26 +70,21 @@ class list_form_widget(QWidget):
              
         # widget section
         
-        
-        
-        
-        scene = QGraphicsScene(0, 0, 400, 200)
+        scene = draw_elbow_scene(0,0,400,200)
 
-        rect = QGraphicsRectItem(0, 0, 200, 50)
-        rect.setPos(50, 20)
-
-        scene.addItem(rect)
-
-        self.view = QGraphicsView(scene)
-        self.view.show()
+        view = QGraphicsView(scene)
+        view.show()
         
+        view_2 = QGraphicsView(scene)
+        view_2.show()
         
         
         main_widget = QWidget()
     
         list_widget = QListWidget()
        
-        vector_image = self.view
+        vector_image = view
+        vector_image_2 = view_2
         
         for i in range(5):
             item = QListWidgetItem(f"0{i}")
@@ -105,6 +105,7 @@ class list_form_widget(QWidget):
         layout.addWidget(main_widget, 4) # empty
         
         content_layout.addWidget(vector_image)   
+        content_layout.addWidget(vector_image_2)   
         content_layout.addWidget(text_widget)
         content_layout.addWidget(button) 
            
