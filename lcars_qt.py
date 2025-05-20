@@ -1,15 +1,23 @@
 #/bin/python3
 import sys
 
-from PyQt6.QtWidgets import QHBoxLayout,QListWidget, QListWidgetItem, QLabel, QLineEdit, QGridLayout, QFormLayout, QGraphicsProxyWidget, QGraphicsItem, QGraphicsRectItem, QGraphicsScene, QGraphicsView, QToolBar, QWidget, QVBoxLayout, QApplication, QMainWindow, QTabWidget, QPushButton, QLCDNumber, QStylePainter
+from PyQt6.QtWidgets import QGraphicsBlurEffect, QGraphicsOpacityEffect, QHBoxLayout,QListWidget, QListWidgetItem, QLabel, QLineEdit, QGridLayout, QFormLayout, QGraphicsProxyWidget, QGraphicsItem, QGraphicsRectItem, QGraphicsScene, QGraphicsView, QToolBar, QWidget, QVBoxLayout, QApplication, QMainWindow, QTabWidget, QPushButton, QLCDNumber, QStylePainter
 
 from PyQt6.QtGui import QColor
 
-from PyQt6.QtCore import Qt
+from PyQt6.QtCore import Qt, QPropertyAnimation, QPoint, QParallelAnimationGroup, QSequentialAnimationGroup
 
 from layout_colorwidget import Color
 
 _placeholder = "Ganz statisch text weil im tutorial etwas verlinkt wurde, was es in der welt von python ohne einen editor dazu einfach nicht giebt"
+
+class element_elbow_widget(QWidget):    
+    def __init__(self, parent):
+        super(QWidget, self).__init__(parent)
+        
+
+        
+
 
 class costume_tab_widget(QTabWidget):
     def __init__(self, parent):
@@ -57,15 +65,34 @@ class list_form_widget(QWidget):
              
         # widget section
         
+        
+        
+        
+        scene = QGraphicsScene(0, 0, 400, 200)
+
+        rect = QGraphicsRectItem(0, 0, 200, 50)
+        rect.setPos(50, 20)
+
+        scene.addItem(rect)
+
+        self.view = QGraphicsView(scene)
+        self.view.show()
+        
+        
+        
         main_widget = QWidget()
     
         list_widget = QListWidget()
+       
+        vector_image = self.view
         
         for i in range(5):
             item = QListWidgetItem(f"0{i}")
             item.setTextAlignment(Qt.AlignmentFlag.AlignRight | Qt.AlignmentFlag.AlignBottom )
             list_widget.addItem(item)
             
+     
+        
         text_widget = QLabel(_placeholder)
         button = QPushButton("Something")
 
@@ -77,8 +104,10 @@ class list_form_widget(QWidget):
         layout.addWidget(list_widget, 1) # list object
         layout.addWidget(main_widget, 4) # empty
         
+        content_layout.addWidget(vector_image)   
         content_layout.addWidget(text_widget)
-        content_layout.addWidget(button)       
+        content_layout.addWidget(button) 
+           
         
         # abstraction
         
@@ -88,6 +117,29 @@ class list_form_widget(QWidget):
             
         self.setLayout(layout)
 
+        effect = QGraphicsOpacityEffect(list_widget)
+        list_widget.setGraphicsEffect(effect)
+
+        # animation
+
+        list_widget.anim_1 = QPropertyAnimation(effect, b"opacity")
+        list_widget.anim_1.setStartValue(0)
+        list_widget.anim_1.setEndValue(1)
+        list_widget.anim_1.setDuration(1200)
+        
+        list_widget.anim_2 = QPropertyAnimation(effect, b"opacity")
+        list_widget.anim_2.setStartValue(1)
+        list_widget.anim_2.setEndValue(0)
+        list_widget.anim_2.setDuration(1200)
+
+        #list_widget.anim.start()
+        
+        self.anim_group = QSequentialAnimationGroup()
+        self.anim_group.addAnimation(list_widget.anim_1)
+        self.anim_group.addAnimation(list_widget.anim_2)
+        self.anim_group.start()
+        
+        self.anim_group.finished.connect(self.anim_group.start)
 
 
 class MainWindow(QMainWindow):
@@ -107,18 +159,6 @@ class MainWindow(QMainWindow):
         #""")
         
         
-        
-        
-
-        #scene = QGraphicsScene(0, 0, 400, 200)
-
-        #rect = QGraphicsRectItem(0, 0, 200, 50)
-        #rect.setPos(50, 20)
-
-        #scene.addItem(rect)
-
-        #view = QGraphicsView(scene)
-        #view.show()
 
         self.table_widget = list_form_widget(self)
 
