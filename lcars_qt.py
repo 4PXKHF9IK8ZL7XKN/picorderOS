@@ -9,19 +9,37 @@ from PyQt6.QtCore import Qt, QPropertyAnimation, QPoint, QParallelAnimationGroup
 
 from layout_colorwidget import Color
 
-_placeholder = "Ganz statisch text weil im tutorial etwas verlinkt wurde, was es in der welt von python ohne einen editor dazu einfach nicht giebt"
+_placeholder = """Ganz statisch text 
+weil im tutorial etwas verlinkt wurde, 
+was es in der welt von python 
+ohne einen editor dazu einfach nicht giebt"""
+
+def draw_line_scene(posx,posy,lengh,hight):
+
+        scene = QGraphicsScene(0,0,lengh,50)
+        scene.setBackgroundBrush(QBrush(QColor("#2255ff")))
+        
+        return scene
+        
+        
+def draw_end_scene(posx,posy,lengh,hight):
+
+        scene = QGraphicsScene(0,0,lengh,50)
+        scene.setBackgroundBrush(QBrush(QColor("#2255ff")))
+        
+        return scene
 
 
 def draw_elbow_scene(posx,posy,lengh,hight):
 
         scene = QGraphicsScene(posx,posy,lengh,hight)
-        scene.setBackgroundBrush(QBrush(QColor(255,255, 255)))
+        scene.setBackgroundBrush(QBrush(QColor("#ffffff")))
 
         rect = QGraphicsRectItem(0, 0, 200, 50)
         rect_2 = QGraphicsRectItem(0, 0, 200, 50)
         
-        rect.setPos(50, 20)
-        rect_2.setPos(80, 40)
+        rect.setPos(-100, 0)
+        rect_2.setPos(0, 80)
 
         scene.addItem(rect)
         scene.addItem(rect_2)
@@ -70,23 +88,31 @@ class list_form_widget(QWidget):
              
         # widget section
         
-        scene = draw_elbow_scene(0,0,400,200)
+        scene = draw_elbow_scene(0,0,25,50)
+        scene_2 = draw_line_scene(0,0,25,50)
 
         view = QGraphicsView(scene)
         view.show()
         
-        view_2 = QGraphicsView(scene)
+        view_2 = QGraphicsView(scene_2)
         view_2.show()
+        
+        view_3 = QGraphicsView(scene_2)
+        view_3.show()
         
         
         main_widget = QWidget()
+        sec_widget = QWidget()
     
         list_widget = QListWidget()
+        
+
        
         vector_image = view
         vector_image_2 = view_2
+        vector_image_3 = view_3
         
-        for i in range(5):
+        for i in range(6):
             item = QListWidgetItem(f"0{i}")
             item.setTextAlignment(Qt.AlignmentFlag.AlignRight | Qt.AlignmentFlag.AlignBottom )
             list_widget.addItem(item)
@@ -98,21 +124,30 @@ class list_form_widget(QWidget):
 
         # layout section
 
-        layout = QHBoxLayout()
-        content_layout = QVBoxLayout()
-               
-        layout.addWidget(list_widget, 1) # list object
-        layout.addWidget(main_widget, 4) # empty
         
-        content_layout.addWidget(vector_image)   
-        content_layout.addWidget(vector_image_2)   
-        content_layout.addWidget(text_widget)
-        content_layout.addWidget(button) 
+        layout = QHBoxLayout()
+        content_layout_1 = QVBoxLayout()
+        content_layout_2 = QVBoxLayout()
+                      
+        layout.addWidget(main_widget,0) # empty
+        layout.addWidget(sec_widget,2) # empty
+        
+        content_layout_1.addWidget(vector_image,0)   
+        content_layout_1.addWidget(list_widget,8)    
+        
+        content_layout_2.addWidget(vector_image_2,0)   
+        content_layout_2.addWidget(text_widget,8)
+        content_layout_2.addWidget(button,1) 
+        content_layout_2.addWidget(vector_image_3,0)   
+        
+        
+
            
         
         # abstraction
         
-        main_widget.setLayout(content_layout) # population of empty main widget
+        main_widget.setLayout(content_layout_1) # population of empty main widget
+        sec_widget.setLayout(content_layout_2) # population of empty main widget
               
         # engage
             
@@ -148,6 +183,9 @@ class MainWindow(QMainWindow):
         super().__init__()
 
         self.setWindowTitle("LCARS")
+        
+        #self.resize(448,368)
+        
         self.showFullScreen()
         
         #window = QLabel("This is a placeholder text")

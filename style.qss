@@ -10,9 +10,9 @@ QListWidget::item {
     border-width:1px;
     border-color: #000000;
     margin: 5px;
-    max-width:50px;
+    max-width:25px;
     max-height:50px;
-    min-width:50px;
+    min-width:25px;
     min-height:50px;
     border-radius: 25px;  
     color: #000000;
@@ -21,14 +21,26 @@ QListWidget::item {
 
 }
 
+QGraphicsView {
+    color: #FFFFFF;
+    background-color: #000000;
+    border-radius: 25px;  
+    color: #000000;
+    max-height:80px;
+    min-width:25px;
+    border-radius: 25px; 
+}
+
+
+
 QListWidget::item:selected {
     background-color: #f5f6fa;
     border-style: solid;
     color: #000000;
     margin: 5px;
-    max-width:50px;
+    max-width:25px;
     max-height:50px;
-    min-width:50px;
+    min-width:25px;
     min-height:50px;
     border-radius: 25px;  
     font: bold 14px;
