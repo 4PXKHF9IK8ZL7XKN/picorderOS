@@ -3,7 +3,7 @@ import sys
 
 from PyQt6.QtWidgets import QGraphicsBlurEffect, QGraphicsOpacityEffect, QHBoxLayout,QListWidget, QListWidgetItem, QLabel, QLineEdit, QGridLayout, QFormLayout, QGraphicsProxyWidget, QGraphicsItem, QGraphicsRectItem, QGraphicsScene, QGraphicsView, QToolBar, QWidget, QVBoxLayout, QApplication, QMainWindow, QTabWidget, QPushButton, QLCDNumber, QStylePainter
 
-from PyQt6.QtGui import QColor, QBrush
+from PyQt6.QtGui import QColor, QBrush, QFont
 
 from PyQt6.QtCore import Qt, QPropertyAnimation, QPoint, QParallelAnimationGroup, QSequentialAnimationGroup
 
@@ -13,6 +13,20 @@ _placeholder = """Ganz statisch text
 weil im tutorial etwas verlinkt wurde, 
 was es in der welt von python 
 ohne einen editor dazu einfach nicht giebt"""
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 def draw_line_scene(posx,posy,lengh,hight):
 
@@ -47,12 +61,33 @@ def draw_elbow_scene(posx,posy,lengh,hight):
         return scene
 
         
-        
+class draw_line_widget(QLabel):
+    def __init__(self):
+        #super().__init__()
+        super(QLabel, self).__init__()
+        self.setAutoFillBackground(True)
+        self.setStyleSheet(
+        """min-height:50px;
+        background-color: #2255ff;
+        border-style: solid;
+        color: #2255ff;
+        margin: 5px;
+        max-width:25px;
+        max-height:50px;
+        min-width:750px;
+        min-height:50px;
+        border-radius: 25px;  
+        font: bold 14px;
+        padding-right: 15px;
+        """)
+     
+
+      
 
 class tab_form_widget(QWidget):
     def __init__(self, parent):
-        #super().__init__()
-        super(QWidget, self).__init__(parent)
+        super().__init__()
+        #super(QWidget, self).__init__(parent)
         #background = (245, 245, 245)
 
         #main_layout = QGridLayout(self)
@@ -88,29 +123,18 @@ class list_form_widget(QWidget):
              
         # widget section
         
-        scene = draw_elbow_scene(0,0,25,50)
-        scene_2 = draw_line_scene(0,0,25,50)
-
-        view = QGraphicsView(scene)
-        view.show()
+        vector_image = draw_elbow_widget()
         
-        view_2 = QGraphicsView(scene_2)
-        view_2.show()
+        vector_image_2 = draw_line_widget()
         
-        view_3 = QGraphicsView(scene_2)
-        view_3.show()
+        vector_image_3 = draw_line_widget()
         
         
         main_widget = QWidget()
         sec_widget = QWidget()
-    
-        list_widget = QListWidget()
-        
 
-       
-        vector_image = view
-        vector_image_2 = view_2
-        vector_image_3 = view_3
+        list_widget = QListWidget()
+
         
         for i in range(6):
             item = QListWidgetItem(f"0{i}")
@@ -176,6 +200,259 @@ class list_form_widget(QWidget):
         self.anim_group.start()
         
         self.anim_group.finished.connect(self.anim_group.start)
+        
+        
+class stacked_form_widget(QWidget):
+    def __init__(self, parent):
+        super(stacked_form_widget, self).__init__(parent)   
+        
+        
+        # Main widget
+        main_widget = QWidget(self)
+        #self.setCentralWidget(main_widget)
+
+        
+        # top_bar label
+        top_bar = QLabel("Background Content", main_widget)
+        top_bar.setGeometry(5, 0, 1015, 200)
+        top_bar.setStyleSheet("""
+        background-color: blue;
+        border: 1px solid black;
+        border-left: none;
+        border-right: none;
+        border-top: none;
+        border-bottom: none;
+        border-bottom-left-radius: 100px; 
+        """)
+        top_bar.setAlignment(Qt.AlignmentFlag.AlignCenter)
+
+        # Overlay label
+        bottom_bar = QLabel(main_widget)
+        bottom_bar.setGeometry(5, 205, 1015, 400)
+        bottom_bar.setStyleSheet("""
+        border: 1px solid black;
+        border-left: none;
+        border-right: none;
+        border-top: none;
+        border-bottom: none;
+        background-color:red;
+        border-top-left-radius: 100px; 
+        """)
+        
+        #bottom_bar.setFont(QFont("Arial", 14, QFont.Weight.Bold))
+        #bottom_bar.setAlignment(Qt.AlignmentFlag.AlignCenter)      
+        
+        # Overlay Mask Bottom
+        bottom_mask = QLabel(main_widget)
+        bottom_mask.setGeometry(200, 230, 1015, 390)
+        bottom_mask.setStyleSheet("""
+        background-color:black;
+        border-top-left-radius: 50px; 
+        """)
+
+        # Overlay Mask Top
+        bottom_mask = QLabel(main_widget)
+        bottom_mask.setGeometry(200, 0, 1015, 170)
+        bottom_mask.setStyleSheet("""
+        background-color:black;
+        border-bottom-left-radius: 50px; 
+        """)
+        
+        list_widget = QListWidget(main_widget)
+        list_widget.setGeometry(0, 300, 205, 230)
+        list_widget.setStyleSheet("""
+        QListWidget {
+        background-color: black;
+        border-style: solid;
+        border-width:0px;
+        border-color: #000000;
+        font: bold 14px;
+        margin: 5px;
+        padding-top: 5px;
+        padding-bottom: 5px;
+        }
+        
+        QListWidget::item:selected {        
+        background-color: #f5f6fa;
+        border-style: solid;
+        border-width:0px;
+        color: #000000;
+        max-height:50px;
+        min-height:50px;
+        font: bold 14px;
+        }
+        
+        QListWidget::item {
+        background-color: darkred;
+        border-style: solid;
+        border-width:0px;
+        border-color: #000000;
+        max-height:50px;
+        min-height:50px;
+        color: #000000;
+        font: bold 14px;
+        margin-top: 1px;
+        margin-bottom: 1px;
+        }
+        """)
+
+        
+        for i in range(4):
+            item = QListWidgetItem(f"0{i}")
+
+            
+            item.setTextAlignment(Qt.AlignmentFlag.AlignRight | Qt.AlignmentFlag.AlignBottom )
+            list_widget.addItem(item)
+          
+        
+        button_group_widget = QListWidget(main_widget)
+        button_group_widget.setGeometry(1024-205, 90, 205, 80)
+        button_group_widget.setStyleSheet("""
+        QListWidget {
+        background-color: black;
+        border-style: solid;
+        border-width:0px;
+        border-color: #000000;
+        font: bold 14px;
+        margin: 5px;
+        padding-top: 5px;
+        padding-bottom: 5px;
+        }
+        
+        QListWidget::item:selected {        
+        background-color: #f5f6fa;
+        border-style: solid;
+        border-width:0px;
+        color: #000000;
+        max-height:50px;
+        min-height:50px;
+        font: bold 14px;
+        }
+        
+        QListWidget::item {
+        background-color: blue;
+        border-style: solid;
+        border-width:0px;
+        border-color: #000000;
+        max-height:50px;
+        min-height:50px;
+        color: #000000;
+        font: bold 14px;
+        margin-top: 1px;
+        margin-bottom: 1px;
+        border-radius: 25px;
+        }
+        """)
+
+        
+        for i in range(1):
+            item = QListWidgetItem(f"0{i}")
+
+            
+            item.setTextAlignment(Qt.AlignmentFlag.AlignRight | Qt.AlignmentFlag.AlignBottom )
+            button_group_widget.addItem(item)
+            
+            
+            
+        button_group2_widget = QListWidget(main_widget)
+        button_group2_widget.setGeometry(1024-410, 90, 205, 80)
+        button_group2_widget.setStyleSheet("""
+        QListWidget {
+        background-color: black;
+        border-style: solid;
+        border-width:0px;
+        border-color: #000000;
+        font: bold 14px;
+        margin: 5px;
+        padding-top: 5px;
+        padding-bottom: 5px;
+        }
+        
+        QListWidget::item:selected {        
+        background-color: #f5f6fa;
+        border-style: solid;
+        border-width:0px;
+        color: #000000;
+        max-height:50px;
+        min-height:50px;
+        font: bold 14px;
+        }
+        
+        QListWidget::item {
+        background-color: blue;
+        border-style: solid;
+        border-width:0px;
+        border-color: #000000;
+        max-height:50px;
+        min-height:50px;
+        color: #000000;
+        font: bold 14px;
+        margin-top: 1px;
+        margin-bottom: 1px;
+        border-radius: 25px;
+        }
+        """)
+
+        
+        for i in range(1):
+            item = QListWidgetItem(f"0{i}")
+
+            
+            item.setTextAlignment(Qt.AlignmentFlag.AlignRight | Qt.AlignmentFlag.AlignBottom )
+            button_group2_widget.addItem(item)
+          
+        
+        
+        
+        
+        
+ 
+        
+        # Overlay Top Right Lable
+        labelHeader = QLabel("LCARS • Test Form",main_widget)
+        labelHeader.setGeometry(1024-405, 0, 400, 80)
+        labelHeader.setAlignment(Qt.AlignmentFlag.AlignRight | Qt.AlignmentFlag.AlignCenter)
+        labelHeader.setFont(QFont("Arial", 28, QFont.Weight.Bold)) 
+        labelHeader.setStyleSheet("""
+        background-color:black;
+        color:gold;
+        """)
+        
+        
+         # Overlay Header Right Lable
+        labelTilel = QLabel("Titel Section",main_widget)
+        labelTilel.setGeometry(1024-405, 240, 400, 80)
+        labelTilel.setAlignment(Qt.AlignmentFlag.AlignRight | Qt.AlignmentFlag.AlignCenter)
+        labelTilel.setFont(QFont("Arial", 28, QFont.Weight.Bold)) 
+        labelTilel.setStyleSheet("""
+        background-color:black;
+        color:Blue;
+        """)
+        
+        # animation
+        effect = QGraphicsOpacityEffect(list_widget)
+        labelTilel.setGraphicsEffect(effect)
+        
+
+        labelTilel.anim_1 = QPropertyAnimation(effect, b"opacity")
+        labelTilel.anim_1.setStartValue(0)
+        labelTilel.anim_1.setEndValue(0)
+        labelTilel.anim_1.setDuration(360)
+        
+        labelTilel.anim_2 = QPropertyAnimation(effect, b"opacity")
+        labelTilel.anim_2.setStartValue(1)
+        labelTilel.anim_2.setEndValue(1)
+        labelTilel.anim_2.setDuration(360)
+
+        #list_widget.anim.start()
+        
+        self.anim_group = QSequentialAnimationGroup()
+        self.anim_group.addAnimation(labelTilel.anim_1)
+        self.anim_group.addAnimation(labelTilel.anim_2)
+        self.anim_group.start()
+        
+        self.anim_group.finished.connect(self.anim_group.start)
+        
 
 
 class MainWindow(QMainWindow):
@@ -187,20 +464,13 @@ class MainWindow(QMainWindow):
         #self.resize(448,368)
         
         self.showFullScreen()
-        
-        #window = QLabel("This is a placeholder text")
-        #window.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        #window.setStyleSheet("""
-        #background-color: #262626;
-        #color: #FFFFFF;
-        #font-family: Titillium;
-        #font-size: 18px;
-        #""")
-        
-        
 
-        self.table_widget = list_form_widget(self)
-
+        self.setStyleSheet("""
+        background-color: #000000;
+        """)
+        
+        
+        self.table_widget = stacked_form_widget(self)
         self.setCentralWidget(self.table_widget)
 
         self.show()
@@ -214,13 +484,6 @@ if __name__ == "__main__":
 
     # Create a Qt widget, which will be our window.
     window = MainWindow()
-
     window.show() # IMPORTANT!!!!! Windows are hidden by default.
-    # Start the event loop.
-    with open("style.qss", "r") as f:
-        _style = f.read()
-        app.setStyleSheet(_style)
-    
-    
-    
+
     sys.exit(app.exec())
