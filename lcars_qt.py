@@ -7,6 +7,11 @@ from PyQt6.QtGui import QColor, QBrush, QFont
 
 from PyQt6.QtCore import Qt, QPropertyAnimation, QPoint, QParallelAnimationGroup, QSequentialAnimationGroup
 
+import pyqtgraph as pg
+import numpy as np
+
+
+
 from layout_colorwidget import Color
 
 _placeholder = """Ganz statisch text 
@@ -429,6 +434,10 @@ class stacked_form_widget(QWidget):
         color:Blue;
         """)
         
+
+         
+        
+        
         # animation
         effect = QGraphicsOpacityEffect(list_widget)
         labelTilel.setGraphicsEffect(effect)
@@ -453,6 +462,13 @@ class stacked_form_widget(QWidget):
         
         self.anim_group.finished.connect(self.anim_group.start)
         
+        
+class plotting_widget(QWidget):
+    def __init__(self, parent):
+        super(plotting_widget, self).__init__(parent)   
+    
+
+        
 
 
 class MainWindow(QMainWindow):
@@ -466,12 +482,17 @@ class MainWindow(QMainWindow):
         self.showFullScreen()
 
         self.setStyleSheet("""
-        background-color: #000000;
+        background-color: #ffffff;
         """)
         
+        x = np.arange(1000)
+        y = np.random.normal(size=(3, 1000))
+        plotWidget = pg.plot(title="Three plot curves")
+        for i in range(3):
+            plotWidget.plot(x, y[i], pen=(i,3))  ## setting pen=(i,3) automaticaly creates three different-colored pens
         
-        self.table_widget = stacked_form_widget(self)
-        self.setCentralWidget(self.table_widget)
+        #self.table_widget = plotting_widget(self)
+        self.setCentralWidget(plotWidget)
 
         self.show()
 
