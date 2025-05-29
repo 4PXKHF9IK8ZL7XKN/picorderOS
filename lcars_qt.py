@@ -27,6 +27,9 @@ from PyQt6.QtCore import QTimer, Qt, QPropertyAnimation, QPoint, QParallelAnimat
 
 from layout_colorwidget import Color
 
+#selected_sensor_values = [["local","BME680","Barometer"],["local","GENERATORS","SineWave"],["local","BME680","Thermometer"]]
+selected_sensor_values = [["local","BME680","Barometer"]]
+
 _placeholder = """Ganz statisch text 
 weil im tutorial etwas verlinkt wurde, 
 was es in der welt von python 
@@ -254,13 +257,7 @@ class LCARS_GRAPH_Widget(QWidget):
       
             item.setTextAlignment(Qt.AlignmentFlag.AlignRight | Qt.AlignmentFlag.AlignBottom )
             list_widget.addItem(item)
-            
-        recent, elements_forgieventime = get_recent("local", "BME680", "Barometer", 60)
-        if type(recent) != bool and len(recent) != 0:
-            x = [*range(elements_forgieventime)]
-            self.plotWidget.plot(x, recent, pen=(i,1))  ## setting pen=(i,3) automaticaly creates three different-colored pens             
-        else:
-            print("No Data Returnd")
+                      
    
 
         # Overlay Header Right Lable
@@ -338,15 +335,53 @@ class LCARS_GRAPH_Widget(QWidget):
         self.timer.setInterval(1000)  # Set interval to 1 second
         self.timer.timeout.connect(self.update_label)
         self.timer.start()
+        
+    def plot_line(self, name, time, temperature, pen):
+        self.plotWidget.plot(
+            time,
+            temperature,
+            name=name,
+            pen=pen
+        )
 
     def update_label(self):
-        recent, elements_forgieventime = get_recent("local", "BME680", "Barometer", 60)
-        if type(recent) != bool and len(recent) != 0:
-            x = [*range(elements_forgieventime)]
-            self.plotWidget.clear()
-            self.plotWidget.plot(x, recent, pen=(1,1))  ## setting pen=(i,3) automaticaly creates three different-colored pens             
-        else:
-            print("No Data Returnd")
+        pen = [1,2,3]
+        
+        styles = [1,2,3]
+        
+    
+        pen[0] = pg.mkPen(color=(255, 0, 0))
+        pen[1] = pg.mkPen(color=(0, 255, 0))
+        pen[2] = pg.mkPen(color=(0, 0, 255))
+        
+        styles[0] = {"color": "red", "font-size": "18px"}
+        styles[1] = {"color": "green", "font-size": "18px"}
+        styles[2] = {"color": "blue", "font-size": "18px"}
+    
+    
+        # Unpacking the array with with array
+        self.plotWidget.clear()
+        for index_a, sensors_to_read in enumerate(selected_sensor_values):
+        # dev is the Pi dsc the cpu, location_tag is a name of the sending device like local remote or tric2351
+
+            # by setting up all sensor values with a timestamp , can we now select the time section to watch , and ask get recent for example for the last minute
+            location_tag,sensor_dev,sensor_dsc = sensors_to_read   
+            recent, elements_forgieventime = get_recent(location_tag, sensor_dev, sensor_dsc, 60)
+            if type(recent) != bool and len(recent) != 0: 
+                x = [*range(elements_forgieventime)]
+                
+                table_string = '%s_%s_%s' % (location_tag,sensor_dev,sensor_dsc)
+                
+                self.plotWidget.setLabel("left", sensor_dsc, **styles[index_a])
+                self.plotWidget.setLabel("bottom", "Time (min)", **styles[index_a])
+                
+                #self.plot_line(x, recent, pen=(pen[index_a]))  ## setting pen=(i,3) automaticaly creates three different-colored pens 
+                self.plot_line(table_string, x, recent, pen[index_a])     
+           
+            else:
+                print("No Data Returnd")
+                
+
         
 
 
