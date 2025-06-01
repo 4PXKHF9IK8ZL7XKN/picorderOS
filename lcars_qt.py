@@ -361,14 +361,14 @@ class LCARS_GRAPH_Widget(QWidget):
     def update_label(self):
         pen = []
         styles = []
+        debug_line = ""
         
-    
         # Unpacking the array with with array
         self.plotWidget.clear()
         for index_a, sensors_to_read in enumerate(selected_sensor_values):
             pen.append(pg.mkPen(color=(255, 0, 0)))
             styles.append({"color": "blue", "font-size": "18px"})
-        # dev is the Pi dsc the cpu, location_tag is a name of the sending device like local remote or tric2351
+            # dev is the Pi dsc the cpu, location_tag is a name of the sending device like local remote or tric2351
 
             # by setting up all sensor values with a timestamp , can we now select the time section to watch , and ask get recent for example for the last minute
             location_tag,sensor_dev,sensor_dsc = sensors_to_read   
@@ -377,6 +377,9 @@ class LCARS_GRAPH_Widget(QWidget):
                 x = [*range(elements_forgieventime)]
                 
                 table_string = '%s_%s_%s' % (location_tag,sensor_dev,sensor_dsc)
+
+                debug = f"{table_string}:{recent} \n"
+                debug_line = debug_line + debug
                 
                 self.plotWidget.setLabel("left", sensor_dsc, **styles[index_a])
                 self.plotWidget.setLabel("bottom", "Time (min)", **styles[index_a])
@@ -386,7 +389,9 @@ class LCARS_GRAPH_Widget(QWidget):
            
             else:
                 print("No Data Returnd")
-                
+
+            self.top_mask.setText(debug_line)  
+           
                 
     def update_label___(self):
         pen = []
