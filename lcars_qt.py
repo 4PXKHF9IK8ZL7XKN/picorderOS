@@ -27,8 +27,8 @@ from PyQt6.QtCore import QTimer, Qt, QPropertyAnimation, QPoint, QParallelAnimat
 
 from layout_colorwidget import Color
 
-#selected_sensor_values = [["local","BME680","Barometer"],["local","GENERATORS","SineWave"],["local","BME680","Thermometer"]]
-selected_sensor_values = [["local","BME680","Barometer"]]
+selected_sensor_values = [["local","BME680","Barometer"],["local","GENERATORS","SineWave"],["local","BME680","Thermometer"],["local","GENERATORS","CosWave"],["local","BME680","Hygrometer"],["local","BME680","VOC"]]
+#selected_sensor_values = [["local","BME680","Barometer"]]
 
 _placeholder = """Ganz statisch text 
 weil im tutorial etwas verlinkt wurde, 
@@ -38,6 +38,7 @@ ohne einen editor dazu einfach nicht giebt"""
 top_elbow_css = """
                 background-color:black;
                 border-bottom-left-radius: 50px; 
+                color: red;
                 """
 
 bottom_elbow_css = """
@@ -202,8 +203,7 @@ class LCARS_GRAPH_Widget(QWidget):
         bottom_bar.setGeometry(18, 205, 1015, 400)
         bottom_bar.setStyleSheet(bottom_bar_css)
         
-        #bottom_bar.setFont(QFont("Arial", 14, QFont.Weight.Bold))
-        #bottom_bar.setAlignment(Qt.AlignmentFlag.AlignCenter)      
+    
         
         # Overlay Mask Bottom
         bottom_mask = QLabel(background_widget)
@@ -211,9 +211,12 @@ class LCARS_GRAPH_Widget(QWidget):
         bottom_mask.setStyleSheet(bottom_elbow_css)
 
         # Overlay Mask Top
-        bottom_mask = QLabel(background_widget)
-        bottom_mask.setGeometry(200, 0, 1015, 170)
-        bottom_mask.setStyleSheet(top_elbow_css)
+        self.top_mask = QLabel(background_widget)
+        self.top_mask.setGeometry(200, 0, 1015, 170)
+        self.top_mask.setStyleSheet(top_elbow_css)
+        # i want to write some text in the box here so i init the block
+        self.top_mask.setFont(QFont("Arial", 14, QFont.Weight.Bold))
+        self.top_mask.setAlignment(Qt.AlignmentFlag.AlignTop)  
         
         list_widget = QListWidget(background_widget)
         list_widget.setGeometry(0, 300, 205, 230)
@@ -236,12 +239,23 @@ class LCARS_GRAPH_Widget(QWidget):
         # this elements are later used for display 
 
         vector_image = draw_line_widget()
-        list_widget = QListWidget()        
-        self.plotWidget = pg.plot(title="Three plot curves")
+        list_widget = QListWidget()     
+        
+        # Init Plot item
+        # Implementing this example https://github.com/pyqtgraph/pyqtgraph/blob/master/pyqtgraph/examples/MultiplePlotAxes.py
+        # kudos and prais to https://github.com/pyqtgraph/pyqtgraph/commits?author=j9ac9k
+        
+        pg.mkQApp()
+           
+        self.plotWidget = pg.PlotWidget()
+        self.plotWidget.show()
         self.plotWidget.invertX(True)
-               
+                       
         text_widget = QLabel(_placeholder)
         lcars_tile_element = LCARS_Title("Multi Graph")  
+        
+        lcars_text_element = LCARS_Title("Multi Graph") 
+        
         SpacerwidgetL = empty_label("")
         SpacerwidgetL.arrange(280)
         
@@ -345,23 +359,15 @@ class LCARS_GRAPH_Widget(QWidget):
         )
 
     def update_label(self):
-        pen = [1,2,3]
+        pen = []
+        styles = []
         
-        styles = [1,2,3]
-        
-    
-        pen[0] = pg.mkPen(color=(255, 0, 0))
-        pen[1] = pg.mkPen(color=(0, 255, 0))
-        pen[2] = pg.mkPen(color=(0, 0, 255))
-        
-        styles[0] = {"color": "red", "font-size": "18px"}
-        styles[1] = {"color": "green", "font-size": "18px"}
-        styles[2] = {"color": "blue", "font-size": "18px"}
-    
     
         # Unpacking the array with with array
         self.plotWidget.clear()
         for index_a, sensors_to_read in enumerate(selected_sensor_values):
+            pen.append(pg.mkPen(color=(255, 0, 0)))
+            styles.append({"color": "blue", "font-size": "18px"})
         # dev is the Pi dsc the cpu, location_tag is a name of the sending device like local remote or tric2351
 
             # by setting up all sensor values with a timestamp , can we now select the time section to watch , and ask get recent for example for the last minute
@@ -381,6 +387,37 @@ class LCARS_GRAPH_Widget(QWidget):
             else:
                 print("No Data Returnd")
                 
+                
+    def update_label___(self):
+        pen = []
+        styles = []
+        
+    
+        # Unpacking the array with with array
+        self.plotWidget.clear()
+        for index_a, sensors_to_read in enumerate(selected_sensor_values):
+            pen.append(pg.mkPen(color=(255, 0, 0)))
+            styles.append({"color": "blue", "font-size": "18px"})
+        # dev is the Pi dsc the cpu, location_tag is a name of the sending device like local remote or tric2351
+
+            # by setting up all sensor values with a timestamp , can we now select the time section to watch , and ask get recent for example for the last minute
+            location_tag,sensor_dev,sensor_dsc = sensors_to_read   
+            recent, elements_forgieventime = get_recent(location_tag, sensor_dev, sensor_dsc, 60)
+            if type(recent) != bool and len(recent) != 0: 
+                x = [*range(elements_forgieventime)]
+                
+                table_string = '%s_%s_%s' % (location_tag,sensor_dev,sensor_dsc)
+                
+                self.plotWidget.setLabel("left", sensor_dsc, **styles[index_a])
+                self.plotWidget.setLabel("bottom", "Time (min)", **styles[index_a])
+                
+                #self.plot_line(x, recent, pen=(pen[index_a]))  ## setting pen=(i,3) automaticaly creates three different-colored pens 
+                self.plot_line(table_string, x, recent, pen[index_a])     
+           
+            else:
+                print("No Data Returnd")
+                    
+                           
 
         
 
