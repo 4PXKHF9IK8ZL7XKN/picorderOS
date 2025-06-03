@@ -100,6 +100,13 @@ bottom_bar_css = """
                 border-top-left-radius: 100px; 
                 """                          
 
+def rnd_colore():
+	r = random.randint(0, 254)
+	g = random.randint(0, 254)
+	b = random.randint(0, 254)
+	return (r,g,b)
+
+
 def update_label():
         print("update")
 
@@ -249,32 +256,34 @@ class LCARS_GRAPH_Widget(QWidget):
            
         self.plotWidget = pg.PlotWidget()
         self.plotWidget.show()
-        self.plotWidget.invertX(True)
         
         self.plot = []
         self.plot_ax = []
+        self.pen = []
         
         # Building Multi Graph
         for index_a, sensors_to_read in enumerate(selected_sensor_values):
+            diced_colore = rnd_colore()
+            diced_colore_hex = '#%02x%02x%02x' % diced_colore
             if index_a == 0:
-                print("First")
+                #print("First")
                 self.plot.append(self.plotWidget.plotItem)
                 self.plot_ax.append(pg.AxisItem('right'))
-                self.plot[0].setLabels(left='axis 1')
+                self.plot[0].setLabels(left=f'{sensors_to_read}')
                 self.plot[0].setZValue(-10000)
             elif index_a >= 1:
                 if index_a == 1:
-                    print("Second")
+                    #print("Second")
                     self.plot.append(pg.ViewBox())
                     self.plot_ax.append(pg.AxisItem('right'))
                     self.plot[0].showAxis('right')
                     self.plot[0].scene().addItem(self.plot[1])
                     self.plot[0].getAxis('right').linkToView(self.plot[1])
                     self.plot[1].setXLink(self.plot[0])
-                    self.plot[0].getAxis('right').setLabel('axis2', color='#0000ff')
+                    self.plot[0].getAxis('right').setLabel(sensors_to_read, color=diced_colore_hex)
              
                 else:
-                    print("Odd third Variant")
+                    #print("Odd third Variant")
                     self.plot.append(pg.ViewBox())
                     self.plot_ax.append(pg.AxisItem('right'))
                     self.plot[0].layout.addItem(self.plot_ax[index_a], 2, index_a+1)
@@ -282,10 +291,12 @@ class LCARS_GRAPH_Widget(QWidget):
                     self.plot_ax[index_a].linkToView(self.plot[index_a])
                     self.plot[index_a].setXLink(self.plot[0])
                     self.plot_ax[index_a].setZValue(-10000)
-                    self.plot_ax[index_a].setLabel(index_a, color='#ff0000')
-                
-             
-        
+                    self.plot_ax[index_a].setLabel(sensors_to_read, color=diced_colore_hex)
+            self.plot[index_a].invertX(True)
+            if index_a == 0:
+                self.pen.append('#999999')
+            else:
+                self.pen.append(diced_colore)
                        
         text_widget = QLabel(_placeholder)
         lcars_tile_element = LCARS_Title("Multi Graph")  
@@ -381,64 +392,32 @@ class LCARS_GRAPH_Widget(QWidget):
         
         self.anim_group.finished.connect(self.anim_group.start)
         
-        #self.timer = QTimer(self)
-        #self.timer.setInterval(1000)  # Set interval to 1 second
-        #self.timer.timeout.connect(self.update_label)
-        #self.timer.start()
+        self.timer = QTimer(self)
+        self.timer.setInterval(1000)  # Set interval to 1 second
+        self.timer.timeout.connect(self.update_label)
+        self.timer.start()
         
-    def plot_line(self, name, time, temperature, pen):
-        self.plotWidget.plot(
-            time,
-            temperature,
-            name=name,
-            pen=pen
-        )
-
+    def updateViews(self):
+        ## view has resized; update auxiliary views to match
+        for index_b, plot_item in enumerate(self.plot):
+            if index_b > 0:
+                self.plot[index_b].setGeometry(self.plot[0].vb.sceneBoundingRect())
+                ## need to re-update linked axes since this was called
+                ## incorrectly while views had different shapes.
+                ## (probably this should be handled in ViewBox.resizeEvent)
+                self.plot[index_b].linkedViewChanged(self.plot[0].vb, self.plot[index_b].XAxis)
+   
+                
     def update_label(self):
-        pen = []
-        styles = []
+
         debug_line = ""
         
-        # Unpacking the array with with array
-        self.plotWidget.clear()
-        for index_a, sensors_to_read in enumerate(selected_sensor_values):
-            pen.append(pg.mkPen(color=(255, 0, 0)))
-            styles.append({"color": "blue", "font-size": "18px"})
-            # dev is the Pi dsc the cpu, location_tag is a name of the sending device like local remote or tric2351
-
-            # by setting up all sensor values with a timestamp , can we now select the time section to watch , and ask get recent for example for the last minute
-            location_tag,sensor_dev,sensor_dsc = sensors_to_read   
-            recent, elements_forgieventime = get_recent(location_tag, sensor_dev, sensor_dsc, 60)
-            if type(recent) != bool and len(recent) != 0: 
-                x = [*range(elements_forgieventime)]
-                
-                table_string = '%s_%s_%s' % (location_tag,sensor_dev,sensor_dsc)
-
-                debug = f"{table_string}:{recent} \n"
-                debug_line = debug_line + debug
-                
-                self.plotWidget.setLabel("left", sensor_dsc, **styles[index_a])
-                self.plotWidget.setLabel("bottom", "Time (min)", **styles[index_a])
-                
-                #self.plot_line(x, recent, pen=(pen[index_a]))  ## setting pen=(i,3) automaticaly creates three different-colored pens 
-                self.plot_line(table_string, x, recent, pen[index_a])     
-           
-            else:
-                print("No Data Returnd")
-
-            self.top_mask.setText(debug_line)  
-           
-                
-    def update_label___(self):
-        pen = []
-        styles = []
-        
+        self.updateViews()
     
         # Unpacking the array with with array
-        self.plotWidget.clear()
-        for index_a, sensors_to_read in enumerate(selected_sensor_values):
-            pen.append(pg.mkPen(color=(255, 0, 0)))
-            styles.append({"color": "blue", "font-size": "18px"})
+      
+        for index_c, sensors_to_read in enumerate(selected_sensor_values):
+
         # dev is the Pi dsc the cpu, location_tag is a name of the sending device like local remote or tric2351
 
             # by setting up all sensor values with a timestamp , can we now select the time section to watch , and ask get recent for example for the last minute
@@ -449,15 +428,18 @@ class LCARS_GRAPH_Widget(QWidget):
                 
                 table_string = '%s_%s_%s' % (location_tag,sensor_dev,sensor_dsc)
                 
-                self.plotWidget.setLabel("left", sensor_dsc, **styles[index_a])
-                self.plotWidget.setLabel("bottom", "Time (min)", **styles[index_a])
+                debug = f"{recent} \n"
+                #debug = f"{table_string}:{recent} \n"
+                debug_line = debug_line + debug
+
+                self.plot[index_c].clear()
+                self.plot[index_c].addItem(pg.PlotCurveItem(recent, pen=self.pen[index_c]))
+             
                 
-                #self.plot_line(x, recent, pen=(pen[index_a]))  ## setting pen=(i,3) automaticaly creates three different-colored pens 
-                self.plot_line(table_string, x, recent, pen[index_a])     
-           
             else:
                 print("No Data Returnd")
                     
+            self.top_mask.setText(debug_line) 
                            
 
         
