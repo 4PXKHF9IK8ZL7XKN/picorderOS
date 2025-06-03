@@ -250,6 +250,42 @@ class LCARS_GRAPH_Widget(QWidget):
         self.plotWidget = pg.PlotWidget()
         self.plotWidget.show()
         self.plotWidget.invertX(True)
+        
+        self.plot = []
+        self.plot_ax = []
+        
+        # Building Multi Graph
+        for index_a, sensors_to_read in enumerate(selected_sensor_values):
+            if index_a == 0:
+                print("First")
+                self.plot.append(self.plotWidget.plotItem)
+                self.plot_ax.append(pg.AxisItem('right'))
+                self.plot[0].setLabels(left='axis 1')
+                self.plot[0].setZValue(-10000)
+            elif index_a >= 1:
+                if index_a == 1:
+                    print("Second")
+                    self.plot.append(pg.ViewBox())
+                    self.plot_ax.append(pg.AxisItem('right'))
+                    self.plot[0].showAxis('right')
+                    self.plot[0].scene().addItem(self.plot[1])
+                    self.plot[0].getAxis('right').linkToView(self.plot[1])
+                    self.plot[1].setXLink(self.plot[0])
+                    self.plot[0].getAxis('right').setLabel('axis2', color='#0000ff')
+             
+                else:
+                    print("Odd third Variant")
+                    self.plot.append(pg.ViewBox())
+                    self.plot_ax.append(pg.AxisItem('right'))
+                    self.plot[0].layout.addItem(self.plot_ax[index_a], 2, index_a+1)
+                    self.plot[0].scene().addItem(self.plot[index_a])
+                    self.plot_ax[index_a].linkToView(self.plot[index_a])
+                    self.plot[index_a].setXLink(self.plot[0])
+                    self.plot_ax[index_a].setZValue(-10000)
+                    self.plot_ax[index_a].setLabel(index_a, color='#ff0000')
+                
+             
+        
                        
         text_widget = QLabel(_placeholder)
         lcars_tile_element = LCARS_Title("Multi Graph")  
@@ -345,10 +381,10 @@ class LCARS_GRAPH_Widget(QWidget):
         
         self.anim_group.finished.connect(self.anim_group.start)
         
-        self.timer = QTimer(self)
-        self.timer.setInterval(1000)  # Set interval to 1 second
-        self.timer.timeout.connect(self.update_label)
-        self.timer.start()
+        #self.timer = QTimer(self)
+        #self.timer.setInterval(1000)  # Set interval to 1 second
+        #self.timer.timeout.connect(self.update_label)
+        #self.timer.start()
         
     def plot_line(self, name, time, temperature, pen):
         self.plotWidget.plot(
