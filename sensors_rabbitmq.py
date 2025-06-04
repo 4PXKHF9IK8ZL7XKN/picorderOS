@@ -10,6 +10,7 @@ import pika
 import signal
 import serial
 import datetime
+import numpy as np
 
 from pynmeagps import NMEAReader
 import RPi.GPIO as GPIO
@@ -525,11 +526,21 @@ class sensor(object):
 			# Create library object using our Bus I2C port
 			self.bme680 = adafruit_bme680.Adafruit_BME680_I2C(i2c, address=0x76, debug=False)
 			self.bme680.sea_level_pressure = 1013.25
+			
 		
 		if configure.bmp280:
 			# Create library object using our Bus I2C port
 			self.bmp280 = adafruit_bmp280.Adafruit_BMP280_I2C(i2c, address=0x77)
 			self.bmp280.sea_level_pressure = 1013.25
+			
+		if configure.bmp280 or configure.bme:
+			self.slope = 0.03
+			self.burn_in_cycles = 300		#determines burn-in-time, usually 5 minutes, equal to 300 cycles of 1s duration
+			self.gas_cal_data = []
+			self.gas_ceil = 0
+			self.gas_recal_period = 3600	#number of cycles after which to drop last entry of the gas calibration list. Here: 1h
+			self.gas_recal_step = 0
+			
 
 		if configure.pocket_geiger:
 			self.radiation = RadiationWatch(configure.PG_SIG,configure.PG_NS)
@@ -555,6 +566,61 @@ class sensor(object):
 	
 		if configure.SHT30:
 			self.sht30 = adafruit_sht31d.SHT31D(i2c)
+			
+	# kudos to thstielow with https://github.com/thstielow/raspi-bme680-iaq/blob/main/bme680IAQ.py
+	# i stole his function to get an IAQ value instead of resistance
+	#calculates the saturation water density of air at the current temperature (in °C)
+	#return the saturation density rho_max in kg/m^3
+	#this is equal to a relative humidity of 100% at the current temperature 
+	def waterSatDensity(self, temp):
+		rho_max = (6.112* 100 * np.exp((17.62 * temp)/(243.12 + temp)))/(461.52 * (temp + 273.15))
+		return rho_max
+
+
+	def getIAQ(self, temp, press, hum, R_gas):
+		
+		#calculate stauration density and absolute humidity
+		rho_max = self.waterSatDensity(temp)
+		hum_abs = hum * 10 * rho_max
+		
+		#compensate exponential impact of humidity on resistance
+		comp_gas = R_gas * np.exp(self.slope * hum_abs)
+		
+		if self.burn_in_cycles > 0:
+			#check if burn-in-cycles are recorded
+			self.burn_in_cycles -= 1		#count down cycles
+			if comp_gas > self.gas_ceil:	#if value exceeds current ceiling, add to calibration list and update ceiling
+				self.gas_cal_data = [comp_gas]
+				self.gas_ceil = comp_gas
+			return self.burn_in_cycles		#return the cylces to indicate the calibration routine on a graph
+		else:
+			#adapt calibration
+			if comp_gas > self.gas_ceil:
+				self.gas_cal_data.append(comp_gas)
+				if len(self.gas_cal_data) > 100:
+					del self.gas_cal_data[0]
+				self.gas_ceil = np.mean(self.gas_cal_data)
+			
+			
+			#calculate and print relative air quality on a scale of 0-100%
+			#use quadratic ratio for steeper scaling at high air quality
+			#clip air quality at 100%
+			AQ = np.minimum((comp_gas / self.gas_ceil)**2, 1) * 100
+			
+			
+			
+			#for compensating negative drift (dropping resistance) of the gas sensor:
+			#delete oldest value from calibration list and add current value
+			self.gas_recal_step += 1
+			if self.gas_recal_step >= self.gas_recal_period:
+				self.gas_recal_step = 0
+				self.gas_cal_data.append(comp_gas)
+				del self.gas_cal_data[0]
+				self.gas_ceil = np.mean(self.gas_cal_data)
+		
+		
+		return AQ
+
 
 
 
@@ -645,7 +711,8 @@ class sensor(object):
 			self.bme680_temp = self.bme680.temperature
 			self.bme680_humi = self.bme680.humidity
 			self.bme680_press = self.bme680.pressure
-			self.bme680_voc = self.bme680.gas / 1000
+			#self.bme680_voc = self.bme680.gas / 1000
+			self.bme680_voc = self.getIAQ(self.bme680_temp, self.bme680_press, self.bme680_humi, self.bme680.gas)			
 			self.bme680_alt = self.bme680.altitude
 		except OSError as e:
 			print("Error in Sensors Rabbitmq by request I2C", e)
