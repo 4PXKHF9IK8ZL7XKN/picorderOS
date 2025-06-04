@@ -605,9 +605,9 @@ class sensor(object):
 			#calculate and print relative air quality on a scale of 0-100%
 			#use quadratic ratio for steeper scaling at high air quality
 			#clip air quality at 100%
-			AQ = np.minimum((comp_gas / self.gas_ceil)**2, 1) * 100
+			gas_AQ = np.minimum((comp_gas / self.gas_ceil)**2, 1) * 100
 			
-			
+			AQ = (gas_AQ / 100) * 500
 			
 			#for compensating negative drift (dropping resistance) of the gas sensor:
 			#delete oldest value from calibration list and add current value
