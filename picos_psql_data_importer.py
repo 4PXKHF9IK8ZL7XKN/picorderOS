@@ -8,7 +8,7 @@ import base64
 from objects import *
 from picosglobals import *
 
-keep_data_lengh = 300 # 5 min
+keep_data_lengh = 900 # 15 min
 keep_data_lengh_gps = 259200 # keep it 3 days 
 
 import psycopg2
