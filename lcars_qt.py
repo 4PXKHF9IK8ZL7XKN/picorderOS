@@ -27,7 +27,8 @@ from PyQt6.QtCore import QTimer, Qt, QPropertyAnimation, QPoint, QParallelAnimat
 
 from layout_colorwidget import Color
 
-selected_sensor_values = [["local","BME680","Barometer"],["local","GENERATORS","SineWave"],["local","BME680","Thermometer"],["local","GENERATORS","CosWave"],["local","BME680","Hygrometer"],["local","BME680","VOC"]]
+#selected_sensor_values = [["local","BME680","Barometer"],["local","GENERATORS","SineWave"],["local","BME680","Thermometer"],["local","GENERATORS","CosWave"],["local","BME680","Hygrometer"],["local","BME680","VOC"]]
+selected_sensor_values = [["local","BME680","Barometer"],["local","BME680","Thermometer"],["local","BME680","VOC"],["local","BME680","Hygrometer"]]
 #selected_sensor_values = [["local","BME680","Barometer"]]
 
 _placeholder = """Ganz statisch text 
