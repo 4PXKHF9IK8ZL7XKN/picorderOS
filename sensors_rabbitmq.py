@@ -607,7 +607,7 @@ class sensor(object):
 			#clip air quality at 100%
 			gas_AQ = np.minimum((comp_gas / self.gas_ceil)**2, 1) * 100
 			
-			AQ = (gas_AQ / 100) * 500
+			AQ = 500 / (100 / gas_AQ)
 			
 			#for compensating negative drift (dropping resistance) of the gas sensor:
 			#delete oldest value from calibration list and add current value
