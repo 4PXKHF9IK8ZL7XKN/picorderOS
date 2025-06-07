@@ -535,10 +535,10 @@ class sensor(object):
 			
 		if configure.bmp280 or configure.bme:
 			self.slope = 0.03
-			self.burn_in_cycles = 300		#determines burn-in-time, usually 5 minutes, equal to 300 cycles of 1s duration
+			self.burn_in_cycles = 300 #determines burn-in-time, usually 5 minutes, equal to 300 cycles of 1s duration
 			self.gas_cal_data = []
 			self.gas_ceil = 0
-			self.gas_recal_period = 3600	#number of cycles after which to drop last entry of the gas calibration list. Here: 1h
+			self.gas_recal_period = 900	#number of cycles after which to drop last entry of the gas calibration list. Here: 1h 3600 cyc
 			self.gas_recal_step = 0
 			
 
@@ -607,7 +607,7 @@ class sensor(object):
 			#clip air quality at 100%
 			gas_AQ = np.minimum((comp_gas / self.gas_ceil)**2, 1) * 100
 			
-			AQ = 500 / (100 / gas_AQ)
+			AQ = (1 - (gas_AQ/100)) * 500
 			
 			#for compensating negative drift (dropping resistance) of the gas sensor:
 			#delete oldest value from calibration list and add current value
