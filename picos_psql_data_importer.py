@@ -955,7 +955,7 @@ def save_dwd_10_avg(tag, dsc, dev):
     if ret is False:
         table_create_text(psql_connection,  table_string)
 	
-    ret, ent_id = insert_data(psql_connection, table_string, sensor_avr_value, time.time(), sensor_avr_latitude, sensor_avr_longitude,tag)
+    ret, ent_id = insert_data(psql_connection, table_string, float(sensor_avr_value), time.time(), sensor_avr_latitude, sensor_avr_longitude,tag)
     if ret is False:
         os.exit("SQL Write Faild")
 
