@@ -4,9 +4,12 @@ import sys
 import ast
 import os
 import base64
+import statistics
 
 from objects import *
 from picosglobals import *
+from datetime import timedelta
+from datetime import datetime
 
 keep_data_lengh = 900 # 15 min
 keep_data_lengh_gps = 259200 # keep it 3 days 
@@ -235,7 +238,7 @@ def purge_data_totime(con, table_str, time_lengh_sec):
 
 
 def insert_data(con, table_str, value, stamp, lat, lon, tag):
-	print("DEBUG:",table_str, value, stamp, lat, lon, tag)
+	#print("DEBUG:",table_str, value, stamp, lat, lon, tag)
 	check_table = empty_tablecheck(con, table_str)
 	ret = False
 	try:
@@ -298,8 +301,51 @@ def insert_data_termal_adv(con, table_str, array_var, lenght, stamp, lat, lon, t
 	except psycopg2.Error as e:
 		print( e )
 	return ret, ret_id      
+
     
-    
+def return_data_from_sql(con, table_str, time_lengh_sec, selection):
+    ret = False
+    now_time = time.time()
+    time_past = now_time - time_lengh_sec 
+	
+
+    try:
+        cur = con.cursor()
+        if selection == 0:
+            cur.execute('select value from "' + table_str + '"  where timestamp > '+ str(time_past) + ' order by timestamp desc')
+        elif selection == 1:
+            cur.execute('select latitude from "' + table_str + '"  where timestamp > '+ str(time_past) + ' order by timestamp desc')
+        elif selection == 2:
+            cur.execute('select longitude from "' + table_str + '"  where timestamp > '+ str(time_past) + ' order by timestamp desc')
+
+        values = cur.fetchall()
+        ret = values
+        cur.close()
+    except psycopg2.Error as e:
+        if e == "no results to fetch":
+            print( e )
+    return ret	   
+
+def get_recent(tag, dsc, dev, time_ing, selection):	
+    timelength = 0
+    clean_slices = []
+    slices = False
+
+    table_string = '%s_%s_%s' % (tag,dsc,dev)
+    table_data = return_data_from_sql(psql_connection, table_string, time_ing, selection)
+    slices = table_data
+    if type(table_data) != bool:
+        timelength = len(table_data)
+        for item in table_data:
+            if selection == 0:
+                item_clean = float(str(item).strip("(, )"))
+            else:
+                _,geo_str = str(item).strip("(, )").split("(")
+                item_clean = float(geo_str.strip("'"))
+            clean_slices.append(item_clean)
+        slices = clean_slices
+    return slices, timelength 
+  
     
     
 def connect_psql(config):
@@ -864,7 +910,7 @@ def callback(ch, method, properties, body):
 		# creates a new dataframe to add new data
 		table_string = '%s_%s_%s' % (WIFI_STATS[index][9],WIFI_STATS[index][5],WIFI_STATS[index][3])
 		
-		print(table_string)
+		#print(table_string)
 
 		ret = table_exists(psql_connection, table_string)
 		if ret is False:
@@ -876,16 +922,73 @@ def callback(ch, method, properties, body):
 			os.exit("SQL Write Faild")
 		
 		purge_data_totime(psql_connection,  table_string, keep_data_lengh)
-		
-		
-
-			
+				
 	return
 
+# reading the last 10 minutes from the database and avg the values for the 10min Table
+def save_dwd_10_avg(tag, dsc, dev):	   
+    # getting the sensor values
+    recent, elements_forgieventime = get_recent(tag, dsc, dev, 600,0)
+    if type(recent) != bool and len(recent) != 0: 
+        sensor_avr_value = statistics.mean(recent)   
+    else:
+        print("No Data Returnd")
+        
+    # getting the latitude values
+    recent, elements_forgieventime = get_recent(tag, dsc, dev, 600,1)
+    if type(recent) != bool and len(recent) != 0: 
+        sensor_avr_latitude = statistics.mean(recent) 
+    else:
+        print("No Data Returnd")
+        
+    # getting the longitude values
+    recent, elements_forgieventime = get_recent(tag, dsc, dev, 600,2)
+    if type(recent) != bool and len(recent) != 0: 
+        sensor_avr_longitude = statistics.mean(recent) 
+    else:
+        print("No Data Returnd")
+        
+        
+    table_string = '%s_%s_%s10m' % (tag,dsc,dev)   
+        
+    ret = table_exists(psql_connection, table_string)
+    if ret is False:
+        table_create_text(psql_connection,  table_string)
+	
+    ret, ent_id = insert_data(psql_connection, table_string, sensor_avr_value, time.time(), sensor_avr_latitude, sensor_avr_longitude,tag)
+    if ret is False:
+        os.exit("SQL Write Faild")
+
+    purge_data_totime(psql_connection,  table_string, keep_data_lengh_gps)
 
 
-  
-  
+# I want to emulate a messurment from the DWD with messurment on every 10 minutes. 
+def check_time():	
+    now = datetime.now().minute
+    if now == 00 or now == 10 or now == 20 or now == 30 or now == 40 or now == 50:
+        #print(datetime.now())
+        save_dwd_10_avg("local","BME680","Barometer")
+        save_dwd_10_avg("local","BME680","Thermometer")
+        save_dwd_10_avg("local","BME680","Hygrometer")
+        save_dwd_10_avg("local","BME680","ALT")
+        save_dwd_10_avg("local","BME680","VOC")
+
+class Job(threading.Thread):
+    def __init__(self, interval, execute, *args, **kwargs):
+        threading.Thread.__init__(self)
+        self.daemon = False
+        self.stopped = threading.Event()
+        self.interval = interval
+        self.execute = execute
+        self.args = args
+        self.kwargs = kwargs
+
+    def stop(self):
+                self.stopped.set()
+                self.join()
+    def run(self):
+            while not self.stopped.wait(self.interval.total_seconds()):
+                self.execute(*self.args, **self.kwargs)        
     
 # Prepare connection to PSQL
 config = load_config()
@@ -896,12 +999,16 @@ print(' [*] Waiting for logs. To exit press CTRL+C')
 
 
 if __name__ == "__main__":
-	channel.basic_consume(queue='',on_message_callback=callback, auto_ack=True)
-	try:	
-		channel.start_consuming()
-	except KeyboardInterrupt or Exception or OSError as e:
-		print("Termination", e)
-		sys.exit(1)
+    channel.basic_consume(queue='',on_message_callback=callback, auto_ack=True)
+    
+    cron_job = Job(interval=timedelta(seconds=60), execute=check_time)
+
+    try:	
+        cron_job.start()
+        channel.start_consuming()
+    except KeyboardInterrupt or Exception or OSError as e:
+        print("Termination", e)
+        sys.exit(1)
 
 
 
