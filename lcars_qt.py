@@ -626,13 +626,13 @@ class LCARS_GRAPH_Widget(QWidget):
         if type(recent) != bool and len(recent) != 0: 
             if recent[0] > recent[1]:
                 self.wetter_label.setStyleSheet(button_css_bar_lvl1) 
-                self.wetter_label.setText("Positiv") 
+                self.wetter_label.setText("Positiv - sunny day") 
             elif recent[0] < recent[1]:
                 self.wetter_label.setStyleSheet(button_css_bar_lvl2) 
-                self.wetter_label.setText("Negativ")   
+                self.wetter_label.setText("Negativ - rain posible")   
             elif recent[0] == recent[1]:
                 self.wetter_label.setStyleSheet(button_css_bar_lvl3) 
-                self.wetter_label.setText("Constant")                   
+                self.wetter_label.setText("Constant - no wether chance")                   
             else:
                 self.wetter_label.setStyleSheet(button_css)    
                 self.wetter_label.setText("NO DATA")      
