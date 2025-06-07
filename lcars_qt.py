@@ -14,6 +14,7 @@ from datetime import timedelta
 
 from objects import *
 from picosglobals import *
+from picoscolores import *
 
 from picos_psql_config import load_config
 from scipy.interpolate import griddata
@@ -39,12 +40,14 @@ ohne einen editor dazu einfach nicht giebt"""
 top_elbow_css = """
                 background-color:black;
                 border-bottom-left-radius: 50px; 
+                border-style: solid;
                 color: red;
                 """
 
 bottom_elbow_css = """
                 background-color:black;
                 border-top-left-radius: 50px; 
+                border-style: solid;
                 """
                 
 list_widget_css = """
@@ -69,7 +72,7 @@ list_widget_css = """
                 }
                 
                 QListWidget::item {
-                background-color: darkred;
+                background-color: #666688;
                 border-style: solid;
                 border-width:0px;
                 border-color: #000000;
@@ -83,7 +86,7 @@ list_widget_css = """
                 }
                 """  
 top_bar_css = """
-                background-color: blue;
+                background-color: #5566ff;
                 border: 1px solid black;
                 border-left: none;
                 border-right: none;
@@ -97,9 +100,165 @@ bottom_bar_css = """
                 border-right: none;
                 border-top: none;
                 border-bottom: none;
-                background-color:red;
+                background-color:#cc4444;
                 border-top-left-radius: 100px; 
-                """                          
+                """    
+
+button_css = """
+                background-color: #C5E566;
+                border-style: solid;
+                border-width:0px;
+                border-color: #000000;
+                max-height:50px;
+                min-height:50px;
+                color: #000000;
+                font: bold 14px;
+                border-radius: 25px; 
+                margin-left: 500px;
+                padding-right: 10px;
+                """      
+                
+button_css_bar_lvl1 = """
+                background-color: #cccc66;
+                border-style: solid;
+                border-width:0px;
+                border-color: #000000;
+                max-height:50px;
+                min-height:50px;
+                color: #000000;
+                font: bold 14px;
+                border-radius: 25px; 
+                margin-left: 500px;
+                padding-right: 10px;
+                """  
+                
+button_css_bar_lvl2 = """
+                background-color: #cc5599;
+                border-style: solid;
+                border-width:0px;
+                border-color: #000000;
+                max-height:50px;
+                min-height:50px;
+                color: #000000;
+                font: bold 14px;
+                border-radius: 25px; 
+                margin-left: 500px;
+                padding-right: 10px;
+                """                   
+ 
+button_css_bar_lvl3 = """
+                background-color: #5566ff;
+                border-style: solid;
+                border-width:0px;
+                border-color: #000000;
+                max-height:50px;
+                min-height:50px;
+                color: #000000;
+                font: bold 14px;
+                border-radius: 25px; 
+                margin-left: 500px;
+                padding-right: 10px;
+                """                                     
+                
+button_css_voc_lvl1 = """
+                background-color: #38e428;
+                border-style: solid;
+                border-width:0px;
+                border-color: #000000;
+                max-height:50px;
+                min-height:50px;
+                color: #000000;
+                font: bold 14px;
+                border-radius: 25px; 
+                margin-left: 500px;
+                padding-right: 10px;
+                """
+                                              
+button_css_voc_lvl2 = """
+                background-color: #95d057;
+                border-style: solid;
+                border-width:0px;
+                border-color: #000000;
+                max-height:50px;
+                min-height:50px;
+                color: #000000;
+                font: bold 14px;
+                border-radius: 25px; 
+                margin-left: 500px;
+                padding-right: 10px;
+                """         
+                
+                
+button_css_voc_lvl3 = """
+                background-color: #feff30;
+                border-style: solid;
+                border-width:0px;
+                border-color: #000000;
+                max-height:50px;
+                min-height:50px;
+                color: #000000;
+                font: bold 14px;
+                border-radius: 25px; 
+                margin-left: 500px;
+                padding-right: 10px;
+                """     
+                
+button_css_voc_lvl4 = """
+                background-color: #f98115;
+                border-style: solid;
+                border-width:0px;
+                border-color: #000000;
+                max-height:50px;
+                min-height:50px;
+                color: #000000;
+                font: bold 14px;
+                border-radius: 25px; 
+                margin-left: 500px;
+                padding-right: 10px;
+                """                      
+                                                  
+button_css_voc_lvl5 = """
+                background-color: #f81d05;
+                border-style: solid;
+                border-width:0px;
+                border-color: #000000;
+                max-height:50px;
+                min-height:50px;
+                color: #000000;
+                font: bold 14px;
+                border-radius: 25px; 
+                margin-left: 500px;
+                padding-right: 10px;
+                """  
+
+button_css_voc_lvl6 = """
+                background-color: #950a4b;
+                border-style: solid;
+                border-width:0px;
+                border-color: #000000;
+                max-height:50px;
+                min-height:50px;
+                color: #000000;
+                font: bold 14px;
+                border-radius: 25px; 
+                margin-left: 500px;
+                padding-right: 10px;
+                """  
+
+button_css_voc_lvl7 = """
+                background-color: #643404;
+                border-style: solid;
+                border-width:0px;
+                border-color: #000000;
+                max-height:50px;
+                min-height:50px;
+                color: #000000;
+                font: bold 14px;
+                border-radius: 25px; 
+                margin-left: 500px;
+                padding-right: 10px;
+                """  
+
 
 def rnd_colore():
 	r = random.randint(0, 254)
@@ -118,7 +277,7 @@ class LCARS_Title(QLabel):
         self.setAutoFillBackground(True)
         self.setStyleSheet("""
         background-color:transparent;
-        color:Gold;
+        color:#ffaa00;
         """)
         self.setAlignment(Qt.AlignmentFlag.AlignRight | Qt.AlignmentFlag.AlignCenter)
         self.setFont(QFont("Arial", 28, QFont.Weight.Bold)) 
@@ -202,26 +361,25 @@ class LCARS_GRAPH_Widget(QWidget):
         
         # top_bar label
         top_bar = QLabel("Background Content", background_widget)
-        top_bar.setGeometry(18, 0, 1015, 200)
+        top_bar.setGeometry(18, 0, 1015, 210)
         top_bar.setStyleSheet(top_bar_css)
         top_bar.setAlignment(Qt.AlignmentFlag.AlignCenter)
 
         # bottom_bar label
         bottom_bar = QLabel("Background Content",background_widget)
-        bottom_bar.setGeometry(18, 205, 1015, 400)
+        bottom_bar.setGeometry(18, 220, 1015, 480)
         bottom_bar.setStyleSheet(bottom_bar_css)
-        
-    
-        
+ 
         # Overlay Mask Bottom
         bottom_mask = QLabel(background_widget)
-        bottom_mask.setGeometry(200, 230, 1015, 390)
+        bottom_mask.setGeometry(200, 250, 1015, 500)
         bottom_mask.setStyleSheet(bottom_elbow_css)
 
         # Overlay Mask Top
         self.top_mask = QLabel(background_widget)
-        self.top_mask.setGeometry(200, 0, 1015, 170)
+        self.top_mask.setGeometry(200, 0, 1015, 180)
         self.top_mask.setStyleSheet(top_elbow_css)
+        
         # i want to write some text in the box here so i init the block
         self.top_mask.setFont(QFont("Arial", 14, QFont.Weight.Bold))
         self.top_mask.setAlignment(Qt.AlignmentFlag.AlignTop)  
@@ -247,7 +405,22 @@ class LCARS_GRAPH_Widget(QWidget):
         # this elements are later used for display 
 
         vector_image = draw_line_widget()
-        list_widget = QListWidget()     
+        list_widget = QListWidget()  
+        
+        # Indicator Button label
+        self.wetter_label = QLabel("Wetter",right_widget)
+        self.wetter_label.setStyleSheet(button_css)
+        self.wetter_label.setFont(QFont("Arial", 14, QFont.Weight.Bold))
+        self.wetter_label.setAlignment(Qt.AlignmentFlag.AlignRight | Qt.AlignmentFlag.AlignBottom )
+        
+        # Indicator Ait Pulution label
+        self.voc_label = QLabel("VOC",right_widget)
+        self.voc_label.setStyleSheet(button_css)
+        self.voc_label.setFont(QFont("Arial", 14, QFont.Weight.Bold))
+        self.voc_label.setAlignment(Qt.AlignmentFlag.AlignRight | Qt.AlignmentFlag.AlignBottom )
+        
+        
+           
         
         # Init Plot item
         # Implementing this example https://github.com/pyqtgraph/pyqtgraph/blob/master/pyqtgraph/examples/MultiplePlotAxes.py
@@ -308,6 +481,7 @@ class LCARS_GRAPH_Widget(QWidget):
         SpacerwidgetL.arrange(280)
         
         SpacerwidgetR = empty_label("")
+        SpacerwidgetR.arrange(80)
 
         list_widget.setStyleSheet(list_widget_css)
         list_widget.setGeometry(0, 300, 205, 230)
@@ -329,7 +503,7 @@ class LCARS_GRAPH_Widget(QWidget):
         labelTilel.setFont(QFont("Arial", 28, QFont.Weight.Bold)) 
         labelTilel.setStyleSheet("""
         background-color:black;
-        color:Blue;
+        color:#cc55ff;
         """)   
         
         # layout section // now i start to arrange the elements
@@ -353,6 +527,8 @@ class LCARS_GRAPH_Widget(QWidget):
                    
         
         content_layout_right.addWidget(lcars_tile_element,0)
+        content_layout_right.addWidget(self.voc_label,0)
+        content_layout_right.addWidget(self.wetter_label,0)
         content_layout_right.addWidget(SpacerwidgetR,0) 
         content_layout_right.addWidget(labelTilel)
         content_layout_right.addWidget(self.plotWidget,2)
@@ -386,6 +562,7 @@ class LCARS_GRAPH_Widget(QWidget):
 
         #list_widget.anim.start()
         
+        # Blink Text
         self.anim_group = QSequentialAnimationGroup()
         self.anim_group.addAnimation(labelTilel.anim_1)
         self.anim_group.addAnimation(labelTilel.anim_2)
@@ -393,10 +570,17 @@ class LCARS_GRAPH_Widget(QWidget):
         
         self.anim_group.finished.connect(self.anim_group.start)
         
+        # Update Graph
         self.timer = QTimer(self)
         self.timer.setInterval(1000)  # Set interval to 1 second
         self.timer.timeout.connect(self.update_label)
         self.timer.start()
+        
+        # Update VOC and Wetter
+        self.timer2 = QTimer(self)
+        self.timer2.setInterval(1000)  # Set interval to 1 second
+        self.timer2.timeout.connect(self.update_voc_wetter_label)
+        self.timer2.start()
         
     def updateViews(self):
         ## view has resized; update auxiliary views to match
@@ -407,6 +591,54 @@ class LCARS_GRAPH_Widget(QWidget):
                 ## incorrectly while views had different shapes.
                 ## (probably this should be handled in ViewBox.resizeEvent)
                 self.plot[index_b].linkedViewChanged(self.plot[0].vb, self.plot[index_b].XAxis)
+                
+    def update_voc_wetter_label(self):
+        recent, elements_forgieventime = get_recent("local", "BME680", "VOC10m", 600)
+        if type(recent) != bool and len(recent) != 0: 
+            if recent[0] > 351:
+                self.voc_label.setStyleSheet(button_css_voc_lvl7) 
+                self.voc_label.setText("IAQ 07") 
+            elif recent[0] < 350 and recent[0] > 251:
+                self.voc_label.setStyleSheet(button_css_voc_lvl6)
+                self.voc_label.setText("IAQ 06") 
+            elif recent[0] < 250 and recent[0] > 201:
+                self.voc_label.setStyleSheet(button_css_voc_lvl5) 
+                self.voc_label.setText("IAQ 05") 
+            elif recent[0] < 200 and recent[0] > 151:
+                self.voc_label.setStyleSheet(button_css_voc_lvl4) 
+                self.voc_label.setText("IAQ 04")     
+            elif recent[0] < 150 and recent[0] > 101:
+                self.voc_label.setStyleSheet(button_css_voc_lvl3)
+                self.voc_label.setText("IAQ 03")      
+            elif recent[0] < 100 and recent[0] > 51:
+                self.voc_label.setStyleSheet(button_css_voc_lvl2)
+                self.voc_label.setText("IAQ 02")   
+            elif recent[0] < 50 and recent[0] > 0:
+                self.voc_label.setStyleSheet(button_css_voc_lvl1)
+                self.voc_label.setText("IAQ 01")  
+            else:
+                self.voc_label.setStyleSheet(button_css)    
+                self.voc_label.setText("VOC DATA CURRUPTED")          
+                 
+                 
+        
+        recent, elements_forgieventime = get_recent("local", "BME680", "Barometer10m", 1200)
+        if type(recent) != bool and len(recent) != 0: 
+            if recent[0] > recent[1]:
+                self.wetter_label.setStyleSheet(button_css_bar_lvl1) 
+                self.wetter_label.setText("Positiv") 
+            elif recent[0] < recent[1]:
+                self.wetter_label.setStyleSheet(button_css_bar_lvl2) 
+                self.wetter_label.setText("Negativ")   
+            elif recent[0] == recent[1]:
+                self.wetter_label.setStyleSheet(button_css_bar_lvl3) 
+                self.wetter_label.setText("Constant")                   
+            else:
+                self.wetter_label.setStyleSheet(button_css)    
+                self.wetter_label.setText("NO DATA")      
+        
+                
+                
    
                 
     def update_label(self):
@@ -546,7 +778,7 @@ def get_recent(tag, dsc, dev, time_ing):
 	if type(table_data) != bool:
 		timelength = len(table_data)
 		for item in table_data:
-			item_clean = float(str(item).strip("(, )"))
+			item_clean = float(str(item).strip("(, )").strip("'"))
 			clean_slices.append(item_clean)
 		slices = clean_slices
 	return slices, timelength 
