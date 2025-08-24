@@ -21,6 +21,8 @@ import vlc
 import numpy as np
 import base64
 import collections
+import RPi.GPIO as GPIO
+
 
 from picoscolores import *
 from picosglobals import *
@@ -44,10 +46,10 @@ bme680_temp = [0]
 
 #styles = [ "multi_graph","termal_view"]
 #styles = ["type1", "multi_graph", "termal_view", "video_playback","type3", "type4"]
-styles = ["termal_view","multi_graph","wifi_band_view"]
-#style = "multi_graph"
+#styles = ["termal_view","multi_graph","wifi_band_view"]
+style = "multi_graph"
 #style = "type1"
-style = "wifi_band_view"
+#style = "wifi_band_view"
 #style = "termal_view"
 i = 0
 i2 = 0
@@ -1657,7 +1659,7 @@ if __name__ == "__main__":
 	job = Job(interval=timedelta(seconds=WAIT_TIME_SECONDS), execute=animation_push)
 	
 	try:
-		device = get_device(['--interface', 'spi', '--display', 'st7789', '--spi-port', '0', '--spi-bus-speed', '52000000', '--width', '320', '--height', '240','--mode','RGB' ])
+		device = get_device(['--interface', 'spi', '--display', 'st7789', '--spi-port', '0', '--spi-bus-speed', '52000000', '--width', '320', '--height', '240','--mode','RGB', '--rotate','2' ])
 		init(device)
 		job.start()
 		channel.start_consuming()
