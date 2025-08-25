@@ -39,13 +39,14 @@ BUTTON_GPIOB = 27
 BUTTON_GPIOA_RST = 22
 
 # set the BUS Freq
-I2C_FRQ = 100000
+#I2C_FRQ = 42000
 
 # A Timer to reset the interrupt, when the data was not pulled correctly , otherwise the trigger stucks
 WAIT_TIME_SECONDS = 0.5
 
 # config the i2c device
-i2c = io.I2C(configure.PIN_SCL, configure.PIN_SDA, frequency=I2C_FRQ)
+# i2c = io.I2C(configure.PIN_SCL, configure.PIN_SDA, frequency=I2C_FRQ)
+i2c = io.I2C(configure.PIN_SCL, configure.PIN_SDA)
 
 # needs configure flag
 if configure.SCD4X:
@@ -74,7 +75,7 @@ if configure.input_cap_mpr121:
 		mpr121B = adafruit_mpr121.MPR121(i2c, address=0x5B)
 
 	except OSError as e:
-		print("Error in Sensors Rabbitmq by request I2C", e)
+		print("Error in Sensors Rabbitmq by request I2C - cap_mpr121", e)
 		sys.exit(1)
 		
 		
@@ -102,7 +103,7 @@ if configure.input_cap1188:
                 #GPIO.output(BUTTON_GPIOA_RST,GPIO.HIGH)
 
 	except OSError as e:
-		print("Error in Sensors Rabbitmq by request I2C", e)
+		print("Error in Sensors Rabbitmq by request I2C - input_cap1188", e)
 		sys.exit(1)		
 		
 
@@ -168,9 +169,11 @@ if configure.amg8833:
 if configure.MLX90640:
 	import adafruit_mlx90640
 	import busio
-	MLX90640 = adafruit_mlx90640.MLX90640(i2c)
-	MLX90640.refresh_rate = adafruit_mlx90640.RefreshRate.REFRESH_2_HZ
-
+	try:
+		MLX90640 = adafruit_mlx90640.MLX90640(i2c)
+		MLX90640.refresh_rate = adafruit_mlx90640.RefreshRate.REFRESH_2_HZ
+	except OSError as e:
+		print("Error in configure.MLX90640",e)
 
 if configure.EM:
 	from modulated_em import *
@@ -607,7 +610,7 @@ class sensor(object):
 			#clip air quality at 100%
 			gas_AQ = np.minimum((comp_gas / self.gas_ceil)**2, 1) * 100
 			
-			AQ = (1 - (gas_AQ/100)) * 500
+			AQ = float((1 - (gas_AQ/100)) * 500)
 			
 			#for compensating negative drift (dropping resistance) of the gas sensor:
 			#delete oldest value from calibration list and add current value
@@ -678,7 +681,7 @@ class sensor(object):
 			high = numpy.max(data)
 			low = numpy.min(data)
 		except OSError as e:
-			print("Error in Sensors Rabbitmq by request I2C", e)
+			print("Error in Sensors Rabbitmq by request I2C - thermal_frame", e)
 			disconnect()
 			GPIO.cleanup()  
 			sys.exit(1)
@@ -695,7 +698,7 @@ class sensor(object):
 			high = numpy.max(data)
 			low = numpy.min(data)
 		except OSError as e:
-			print("Error in Sensors Rabbitmq by request I2C", e)
+			print("Error in Sensors Rabbitmq by request I2C - frame_MLX90640", e)
 			disconnect()
 			GPIO.cleanup()  
 			sys.exit(1)
@@ -708,14 +711,18 @@ class sensor(object):
 	def get_bme680(self):
 		global local_gps
 		try:
+			self.bme680_alt = self.bme680.altitude
+		except OSError as e:
+			print("Error in Sensors Rabbitmq by request I2C - bme680_alt", e)
+			
+		try:
 			self.bme680_temp = self.bme680.temperature
 			self.bme680_humi = self.bme680.humidity
 			self.bme680_press = self.bme680.pressure
 			#self.bme680_voc = self.bme680.gas / 1000
 			self.bme680_voc = self.getIAQ(self.bme680_temp, self.bme680_press, self.bme680_humi, self.bme680.gas)			
-			self.bme680_alt = self.bme680.altitude
 		except OSError as e:
-			print("Error in Sensors Rabbitmq by request I2C", e)
+			print("Error in Sensors Rabbitmq by request I2C - bme680_group", e)
 			disconnect()
 			GPIO.cleanup()  
 			sys.exit(1)
@@ -732,7 +739,7 @@ class sensor(object):
 			self.bmp280_press = self.bmp280.pressure
 			self.bmp280_alt = self.bmp280.altitude
 		except OSError as e:
-			print("Error in Sensors Rabbitmq by request I2C", e)
+			print("Error in Sensors Rabbitmq by request I2C - bmp280", e)
 			disconnect()
 			GPIO.cleanup()  
 			sys.exit(1)
@@ -747,7 +754,7 @@ class sensor(object):
 			self.sht30_temp = self.sht30.temperature
 			self.sht30_rel_humi = self.sht30.relative_humidity
 		except OSError as e:
-			print("Error in Sensors Rabbitmq by request I2C", e)
+			print("Error in Sensors Rabbitmq by request I2C - sht30", e)
 			disconnect()
 			GPIO.cleanup()  
 			sys.exit(1)
@@ -762,7 +769,7 @@ class sensor(object):
 			self.lsm6ds3_accel_X, self.lsm6ds3_accel_Y, self.lsm6ds3_accel_Z = self.lsm6ds3.acceleration
 			self.lsm6ds3_gyro_X, self.lsm6ds3_gyro_Y, self.lsm6ds3_gyro_Z = self.lsm6ds3.gyro
 		except OSError as e:
-			print("Error in Sensors Rabbitmq by request I2C", e)
+			print("Error in Sensors Rabbitmq by request I2C - lsm6ds3", e)
 			disconnect()
 			GPIO.cleanup()  
 			sys.exit(1)
@@ -778,7 +785,7 @@ class sensor(object):
 			self.lis3mdl_X, self.lis3mdl_Y, self.lis3mdl_Z = self.lis3mdl.magnetic
 			
 		except OSError as e:
-			print("Error in Sensors Rabbitmq by request I2C", e)
+			print("Error in Sensors Rabbitmq by request I2C - lis3mdl", e)
 			disconnect()
 			GPIO.cleanup()  
 			sys.exit(1)
@@ -794,7 +801,7 @@ class sensor(object):
 			self.apds9960_gesture = self.apds9960.gesture()
 			self.apds9960_colore_r ,self.apds9960_colore_g ,self.apds9960_colore_b ,self.apds9960_colore_c = self.apds9960.color_data
 		except OSError as e:
-			print("Error in Sensors Rabbitmq by request I2C", e)
+			print("Error in Sensors Rabbitmq by request I2C - apds9960", e)
 			disconnect()
 			GPIO.cleanup()  
 			sys.exit(1)
@@ -838,7 +845,7 @@ class sensor(object):
 			self.sh_accz = acceldata['z']
 			
 		except OSError as e:
-			print("Error in Sensors Rabbitmq by request I2C", e)
+			print("Error in Sensors Rabbitmq by request I2C - sensehat", e)
 			disconnect()
 			GPIO.cleanup()  
 			sys.exit(1)
@@ -857,7 +864,7 @@ class sensor(object):
 			self.radiat.set(rad_data*100, timestamp, position)	
 			
 		except OSError as e:
-			print("Error in Sensors Rabbitmq by request I2C", e)
+			print("Error in Sensors Rabbitmq by request I2C - pocket_geiger", e)
 			disconnect()
 			GPIO.cleanup()  			
 			sys.exit(1)
@@ -909,7 +916,7 @@ class sensor(object):
 			self.ep_accz = self.acc_values[2]
 			
 		except OSError as e:
-			print("Error in Sensors Rabbitmq by request I2C", e)
+			print("Error in Sensors Rabbitmq by request I2C - envirophat", e)
 			disconnect()
 			GPIO.cleanup()  
 			sys.exit(1)
@@ -925,7 +932,7 @@ class sensor(object):
 			obj_temp = MLX90614.data_to_temp(MLX90614.get_obj_temp)	
 			
 		except OSError as e:
-			print("Error in Sensors Rabbitmq by request I2C", e)
+			print("Error in Sensors Rabbitmq by request I2C - MLX90614", e)
 			disconnect()
 			GPIO.cleanup()  
 			sys.exit(1)	
@@ -1155,7 +1162,7 @@ if __name__ == "__main__":
 			if counter == 180:
 				counter = 0
 			else:
-				time.sleep(0.01)
+				time.sleep(0.02)
 					
 					
 		except KeyboardInterrupt or Exception or OSError as e:
