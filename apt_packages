@@ -1,0 +1,11 @@
+psutils
+python3-pip
+vlc
+python3-pika
+postgresql
+postgresql-common
+postgresql-client
+rabbitmq-server
+python3-psycopg2
+opencv-data
+python3-bluez
