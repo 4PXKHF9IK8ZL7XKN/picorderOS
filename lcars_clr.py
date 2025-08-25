@@ -47,9 +47,10 @@ bme680_temp = [0]
 #styles = [ "multi_graph","termal_view"]
 #styles = ["type1", "multi_graph", "termal_view", "video_playback","type3", "type4"]
 #styles = ["termal_view","multi_graph","wifi_band_view"]
-style = "multi_graph"
+#style = "video_playback"
+#style = "multi_graph"
 #style = "type1"
-#style = "wifi_band_view"
+style = "wifi_band_view"
 #style = "termal_view"
 i = 0
 i2 = 0
@@ -450,6 +451,10 @@ def lcars_element_termal_array(device, draw,pos_ax,pos_ay,pos_bx,pos_by,sensor,m
 	RES_X = 0
 	RES_Y = 0
 	
+	ret_min = 0
+	ret_max = 0
+	ret_avg = 0
+	
 	#COLORDEPTH = 128
 	COLORDEPTH = 96
 	
@@ -539,68 +544,62 @@ def lcars_element_termal_array(device, draw,pos_ax,pos_ay,pos_bx,pos_by,sensor,m
 		
 		#print("min_max",MINTEMP,  MAXTEMP, ret_avg)
 	
-	#### meeds check on amd8833	
-	for overscanline in range(len(termal_matrix),RES_X,1):
-		termal_matrix.append(termal_matrix[len(termal_matrix)-1]) 		
+		#### meeds check on amd8833	
+		for overscanline in range(len(termal_matrix),RES_X,1):
+			termal_matrix.append(termal_matrix[len(termal_matrix)-1]) 		
 		
-	pixels = []
-	for row in termal_matrix:
-		pixels = pixels + row
-	pixels = [map_value(p, MINTEMP, MAXTEMP, 0, COLORDEPTH - 1) for p in pixels]	
+		pixels = []
+		for row in termal_matrix:
+			pixels = pixels + row
+		pixels = [map_value(p, MINTEMP, MAXTEMP, 0, COLORDEPTH - 1) for p in pixels]	
+			
+		# perform interpolation
+		bicubic = griddata(points, pixels, (grid_x, grid_y), method="cubic")
 		
-	# perform interpolation
-	bicubic = griddata(points, pixels, (grid_x, grid_y), method="cubic")
-	
-	# draw everything
-	for index1_Y, row in enumerate(termal_matrix):
-		if index1_Y <= RES_Y:
-			for index2_X, pixel in enumerate(row):
-				#print("index:", index1_Y,index2_X,colors[constrain(int(pixel), 0, COLORDEPTH - 1)] , termal_matrix[index1_Y][index2_X], termal_matrix[index1_Y][index2_X]*3 )
-				draw.rectangle((
-				pos_ax+index2_X*displayPixelWidth , 
-				pos_ay+index1_Y*displayPixelHeight,
-				pos_ax+index2_X*displayPixelWidth+displayPixelWidth ,
-				pos_ay+index1_Y*displayPixelHeight+displayPixelHeight),
-				colors[constrain(int(pixel), 0, COLORDEPTH - 1)])
-		else:
-			if index1_Y <= RES_Y+1:
-			#overscan Section
-				for index2_X, pixel in enumerate(row):					
+		# draw everything
+		for index1_Y, row in enumerate(termal_matrix):
+			if index1_Y <= RES_Y:
+				for index2_X, pixel in enumerate(row):
+					#print("index:", index1_Y,index2_X,colors[constrain(int(pixel), 0, COLORDEPTH - 1)] , termal_matrix[index1_Y][index2_X], termal_matrix[index1_Y][index2_X]*3 )
 					draw.rectangle((
 					pos_ax+index2_X*displayPixelWidth , 
 					pos_ay+index1_Y*displayPixelHeight,
 					pos_ax+index2_X*displayPixelWidth+displayPixelWidth ,
 					pos_ay+index1_Y*displayPixelHeight+displayPixelHeight),
-					colors[int((len(colors)/32)*index2_X)])
+					colors[constrain(int(pixel), 0, COLORDEPTH - 1)])
+			else:
+				if index1_Y <= RES_Y+1:
+				#overscan Section
+					for index2_X, pixel in enumerate(row):					
+						draw.rectangle((
+						pos_ax+index2_X*displayPixelWidth , 
+						pos_ay+index1_Y*displayPixelHeight,
+						pos_ax+index2_X*displayPixelWidth+displayPixelWidth ,
+						pos_ay+index1_Y*displayPixelHeight+displayPixelHeight),
+						colors[int((len(colors)/32)*index2_X)])
 					
-	if legend == True:
-		# This Displays the Sensor Legende Bottom
-		draw.text((pos_ax+0*(device.height * 0.25), pos_by*0.95), text=str(ret_min), font=lcars_microfont, fill=lcars_theme[lcars_theme_selection]["colore5"])
-		draw.text((pos_ax+1.35*(device.height * 0.25), pos_by*0.95), text=str(ret_avg), font=lcars_microfont, fill=lcars_theme[lcars_theme_selection]["colore5"])
-		draw.text((pos_ax+3.49*(device.height * 0.25), pos_by*0.95), text=str(ret_max), font=lcars_microfont, fill=lcars_theme[lcars_theme_selection]["colore5"])
-				
-		draw.text((pos_ax+0*(device.height * 0.25), pos_by*0.87), text=str(META_MIN), font=lcars_microfont, fill=lcars_theme[lcars_theme_selection]["colore4"])
-		draw.text((pos_ax+3.8*(device.height * 0.25), pos_by*0.87), text=str(META_MAX), font=lcars_microfont, fill=lcars_theme[lcars_theme_selection]["colore4"])
-		
-		per_ret_min = round((ret_min/(percentage_range/100)),2)*(percentage_multi/2)
-		per_ret_max = round((ret_max/(percentage_range/100)),2)*(percentage_multi/2)
-		per_ret_avg = round((ret_avg/(percentage_range/100)),2)*(percentage_multi/2)
+		if legend == True:
+			# This Displays the Sensor Legende Bottom
+			draw.text((pos_ax+0*(device.height * 0.25), pos_by*0.95), text=str(ret_min), font=lcars_microfont, fill=lcars_theme[lcars_theme_selection]["colore5"])
+			draw.text((pos_ax+1.35*(device.height * 0.25), pos_by*0.95), text=str(ret_avg), font=lcars_microfont, fill=lcars_theme[lcars_theme_selection]["colore5"])
+			draw.text((pos_ax+3.49*(device.height * 0.25), pos_by*0.95), text=str(ret_max), font=lcars_microfont, fill=lcars_theme[lcars_theme_selection]["colore5"])
+					
+			draw.text((pos_ax+0*(device.height * 0.25), pos_by*0.87), text=str(META_MIN), font=lcars_microfont, fill=lcars_theme[lcars_theme_selection]["colore4"])
+			draw.text((pos_ax+3.8*(device.height * 0.25), pos_by*0.87), text=str(META_MAX), font=lcars_microfont, fill=lcars_theme[lcars_theme_selection]["colore4"])
 			
-		marker_line1 = [(pos_bx*per_ret_max,pos_by*1),(pos_bx*per_ret_max,pos_by*1.06)] 
-		draw.line(marker_line1,fill=lcars_theme[lcars_theme_selection]["colore5"])
-		
-		marker_line2 = [(pos_bx*per_ret_min,pos_by*1),(pos_bx*per_ret_min,pos_by*1.06)] 
-		draw.line(marker_line2,fill=lcars_theme[lcars_theme_selection]["colore5"])
-						
-		marker_line3 = [(pos_bx*per_ret_avg,pos_by*1),(pos_bx*per_ret_avg,pos_by*1.06)] 
-		draw.line(marker_line3,fill=lcars_theme[lcars_theme_selection]["colore5"])
+			per_ret_min = round((ret_min/(percentage_range/100)),2)*(percentage_multi/2)
+			per_ret_max = round((ret_max/(percentage_range/100)),2)*(percentage_multi/2)
+			per_ret_avg = round((ret_avg/(percentage_range/100)),2)*(percentage_multi/2)
+				
+			marker_line1 = [(pos_bx*per_ret_max,pos_by*1),(pos_bx*per_ret_max,pos_by*1.06)] 
+			draw.line(marker_line1,fill=lcars_theme[lcars_theme_selection]["colore5"])
+			
+			marker_line2 = [(pos_bx*per_ret_min,pos_by*1),(pos_bx*per_ret_min,pos_by*1.06)] 
+			draw.line(marker_line2,fill=lcars_theme[lcars_theme_selection]["colore5"])
+							
+			marker_line3 = [(pos_bx*per_ret_avg,pos_by*1),(pos_bx*per_ret_avg,pos_by*1.06)] 
+			draw.line(marker_line3,fill=lcars_theme[lcars_theme_selection]["colore5"])
 					
-					
-					
-					
-					
-					
-	
 	return META_MIN, META_MAX ,ret_min, ret_max, ret_avg
 
 
@@ -1627,13 +1626,6 @@ def return_data_from_sql_termal_adv(con, table_str, dev):
 		if e == "no results to fetch":
 			print( e )
 	return ret	
-
-
-
-
-
-
-
 
 		
 def connect_psql(config):
