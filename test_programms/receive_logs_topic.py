@@ -39,8 +39,8 @@ channel.queue_bind(
 #channel.queue_bind(
 #    exchange='sensor_data', queue='', routing_key='scd4x')
 
-channel.queue_bind(
-    exchange='sensor_data', queue='', routing_key='bme680')
+#channel.queue_bind(
+#    exchange='sensor_data', queue='', routing_key='bme680')
 
 #channel.queue_bind(
 #    exchange='sensor_data', queue='', routing_key='thermal_frame_MLX90640')
