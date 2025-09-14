@@ -71,8 +71,12 @@ if configure.input_cap_mpr121:
 	try:
 
 		# Note you can optionally change the address of the device:
-		mpr121A = adafruit_mpr121.MPR121(i2c, address=0x5A)
-		mpr121B = adafruit_mpr121.MPR121(i2c, address=0x5B)
+		mpr121A = adafruit_mpr121.MPR121(i2c, address=0x5A )
+		mpr121B = adafruit_mpr121.MPR121(i2c, address=0x5B )
+
+		for b in range(12):
+			mpr121A[b].baseline_data = 7
+			mpr121B[b].baseline_data = 7
 
 	except OSError as e:
 		print("Error in Sensors Rabbitmq by request I2C - cap_mpr121", e)
