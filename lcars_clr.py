@@ -44,13 +44,18 @@ from scipy.interpolate import griddata
 
 bme680_temp = [0]
 
+
+wheel_lib = [ "multi_graph","termal_view","wifi_band_view", "video_playback","type3", "type4"]
+wheel_geo = [ "multi_graph","wifi_band_view"]
+wheel_met = [ "multi_graph","type3", "type4"]
+wheel_bio = [ "multi_graph","termal_view"]
+
 #styles = [ "multi_graph","termal_view"]
 #styles = ["type1", "multi_graph", "termal_view", "video_playback","type3", "type4"]
 #styles = ["termal_view","multi_graph","wifi_band_view"]
 #style = "video_playback"
-#style = "multi_graph"
-#style = "type1"
-style = "wifi_band_view"
+style = "type1"
+#style = "wifi_band_view"
 #style = "termal_view"
 i = 0
 i2 = 0
@@ -1537,24 +1542,35 @@ def callback(ch, method, properties, body):
 		
 		if DICT_CLEAN['geo']:
 			print('EVENT - geo')	
-			style = styles.pop()
-			styles.insert(0, style)
-			print('EVENT')
+			style = wheel_geo.pop()
+			wheel_geo.insert(0, style)			
 			
 		if DICT_CLEAN['met']:
-			print('EVENT - met')	
-			lcars_theme_selection = lcars_theme_selection + 1
-			if lcars_theme_selection == 3: 
-				lcars_theme_selection = 0
+			print('EVENT - met')
+			style = wheel_met.pop()
+			wheel_met.insert(0, style)
+			
+		if DICT_CLEAN['bio']:
+			print('EVENT - bio')
+			style = wheel_bio.pop()
+			wheel_bio.insert(0, style)	
+			
+				
+			#lcars_theme_selection = lcars_theme_selection + 1
+			#if lcars_theme_selection == 3: 
+			#	lcars_theme_selection = 0
 				
 	#update(ch, method, properties, body)
 
 def animation_push():
 	global animation_step
+	global style
 	LCARS_Struct.draw(style)
 	animation_step = animation_step + 1
 	if animation_step == 72:
 		animation_step = 0
+		if style == "type1":
+			style = "multi_graph"
 
 # This Class helps to start a thread that runs a timer non blocking to animate details
 class Job(threading.Thread):
