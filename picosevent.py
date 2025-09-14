@@ -117,31 +117,26 @@ def callback(ch, method, properties, body):
 				if sensor_dict['DICT'] == 'A':
 					if not key == 'DICT':
 						if key == 0:
-							EVENT_MAP['geo'] = sensor_dict[key]
+							EVENT_MAP['pwr'] = sensor_dict[key]
 							configure.eventlist[0][0] =  sensor_dict[key]
 						elif key == 1:
-							EVENT_MAP['met'] = sensor_dict[key]
-							configure.eventlist[0][1] =  sensor_dict[key]
+							pass
 						elif key == 2:
-							EVENT_MAP['bio'] = sensor_dict[key]
-							configure.eventlist[0][2] =  sensor_dict[key]
+							pass
 						elif key == 3:
-							EVENT_MAP['lib'] = sensor_dict[key]
-							configure.eventlist[0][3] =  sensor_dict[key]
-							if sensor_dict[key]:
-								SENSOR_MODE = SENSOR_MODE + 1
-								SENSOR_MODE_LAST = SENSOR_MODE 
-								if SENSOR_MODE > 8:
-									SENSOR_MODE = 0
-									SENSOR_MODE_LAST = 0
-
+							pass
 						elif key == 4:
-							EVENT_MAP['pwr'] = sensor_dict[key]
+							EVENT_MAP['geo'] = sensor_dict[key]
 							configure.eventlist[0][4] =  sensor_dict[key]
 						elif key == 5:
+							EVENT_MAP['cancel/switch'] = sensor_dict[key]
+						elif key == 6:
+							EVENT_MAP['E'] = sensor_dict[key]
+							configure.eventlist[0][7] =  sensor_dict[key]
+						elif key == 7:
 							EVENT_MAP['f1/f2'] = sensor_dict[key]
 							configure.eventlist[0][5] =  sensor_dict[key]
-						elif key == 6:
+						elif key == 8:
 							EVENT_MAP['I'] = sensor_dict[key]
 							configure.eventlist[0][6] =  sensor_dict[key]
 							if sensor_dict[key]:
@@ -151,18 +146,21 @@ def callback(ch, method, properties, body):
 								else:
 									ALERT_STATE = 0
 									SENSOR_MODE = SENSOR_MODE_LAST
-						elif key == 7:
-							EVENT_MAP['E'] = sensor_dict[key]
-							configure.eventlist[0][7] =  sensor_dict[key]
-						elif key == 8:
-							EVENT_MAP['cancel/switch'] = sensor_dict[key]
-						# no mapping here all keys in the top part of the tric are mapped
 						elif key == 9:
-							pass
+							EVENT_MAP['lib'] = sensor_dict[key]
+							configure.eventlist[0][3] =  sensor_dict[key]
+							if sensor_dict[key]:
+								SENSOR_MODE = SENSOR_MODE + 1
+								SENSOR_MODE_LAST = SENSOR_MODE 
+								if SENSOR_MODE > 8:
+									SENSOR_MODE = 0
+									SENSOR_MODE_LAST = 0
 						elif key == 10:
-							pass
+							EVENT_MAP['met'] = sensor_dict[key]
+							configure.eventlist[0][1] =  sensor_dict[key]
 						elif key == 11:
-							pass
+							EVENT_MAP['bio'] = sensor_dict[key]
+							configure.eventlist[0][2] =  sensor_dict[key]
 				elif sensor_dict['DICT'] == 'B':
 					if not key == 'DICT':
 						if key == 0:
@@ -219,7 +217,9 @@ def callback(ch, method, properties, body):
 
 	publish('EVENT',EVENT_MAP)
 	print("EVENT:", EVENT_MAP)
-	click = beepsound.play()
+	for key in EVENT_MAP:
+		if EVENT_MAP[key] == True:
+			click = beepsound.play()
 	#print(f" [x] {method.routing_key}:{body}")
 
 if __name__ == '__main__':
