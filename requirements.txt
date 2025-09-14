@@ -33,3 +33,4 @@ opencv-python
 scipy
 psutil
 pygame
+simpleaudio
