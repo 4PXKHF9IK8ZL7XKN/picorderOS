@@ -9,3 +9,5 @@ rabbitmq-server
 python3-psycopg2
 opencv-data
 python3-bluez
+python3-dev 
+libasound2-dev
