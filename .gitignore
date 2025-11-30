@@ -7,3 +7,4 @@ data/
 configure.ini
 config.ini
 database.ini
+database_gisdata.ini

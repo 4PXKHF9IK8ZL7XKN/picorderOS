@@ -228,19 +228,19 @@ def disconnect():
 def button_callbackA(channel):
 	global softbreak_flag
 	global term_signal
-	
+
 	touchA_dict = {"DICT":"A",0:False,1:False,2:False,3:False,4:False,5:False,6:False,7:False,8:False,9:False,10:False,11:False}
 	softbreak_flag = True
 
 	if configure.input_cap_mpr121:	
 		for i in range(12):
 			touchA_dict[i] = mpr121A[i].value
-			
+
 	if configure.input_cap1188:
 		for i in range(0,7,1):
 			touchA_dict[i] = cap1188A[i+1].value
-			#print("valueA", cap1188A[i].value)
-	
+			print("valueA", cap1188A[i+1].value)
+
 	publish("touch",touchA_dict)
 	softbreak_flag = False
 
@@ -248,20 +248,20 @@ def button_callbackA(channel):
 def button_callbackB(channel):
 	global softbreak_flag
 	global term_signal
-	
+
 	touchB_dict = {"DICT":"B",0:False,1:False,2:False,3:False,4:False,5:False,6:False,7:False,8:False,9:False,10:False,11:False}
 	softbreak_flag = True
-	
+
 	if configure.input_cap_mpr121:	
 		for i in range(12):
 			touchB_dict[i] = mpr121B[i].value
-			
+
 	if configure.input_cap1188:
 		for i in range(0,7,1):
 			touchB_dict[i] = cap1188B[i+1].value
-			#print("valueB", cap1188B[i].value)
-	
-	
+			print("valueB", cap1188B[i+1].value)
+
+
 	publish("touch",touchB_dict)
 	softbreak_flag = False
 
@@ -1047,16 +1047,18 @@ if __name__ == "__main__":
 		GPIO.add_event_detect(BUTTON_GPIOB, GPIO.RISING, callback=button_callbackB, bouncetime=10) 
 
 	if configure.input_cap1188:
-		GPIO.setup(BUTTON_GPIOA, GPIO.IN)
-		GPIO.setup(BUTTON_GPIOB, GPIO.IN)
+		#GPIO.setup(BUTTON_GPIOA, GPIO.IN)
+		#GPIO.setup(BUTTON_GPIOB, GPIO.IN)
 
-		#GPIO.setup(BUTTON_GPIOA, GPIO.IN, pull_up_down=GPIO.PUD_UP)
-		#GPIO.setup(BUTTON_GPIOB, GPIO.IN, pull_up_down=GPIO.PUD_UP)
+		GPIO.setup(BUTTON_GPIOA, GPIO.IN, pull_up_down=GPIO.PUD_UP)
+		GPIO.setup(BUTTON_GPIOB, GPIO.IN, pull_up_down=GPIO.PUD_UP)
 		#GPIO.setup(BUTTON_GPIOA_RST, GPIO.OUT, initial=GPIO.HIGH)
 		#time.sleep(0.01)
 		#GPIO.output(BUTTON_GPIOA_RST,GPIO.LOW)
-		GPIO.add_event_detect(BUTTON_GPIOA, GPIO.FALLING, callback=button_callbackA, bouncetime=10)
-		######GPIO.add_event_detect(BUTTON_GPIOB, GPIO.FALLING, callback=button_callbackB, bouncetime=10)
+		#GPIO.add_event_detect(BUTTON_GPIOA, GPIO.FALLING, callback=button_callbackA, bouncetime=10)
+
+		GPIO.add_event_detect(BUTTON_GPIOA, GPIO.BOTH, callback=button_callbackA, bouncetime=10)
+		GPIO.add_event_detect(BUTTON_GPIOB, GPIO.BOTH, callback=button_callbackB, bouncetime=10)
 
 		button_callbackA(open_channel)
 		#####button_callbackB(open_channel)
@@ -1161,7 +1163,14 @@ if __name__ == "__main__":
 						publish("GPS_DATA",gps_parsed)
 					    
 			soft_break()
-			    
+			
+			stateA = GPIO.input(BUTTON_GPIOA)
+			if stateA:
+				print('on')
+				button_callbackA(open_channel)
+			else:
+				print('off')
+
 			counter = counter + 1 
 			if counter == 180:
 				counter = 0

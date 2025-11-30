@@ -1,10 +1,10 @@
 #!/usr/bin/env python
 import pika
 import sys
-from pygame import mixer
+#from pygame import mixer
 
-mixer.init()
-alert=mixer.Sound('../assets/beep.wav')
+#mixer.init()
+#alert=mixer.Sound('../assets/beep.wav')
 
 connection = pika.BlockingConnection(
     pika.ConnectionParameters(host='localhost'))
@@ -15,11 +15,11 @@ channel = connection.channel()
 result = channel.queue_declare('', exclusive=True)
 queue_name = result.method.queue
 
-channel.queue_bind(
-    exchange='sensor_data', queue='', routing_key='touch')
-
 #channel.queue_bind(
-#    exchange='sensor_data', queue='', routing_key='wifi_stats')
+#    exchange='sensor_data', queue='', routing_key='touch')
+
+channel.queue_bind(
+    exchange='sensor_data', queue='', routing_key='wifi_stats')
 
 #channel.queue_bind(
 #    exchange='sensor_data', queue='', routing_key='_empty')

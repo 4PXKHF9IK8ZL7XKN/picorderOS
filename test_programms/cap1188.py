@@ -57,11 +57,11 @@ if configure.input_cap1188:
 
 	try:
 
-                GPIO.setup(BUTTON_GPIOA_RST, GPIO.OUT, initial=GPIO.LOW)
+                #GPIO.setup(BUTTON_GPIOA_RST, GPIO.OUT, initial=GPIO.LOW)
                 time.sleep(0.1)
-                GPIO.output(BUTTON_GPIOA_RST,GPIO.HIGH)
+                #GPIO.output(BUTTON_GPIOA_RST,GPIO.HIGH)
                 time.sleep(0.1)
-                GPIO.output(BUTTON_GPIOA_RST,GPIO.LOW)
+                #GPIO.output(BUTTON_GPIOA_RST,GPIO.LOW)
                 time.sleep(0.1)
                 cap1188A = CAP1188_I2C(i2c, address=0x28)
                 #cap1188B = CAP1188_I2C(i2c, address=0x29)
@@ -138,7 +138,7 @@ def button_callbackA(channel):
 			
 	if configure.input_cap1188:
 		for i in range(0,7,1):
-			#touchA_dict[i] = cap1188A[i+1].value
+			touchA_dict[i] = cap1188A[i+1].value
 			print("valueA", cap1188A[i+1].value)
 	
 	publish("touch",touchA_dict)
@@ -246,8 +246,8 @@ if __name__ == "__main__":
 
 			signal.signal(signal.SIGTERM, signal_handler_function)
 			  
-			print(GPIO.input(BUTTON_GPIOA),GPIO.input(BUTTON_GPIOB))
-			#button_callbackA(open_channel)
+			#print(GPIO.input(BUTTON_GPIOA),GPIO.input(BUTTON_GPIOB))
+			#Obutton_callbackA(open_channel)
 			
 			reset()
 			

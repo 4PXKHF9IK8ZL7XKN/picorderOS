@@ -137,15 +137,20 @@ class sensor_functions(object):
 				matrix[interface][connection_ID-1][mac][k] = v.strip()
 			
 			if clean_line.startswith("RSN:"):
+				print("DEBUG")
+				print(clean_line)
 				k,v,t = clean_line.split(":")				
 				_,v = v.split("*")
 				matrix[interface][connection_ID-1][mac][k.strip()] = {v.strip(): t.strip()}
+			else:
+				matrix[interface][connection_ID-1][mac]['RSN'] = {'RSN': "STATIC"}
 				
 			if clean_line.startswith("Channels"):
 				k,v0,v1,v2,v3,v4,v5 = clean_line.split(" ")
 				if k.strip() not in matrix[interface][connection_ID-1][mac]:
 					matrix[interface][connection_ID-1][mac][k.strip()] = []
-				matrix[interface][connection_ID-1][mac][k.strip()].append([v0.strip('['),v2.strip(']'),v4,v5])				
+				matrix[interface][connection_ID-1][mac][k.strip()].append([v0.strip('['),v2.strip(']'),v4,v5])			
+				
 				
 			if clean_line.startswith("* Group cipher:"):
 				k,v = clean_line.split(":")

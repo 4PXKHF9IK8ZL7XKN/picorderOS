@@ -34,3 +34,5 @@ scipy
 psutil
 pygame
 simpleaudio
+osmnx
+geopandas

@@ -22,6 +22,8 @@ import numpy as np
 import base64
 import collections
 import RPi.GPIO as GPIO
+import geopandas 
+import osmnx as ox
 
 
 from picoscolores import *
@@ -42,11 +44,13 @@ from picos_psql_config import load_config
 
 from scipy.interpolate import griddata
 
+from sqlalchemy import create_engine
+
 bme680_temp = [0]
 
 
 wheel_lib = [ "multi_graph","termal_view","wifi_band_view", "video_playback","type3", "type4"]
-wheel_geo = [ "multi_graph","wifi_band_view"]
+wheel_geo = [ "multi_graph","wifi_band_view", "geo_map_view"]
 wheel_met = [ "multi_graph","type3", "type4"]
 wheel_bio = [ "multi_graph","termal_view"]
 
@@ -120,6 +124,86 @@ def lcars_element_videoframe(device, draw, pos_ax,pos_ay,pos_bx,pos_by,filename,
 		player.release()
 		
 		
+def coord_lister(geom):
+    coords = list(geom.exterior.coords)
+    return (coords)
+		
+def lcars_element_geo_map(device, draw, pos_ax,pos_ay,pos_bx,pos_by):
+	# this element needs to be on top so no canvase can be used here
+
+	fill = "yellow"
+	fill2 = "red"
+	offset = 0
+	sensor_legende = ""
+	global lcars_microfont
+	
+	#bounding box
+	box_element_graph = [(pos_ax , pos_ay), (pos_bx, pos_by)] 
+	draw.rectangle(box_element_graph,fill="black", outline=lcars_theme[lcars_theme_selection]["colore5"])
+	
+	sql_query = 'select geometry as geom from "Alameda"'
+	gdf_object = geopandas.read_postgis(sql_query, gis_engine )
+	print(gdf_object)
+	
+	coordinates_list = gdf_object.geometry.apply(coord_lister)
+	
+	scale_list_Y = []
+	scale_list_X = []
+	# scaling determination
+	for scale_item in coordinates_list[0]:
+		scale_list_X.append(scale_item[0])
+		scale_list_Y.append(scale_item[1])
+
+	
+	coordinates_min_Y = min(scale_list_Y)
+	coordinates_max_Y = max(scale_list_Y)
+	coordinates_avr_Y = statistics.mean(scale_list_Y)
+	
+	coordinates_min_X = min(scale_list_X)
+	coordinates_max_X = max(scale_list_X)
+	coordinates_avr_X = statistics.mean(scale_list_X)
+	
+	coordinates_delta_X = coordinates_max_X - coordinates_min_X
+	coordinates_delta_Y = coordinates_max_Y - coordinates_min_Y
+	
+	image_delta = pos_by - pos_ay
+	image_delta_2Y = (pos_bx - pos_ax) /3
+	image_delta_2X = (pos_bx - pos_ax) /3
+	
+	resultion_multi = (image_delta / coordinates_delta_X ) 
+	
+	first_cord = True
+	point_pos_a = (0,0)
+	for item in coordinates_list[0]:
+
+		geo_pos_bx,geo_pos_by = item[0], item[1]
+
+		local_X = geo_pos_bx - coordinates_min_X
+		local_Y = geo_pos_by - coordinates_min_Y
+		
+		scaled_X = local_X * resultion_multi
+		scaled_Y = local_Y * resultion_multi
+		
+		point_bx = scaled_X + image_delta_2X
+		point_by = scaled_Y + image_delta_2Y
+		
+		point_element = (point_bx , point_by)
+		#print(int(point_element[1]),int(pos_ay),int(pos_by))
+		
+		
+		if int(point_element[1]) in range(int(pos_ay), int(pos_by)):
+			if int(point_element[0]) in range(int(pos_ax), int(pos_bx)):
+				if first_cord:
+					draw.point(point_element)
+					first_cord = False
+				else:
+					line_element = [point_pos_a , (point_bx, point_by)] 
+					draw.line(line_element)		
+					#draw.point(point_element)			
+				point_pos_a = point_element
+	
+		
+		
 def lcars_element_wifi_signal_list(device, draw,pos_ax,pos_ay,pos_bx,pos_by, location_tag):
 	fill = "yellow"
 	fill2 = "red"
@@ -135,37 +219,44 @@ def lcars_element_wifi_signal_list(device, draw,pos_ax,pos_ay,pos_bx,pos_by, loc
 	#print("result",result[0],len(result),elements_forgieventime)
 	#print("decode",base64.b64decode(result[0]).decode())
 	#wifi_data_object = ast.literal_eval(base64.b64decode(result[0]).decode())
-	wifi_data_object = base64.b64decode(result[0]).decode()
-	wifi_data_object = ast.literal_eval(wifi_data_object)
+	if len(result) != 0 :
+		wifi_data_object = base64.b64decode(result[0]).decode()
+		wifi_data_object = ast.literal_eval(wifi_data_object)
 
-	#for signal in wifi_data_object['wlan0']:
-	if 'wlan0' in wifi_data_object:
-		for  indexof ,dict_of_signals in enumerate(wifi_data_object['wlan0']):
-			for signal in dict_of_signals:
-				hirachie_of_signals[indexof] = dict_of_signals[signal]['signal:'][0]
+		#for signal in wifi_data_object['wlan0']:
+		if 'wlan0' in wifi_data_object:
+			for  indexof ,dict_of_signals in enumerate(wifi_data_object['wlan0']):
+				for signal in dict_of_signals:
+					hirachie_of_signals[indexof] = dict_of_signals[signal]['signal:'][0]
+					
+			#print("my_list",hirachie_of_signals)
+			for key in sorted(hirachie_of_signals, key=hirachie_of_signals.get):
+				sorted_dict[key] = hirachie_of_signals[key]
+			#print("my_sorted_list",sorted_dict)
+			for items in sorted_dict:
+				signal_object = wifi_data_object['wlan0'][items]
+				#print(signal)
+				for signal in signal_object:
+					text_block = '%s  -  %s  %s  %s ' % ( signal, signal_object[signal]['freq:'], signal_object[signal]['signal:'][0], signal_object[signal]['SSID'][:8] )
+					if pos_ay+index_a*(device.height * 0.058) < pos_by-device.height * 0.07:
+						if animation_step == index_a:
+							draw.text((pos_ax, pos_ay+index_a*(device.height * 0.070)), text=str(text_block), font=lcars_littlefont, fill=lcars_theme[lcars_theme_selection]["colore5"])
+						else:
+							draw.text((pos_ax, pos_ay+index_a*(device.height * 0.070)), text=str(text_block), font=lcars_littlefont, fill=lcars_theme[lcars_theme_selection]["colore4"])
+							
+						if signal_object[signal]['status'] == 'associated':
+							draw.text((pos_ax, pos_ay+index_a*(device.height * 0.070)), text=str(text_block), font=lcars_littlefont, fill=lcars_theme[lcars_theme_selection]["colore1"])
+							
+					index_a = index_a + 1
+					#print(text_block)
 				
-		#print("my_list",hirachie_of_signals)
-		for key in sorted(hirachie_of_signals, key=hirachie_of_signals.get):
-			sorted_dict[key] = hirachie_of_signals[key]
-		#print("my_sorted_list",sorted_dict)
-		for items in sorted_dict:
-			signal_object = wifi_data_object['wlan0'][items]
-			#print(signal)
-			for signal in signal_object:
-				text_block = '%s  -  %s  %s  %s ' % ( signal, signal_object[signal]['freq:'], signal_object[signal]['signal:'][0], signal_object[signal]['SSID'][:8] )
-				if pos_ay+index_a*(device.height * 0.058) < pos_by-device.height * 0.07:
-					if animation_step == index_a:
-						draw.text((pos_ax, pos_ay+index_a*(device.height * 0.070)), text=str(text_block), font=lcars_littlefont, fill=lcars_theme[lcars_theme_selection]["colore5"])
-					else:
-						draw.text((pos_ax, pos_ay+index_a*(device.height * 0.070)), text=str(text_block), font=lcars_littlefont, fill=lcars_theme[lcars_theme_selection]["colore4"])
-						
-					if signal_object[signal]['status'] == 'associated':
-						draw.text((pos_ax, pos_ay+index_a*(device.height * 0.070)), text=str(text_block), font=lcars_littlefont, fill=lcars_theme[lcars_theme_selection]["colore1"])
-						
-				index_a = index_a + 1
-				#print(text_block)
+			return len(hirachie_of_signals)
 			
-		return len(hirachie_of_signals)
+	else:
+		if animation_step > 50:
+			draw.text((pos_ax+(device.width * 0.25), pos_ay), text=str("NO DATA"), font=lcars_bigfont, fill=lcars_theme[lcars_theme_selection]["colore4"])
+		else:
+			draw.text((pos_ax+(device.width * 0.25), pos_ay), text=str("NO DATA"), font=lcars_bigfont, fill=lcars_theme[lcars_theme_selection]["colore5"])
 	
 def lcars_element_wifi_signal_activ(device, draw,pos_ax,pos_ay,pos_bx,pos_by, location_tag):
 	fill = "yellow"
@@ -184,48 +275,75 @@ def lcars_element_wifi_signal_activ(device, draw,pos_ax,pos_ay,pos_bx,pos_by, lo
 	#print("result",result[0],len(result),elements_forgieventime)
 	#print("decode",base64.b64decode(result[0]).decode())
 	#wifi_data_object = ast.literal_eval(base64.b64decode(result[0]).decode())
-	wifi_data_object = base64.b64decode(result[0]).decode()
-	wifi_data_object = ast.literal_eval(wifi_data_object)
-	
-	if 'wlan0' in wifi_data_object:
-	    #for signal in wifi_data_object['wlan0']:
-	    for  indexof ,dict_of_signals in enumerate(wifi_data_object['wlan0']):
-		    for signal in dict_of_signals:
-			    if dict_of_signals[signal]['status'] == 'associated':
-				    text_block = '%s - %s  %s  ' % ( dict_of_signals[signal]['SSID'][:8], "associated", dict_of_signals[signal]['freq:']  )
-				    draw.text((pos_ax, pos_ay+index_a*(device.height * 0.070)), text=str(text_block), font=lcars_font, fill=lcars_theme[lcars_theme_selection]["colore1"])
-				    associated = True
-	    
-	    if associated == False:
-		    #for signal in wifi_data_object['wlan0']:
-		    for  indexof ,dict_of_signals in enumerate(wifi_data_object['wlan0']):
-			    for signal in dict_of_signals:
-				    hirachie_of_signals[indexof] = dict_of_signals[signal]['signal:'][0]
-				    
-		    #print("my_list",hirachie_of_signals)
-		    for key in sorted(hirachie_of_signals, key=hirachie_of_signals.get):
-			    sorted_dict[key] = hirachie_of_signals[key]
+	if len(result) != 0 :
+		wifi_data_object = base64.b64decode(result[0]).decode()
+		wifi_data_object = ast.literal_eval(wifi_data_object)
+		
+		if 'wlan0' in wifi_data_object:
+			#for signal in wifi_data_object['wlan0']:
+			for  indexof ,dict_of_signals in enumerate(wifi_data_object['wlan0']):
+				for signal in dict_of_signals:
+					if dict_of_signals[signal]['status'] == 'associated':
+						text_block = '%s - %s  %s  ' % ( dict_of_signals[signal]['SSID'][:8], "associated", dict_of_signals[signal]['freq:']  )
+						draw.text((pos_ax, pos_ay+index_a*(device.height * 0.070)), text=str(text_block), font=lcars_font, fill=lcars_theme[lcars_theme_selection]["colore1"])
+						associated = True
+			
+			if associated == False:
+				#for signal in wifi_data_object['wlan0']:
+				for  indexof ,dict_of_signals in enumerate(wifi_data_object['wlan0']):
+					for signal in dict_of_signals:
+						hirachie_of_signals[indexof] = dict_of_signals[signal]['signal:'][0]
+						
+				#print("my_list",hirachie_of_signals)
+				for key in sorted(hirachie_of_signals, key=hirachie_of_signals.get):
+					sorted_dict[key] = hirachie_of_signals[key]
 
-		    for items in sorted_dict:
-			    signal_object = wifi_data_object['wlan0'][next(iter(sorted_dict))]
-			    for indexof2, signal in enumerate(signal_object):
-				    if indexof2 == 0:
-					    text_block = '%s - %s      %s %s' % (signal_object[signal]['SSID'][:8], "Strong" , signal_object[signal]['signal:'][0], signal_object[signal]['signal:'][1] )
-					    draw.text((pos_ax, pos_ay+index_a*(device.height * 0.070)), text=str(text_block), font=lcars_font, fill=lcars_theme[lcars_theme_selection]["colore1"])
-			    
+				for items in sorted_dict:
+					signal_object = wifi_data_object['wlan0'][next(iter(sorted_dict))]
+					for indexof2, signal in enumerate(signal_object):
+						if indexof2 == 0:
+							text_block = '%s - %s      %s %s' % (signal_object[signal]['SSID'][:8], "Strong" , signal_object[signal]['signal:'][0], signal_object[signal]['signal:'][1] )
+							draw.text((pos_ax, pos_ay+index_a*(device.height * 0.070)), text=str(text_block), font=lcars_font, fill=lcars_theme[lcars_theme_selection]["colore1"])
+					
 
 
 
-def lcars_element_wifi_signal_spectrum(device, draw,pos_ax,pos_ay,pos_bx,pos_by, sensors):
+def lcars_element_wifi_signal_spectrum(device, draw,pos_ax,pos_ay,pos_bx,pos_by, location_tag):
 	fill = "yellow"
 	fill2 = "red"
+	time_lengh = 60
+	index_a = 0
+	associated = False
+	hirachie_of_signals = {}
+	sorted_dict = {}
 	
 	#bounding box
 	box_element_graph = [(pos_ax , pos_ay), (pos_bx, pos_by)] 
 	draw.rectangle(box_element_graph,fill="black", outline=lcars_theme[lcars_theme_selection]["colore5"])
+	
+	
+	result, elements_forgieventime = get_recent_text(location_tag, "wifi", "OBJECT", time_lengh)
 
+	if len(result) != 0 :
+		print("result")
+		wifi_data_object = base64.b64decode(result[0]).decode()
+		wifi_data_object = ast.literal_eval(wifi_data_object)
+		
+		for index,signals_over_time in enumerate(result):
+			for  indexof ,dict_of_signals in enumerate(signals_over_time[index]):
+				print(dict_of_signals[indexof])
 
-
+			draw.text((pos_ax+(device.width * 0.25), pos_ay+index*(device.height * 0.070)), text=str("DATA"), font=lcars_littlefont, fill=lcars_theme[lcars_theme_selection]["colore4"])
+		
+		
+		
+	else:
+		print("test")
+		
+		if animation_step > 50:
+			draw.text((pos_ax+(device.width * 0.25), pos_ay), text=str("NO DATA"), font=lcars_bigfont, fill=lcars_theme[lcars_theme_selection]["colore4"])
+		else:
+			draw.text((pos_ax+(device.width * 0.25), pos_ay), text=str("NO DATA"), font=lcars_bigfont, fill=lcars_theme[lcars_theme_selection]["colore5"])
 
 def lcars_element_graph(device, draw,pos_ax,pos_ay,pos_bx,pos_by, sensors_dict,mode):
 	# mode is auto scalling depending on min max
@@ -1051,9 +1169,9 @@ def lcars_multi_graph_build():
 		draw.rectangle(bottom_line,lcars_theme[lcars_theme_selection]["colore5"])
 	
 		## Looks like i found my overlapping box
-		text = "Multi   Graph"
+		text = "Multi Graph        "
 		left, top, right, bottom = draw.textbbox((0, 0), text)
-		w, h = right - left, bottom+5 - top
+		w, h = right - left, bottom+10 - top
 		w3 = device.width*0.7
 
 		left = w3-radius*2.5
@@ -1212,9 +1330,9 @@ def lcars_videoplayer_build():
 		draw.rectangle(bottom_line,lcars_theme[lcars_theme_selection]["colore5"])
 	
 		## Looks like i found my overlapping box
-		text = "Video Playback"
+		text = "Video Playback         "
 		left, top, right, bottom = draw.textbbox((0, 0), text)
-		w, h = right - left, bottom+5 - top
+		w, h = right - left, bottom+10 - top
 		w3 = device.width*0.7
 
 		left = w3-radius*2.5
@@ -1224,6 +1342,85 @@ def lcars_videoplayer_build():
 		
 	####picosvideoplayer without canvis and overdrawing i hope
 	lcars_element_videoframe(device, draw, device.width*0.15,device.height*0.12,device.width*0.95,device.height*0.85,file,option)
+	
+	
+def geo_map_view_build():
+	global animation_step
+	global sensor_animation
+	global lcars_theme_selection
+	
+	global lcars_microfont
+	global lcars_littlefont 
+	global lcars_font
+	global lcars_titlefont 
+	global lcars_bigfont 
+	global lcars_giantfont
+
+	fill2 = "black"
+	fill3 = "yellow"
+	
+	dict_graph = []
+	
+	with canvas(device, dither=True) as draw:
+					
+		lcars_element_elbow(device, draw, device.width*0.01,device.height*0.01,2,lcars_theme[lcars_theme_selection]["colore4"])
+		lcars_element_elbow(device, draw, device.width*0.01,device.height*0.86 ,3, lcars_theme[lcars_theme_selection]["colore0"])			
+           
+		radius = device.height*0.05
+          
+        #end locations
+		w0, h0 = device.width*0.01, device.height*0.41
+		w1, h1 = device.width*0.22/2, device.height*0.865
+        
+		Rshape0 = [(w0,  h0), (w1, h1)]
+        
+		# the connecting from top to bottom
+		draw.rectangle(Rshape0, lcars_theme[lcars_theme_selection]["colore5"])
+
+		if sensor_animation == 3:
+			lcars_element_side_bar(device, draw, device.width*0.01,device.height*0.13 ,3,lcars_theme[lcars_theme_selection]["colore1"])
+		else:
+			lcars_element_side_bar(device, draw, device.width*0.01,device.height*0.13 ,3,lcars_theme[lcars_theme_selection]["colore2"])
+		
+		if sensor_animation == 2:
+			lcars_element_side_bar(device, draw, device.width*0.01,device.height*0.20 ,3,lcars_theme[lcars_theme_selection]["colore1"])
+		else:
+			lcars_element_side_bar(device, draw, device.width*0.01,device.height*0.20 ,3,lcars_theme[lcars_theme_selection]["colore2"])
+		
+		if sensor_animation == 1:
+			lcars_element_side_bar(device, draw, device.width*0.01,device.height*0.274 ,3,lcars_theme[lcars_theme_selection]["colore1"])
+		else:
+			lcars_element_side_bar(device, draw, device.width*0.01,device.height*0.274 ,3,lcars_theme[lcars_theme_selection]["colore2"])
+		
+		if sensor_animation == 0:
+			lcars_element_side_bar(device, draw, device.width*0.01,device.height*0.345 ,3,lcars_theme[lcars_theme_selection]["colore1"])
+		else:
+			lcars_element_side_bar(device, draw, device.width*0.01,device.height*0.345 ,3,lcars_theme[lcars_theme_selection]["colore2"])
+		
+		lcars_element_end(device, draw, device.width*0.93,device.height*0.015,3,lcars_theme[lcars_theme_selection]["colore0"])
+		lcars_element_end(device, draw, device.width*0.93,device.height*0.93,3,lcars_theme[lcars_theme_selection]["colore0"])
+		
+		lcars_element_doublebar(device, draw, device.width*0.27 ,device.height*0.01, device.width*0.5, device.height*0.06,0,lcars_theme[lcars_theme_selection]["colore0"],lcars_theme[lcars_theme_selection]["colore5"])
+		lcars_element_doublebar(device, draw, device.width*0.51 ,device.height*0.01, device.width*0.60, device.height*0.06,0,lcars_theme[lcars_theme_selection]["colore5"],lcars_theme[lcars_theme_selection]["colore0"])
+		
+		draw.rectangle((device.width*0.7 ,device.height*0.01, device.width*0.94, device.height*0.06), fill=lcars_theme[lcars_theme_selection]["colore5"], outline=lcars_theme[lcars_theme_selection]["colore5"])
+		
+		bottom_line = [(device.width*0.27 , device.height*0.93), (device.width*0.93, device.height*0.93+radius)] 
+		
+		draw.rectangle(bottom_line,lcars_theme[lcars_theme_selection]["colore5"])
+	
+		## Looks like i found my overlapping box
+		text = "GEO  MAP EARTH   "
+		left, top, right, bottom = draw.textbbox((0, 0), text)
+		w, h = right - left, bottom+10 - top
+		w3 = device.width*0.7
+
+		left = w3-radius*2.5
+		top = -2
+		draw.rectangle((left - 1, top, left + w + 6, top + h), fill="black", outline="black")
+		draw.text((left + 1, top), text=text, font=lcars_littlefont, fill=lcars_theme[lcars_theme_selection]["font0"])	
+		
+		lcars_element_geo_map(device, draw, device.width*0.15,device.height*0.12,device.width*0.95,device.height*0.85)
 	
 	
 	
@@ -1249,8 +1446,7 @@ def wifi_band_view_build():
 		
 		wifi_activ = lcars_element_wifi_signal_activ(device, draw,device.width*0.15,device.height*0.50,device.width*0.95,device.height*0.59, "local")
 		wifi_nodes = lcars_element_wifi_signal_list(device, draw,device.width*0.15,device.height*0.60,device.width*0.95,device.height*0.85, "local")
-		#lcars_element_wifi_signal_spectrum(device, draw,device.width*0.15,device.height*0.12,device.width*0.95,device.height*0.35, "local_wifi_OBJECT")
-		#lcars_element_termal_array(device, draw,device.width*0.15,device.height*0.12,device.width*0.95,device.height*0.85,'mlx90640','dynamic_range',True)
+		lcars_element_wifi_signal_spectrum(device, draw,device.width*0.15,device.height*0.12,device.width*0.95,device.height*0.35, "local")
            
 		radius = device.height*0.05
           
@@ -1447,7 +1643,9 @@ class LCARS_Struct(object):
 		elif self == "video_playback":
 			lcars_videoplayer_build()  
 		elif self == "wifi_band_view":
-			wifi_band_view_build()      
+			wifi_band_view_build()  
+		elif self == "geo_map_view":
+			geo_map_view_build()  	
 		elif self == "type3":
 			lcars_type3_build()              
 		elif self == "type4":
@@ -1658,8 +1856,14 @@ def connect_psql(config):
 
 # Prepare connection to PSQL
 config = load_config()
+
 psql_connection_lcars = connect_psql(config)
 psql_connection_lcars.autocommit = True
+
+config_gis = load_config('database_gisdata.ini')
+con_param = "postgresql://%s:%s@%s:5432/%s" % (config_gis['user'] , config_gis['password'], config_gis['host'], config_gis['database'] )
+gis_engine = create_engine(con_param)
+
 
 if __name__ == "__main__":
 	channel.basic_consume(queue='',on_message_callback=callback, auto_ack=True)
@@ -1667,7 +1871,7 @@ if __name__ == "__main__":
 	job = Job(interval=timedelta(seconds=WAIT_TIME_SECONDS), execute=animation_push)
 	
 	try:
-		device = get_device(['--interface', 'spi', '--display', 'st7789', '--spi-port', '0', '--spi-bus-speed', '52000000', '--width', '320', '--height', '240','--mode','RGB', '--rotate','2' ])
+		device = get_device(['--interface', 'spi', '--display', 'st7789', '--spi-port', '0', '--spi-bus-speed', '52000000', '--width', '320', '--height', '240','--mode','RGB', '--rotate','0' ])
 		init(device)
 		job.start()
 		channel.start_consuming()
