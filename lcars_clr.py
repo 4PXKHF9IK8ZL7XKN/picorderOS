@@ -182,10 +182,12 @@ def lcars_element_geo_map(device, draw, pos_ax,pos_ay,pos_bx,pos_by):
 		local_Y = geo_pos_by - coordinates_min_Y
 		
 		scaled_X = local_X * resultion_multi
-		scaled_Y = local_Y * resultion_multi
+		#scaled_Y = local_Y * resultion_multi
+		scaled_Y = pos_by - local_Y * resultion_multi
 		
 		point_bx = scaled_X + image_delta_2X
-		point_by = scaled_Y + image_delta_2Y
+		#point_by = scaled_Y + image_delta_2Y
+		point_by = scaled_Y - image_delta_2Y/2
 		
 		point_element = (point_bx , point_by)
 		#print(int(point_element[1]),int(pos_ay),int(pos_by))
