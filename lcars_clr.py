@@ -142,74 +142,95 @@ def lcars_element_geo_map(device, draw, pos_ax,pos_ay,pos_bx,pos_by):
 	box_element_graph = [(pos_ax , pos_ay), (pos_bx, pos_by)] 
 	draw.rectangle(box_element_graph,fill="black", outline=lcars_theme[lcars_theme_selection]["colore5"])
 	
-	
-	sql_query = 'select geometry as geom from "Dänemark", "Germany"'
-	#sql_query = 'select geometry as geom from "Germany"'
-	#sql_query = 'select geometry as geom from "Alameda"'
-	gdf_object = geopandas.read_postgis(sql_query, gis_engine )
-	#print(gdf_object)
+	map_to_display = ["Dänemark", "Germany"]
+	#map_to_display = ["Dänemark", "Germany", "Alameda"]
 	
 	scale_list_Y = []
 	scale_list_X = []
 	# scaling determination
 	
-	exploded_geom = gdf_object.geometry.explode()
-	for item_num, gemoetry_item in  enumerate(exploded_geom):
-		coordinates_list = coord_lister(gemoetry_item)
+	for sections_todisplay in map_to_display:
+		sql_query = 'select geometry as geom from "%s"' % sections_todisplay
+		#sql_query = 'select geometry as geom from "Germany"'
+		#sql_query = 'select geometry as geom from "Alameda"'
+		gdf_object = geopandas.read_postgis(sql_query, gis_engine )
+		#print(gdf_object)
+		
+		#scale_list_Y = []
+		#scale_list_X = []
 
-		for scale_item in coordinates_list:
-			scale_list_X.append(scale_item[0])
-			scale_list_Y.append(scale_item[1])
+		
+		exploded_geom = gdf_object.geometry.explode()
+		for item_num, gemoetry_item in  enumerate(exploded_geom):
+			coordinates_list = coord_lister(gemoetry_item)
 
+			for scale_item in coordinates_list:
+				scale_list_X.append(scale_item[0])
+				scale_list_Y.append(scale_item[1])
 		
-		coordinates_min_Y = min(scale_list_Y)
-		coordinates_max_Y = max(scale_list_Y)
-		coordinates_avr_Y = statistics.mean(scale_list_Y)
+	coordinates_min_Y = min(scale_list_Y)
+	coordinates_max_Y = max(scale_list_Y)
+	coordinates_avr_Y = statistics.mean(scale_list_Y)
+	
+	coordinates_min_X = min(scale_list_X)
+	coordinates_max_X = max(scale_list_X)
+	coordinates_avr_X = statistics.mean(scale_list_X)
+	
+	coordinates_delta_X = coordinates_max_X - coordinates_min_X
+	coordinates_delta_Y = coordinates_max_Y - coordinates_min_Y
+	
+	image_delta = pos_by - pos_ay
+	image_delta_2Y = (pos_bx - pos_ax) /3
+	image_delta_2X = (pos_bx - pos_ax) /3
+	
+	resultion_multi = (image_delta / coordinates_delta_Y ) * 0.7
+	
+	for sections_todisplay in map_to_display:
+		sql_query = 'select geometry as geom from "%s"' % sections_todisplay
+		#sql_query = 'select geometry as geom from "Germany"'
+		#sql_query = 'select geometry as geom from "Alameda"'
+		gdf_object = geopandas.read_postgis(sql_query, gis_engine )
 		
-		coordinates_min_X = min(scale_list_X)
-		coordinates_max_X = max(scale_list_X)
-		coordinates_avr_X = statistics.mean(scale_list_X)
-		
-		coordinates_delta_X = coordinates_max_X - coordinates_min_X
-		coordinates_delta_Y = coordinates_max_Y - coordinates_min_Y
-		
-		image_delta = pos_by - pos_ay
-		image_delta_2Y = (pos_bx - pos_ax) /3
-		image_delta_2X = (pos_bx - pos_ax) /3
-		
-		resultion_multi = (image_delta / coordinates_delta_Y ) * 0.7
-		
-		first_cord = True
-		point_pos_a = (0,0)
-		for item in coordinates_list:
+		exploded_geom = gdf_object.geometry.explode()
+		for item_num, gemoetry_item in  enumerate(exploded_geom):
+			coordinates_list = coord_lister(gemoetry_item)
+	
 
-			geo_pos_bx,geo_pos_by = item[0], item[1]
+		for item_num, gemoetry_item in  enumerate(exploded_geom):
+			coordinates_list = coord_lister(gemoetry_item)
+			
+			
+			first_cord = True
+			point_pos_a = (0,0)
+			for item in coordinates_list:
 
-			local_X = geo_pos_bx - coordinates_min_X
-			local_Y = geo_pos_by - coordinates_min_Y
-			
-			scaled_X = local_X * resultion_multi
-			#scaled_Y = local_Y * resultion_multi
-			scaled_Y = pos_by - local_Y * resultion_multi
-			
-			point_bx = scaled_X + image_delta_2X
-			#point_by = scaled_Y + image_delta_2Y
-			point_by = scaled_Y - image_delta_2Y/2
-			
-			point_element = (point_bx , point_by)
-			#print(int(point_element[1]),int(pos_ay),int(pos_by))
-			
-			
-			if int(point_element[1]) in range(int(pos_ay), int(pos_by)):
-				if int(point_element[0]) in range(int(pos_ax), int(pos_bx)):
-					if first_cord:
-						draw.point(point_element)
-						first_cord = False
-					else:
-						line_element = [point_pos_a , (point_bx, point_by)] 
-						draw.line(line_element)		
-						#draw.point(point_element)			
-					point_pos_a = point_element
+				geo_pos_bx,geo_pos_by = item[0], item[1]
+
+				local_X = geo_pos_bx - coordinates_min_X
+				local_Y = geo_pos_by - coordinates_min_Y
+				
+				scaled_X = local_X * resultion_multi
+				#scaled_Y = local_Y * resultion_multi
+				scaled_Y = pos_by - local_Y * resultion_multi
+				
+				point_bx = scaled_X + image_delta_2X
+				#point_by = scaled_Y + image_delta_2Y
+				point_by = scaled_Y - image_delta_2Y/2
+				
+				point_element = (point_bx , point_by)
+				#print(int(point_element[1]),int(pos_ay),int(pos_by))
+				
+				
+				if int(point_element[1]) in range(int(pos_ay), int(pos_by)):
+					if int(point_element[0]) in range(int(pos_ax), int(pos_bx)):
+						if first_cord:
+							draw.point(point_element)
+							first_cord = False
+						else:
+							line_element = [point_pos_a , (point_bx, point_by)] 
+							draw.line(line_element)		
+							#draw.point(point_element)			
+						point_pos_a = point_element
 	
 		
 		
