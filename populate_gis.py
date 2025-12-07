@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
-# PYTHON_ARGCOMPLETE_OK
+ # PYTHON_ARGCOMPLETE_OK
 
 import geopandas 
 import osmnx as ox
@@ -9,7 +9,7 @@ from sqlalchemy import create_engine
 from picos_psql_config import load_config
 
 # Specify the name that is used to seach for the data
-place_name = "Alameda"
+place_name = "Dänemark"
 
 
 # Get place boundary related to the place name as a geodataframe
