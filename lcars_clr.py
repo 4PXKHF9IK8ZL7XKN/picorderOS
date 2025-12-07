@@ -44,7 +44,7 @@ from picos_psql_config import load_config
 
 from scipy.interpolate import griddata
 
-from sqlalchemy import create_engine
+from sqlalchemy import create_engine, inspect
 
 bme680_temp = [0]
 
@@ -142,24 +142,23 @@ def lcars_element_geo_map(device, draw, pos_ax,pos_ay,pos_bx,pos_by):
 	box_element_graph = [(pos_ax , pos_ay), (pos_bx, pos_by)] 
 	draw.rectangle(box_element_graph,fill="black", outline=lcars_theme[lcars_theme_selection]["colore5"])
 	
-	map_to_display = ["Dänemark", "Germany"]
+	#map_to_display = ["Dänemark", "Germany"]
 	#map_to_display = ["Dänemark", "Germany", "Alameda"]
 	
 	scale_list_Y = []
 	scale_list_X = []
 	# scaling determination
 	
+	inspection = inspect(gis_engine)
+	map_to_display = inspection.get_table_names()
+	map_to_display.remove("spatial_ref_sys")
+	print(map_to_display)
+	
 	for sections_todisplay in map_to_display:
 		sql_query = 'select geometry as geom from "%s"' % sections_todisplay
-		#sql_query = 'select geometry as geom from "Germany"'
-		#sql_query = 'select geometry as geom from "Alameda"'
+		
 		gdf_object = geopandas.read_postgis(sql_query, gis_engine )
-		#print(gdf_object)
-		
-		#scale_list_Y = []
-		#scale_list_X = []
 
-		
 		exploded_geom = gdf_object.geometry.explode()
 		for item_num, gemoetry_item in  enumerate(exploded_geom):
 			coordinates_list = coord_lister(gemoetry_item)
@@ -183,12 +182,10 @@ def lcars_element_geo_map(device, draw, pos_ax,pos_ay,pos_bx,pos_by):
 	image_delta_2Y = (pos_bx - pos_ax) /3
 	image_delta_2X = (pos_bx - pos_ax) /3
 	
-	resultion_multi = (image_delta / coordinates_delta_Y ) * 0.7
+	resultion_multi = (image_delta / coordinates_delta_Y ) * 0.57
 	
 	for sections_todisplay in map_to_display:
 		sql_query = 'select geometry as geom from "%s"' % sections_todisplay
-		#sql_query = 'select geometry as geom from "Germany"'
-		#sql_query = 'select geometry as geom from "Alameda"'
 		gdf_object = geopandas.read_postgis(sql_query, gis_engine )
 		
 		exploded_geom = gdf_object.geometry.explode()
@@ -213,9 +210,9 @@ def lcars_element_geo_map(device, draw, pos_ax,pos_ay,pos_bx,pos_by):
 				#scaled_Y = local_Y * resultion_multi
 				scaled_Y = pos_by - local_Y * resultion_multi
 				
-				point_bx = scaled_X + image_delta_2X
+				point_bx = 10 + scaled_X + image_delta_2X * 0.4
 				#point_by = scaled_Y + image_delta_2Y
-				point_by = scaled_Y - image_delta_2Y/2
+				point_by = scaled_Y - image_delta_2Y * 0.4
 				
 				point_element = (point_bx , point_by)
 				#print(int(point_element[1]),int(pos_ay),int(pos_by))
