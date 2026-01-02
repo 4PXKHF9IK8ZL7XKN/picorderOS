@@ -36,6 +36,7 @@ from luma.core.sprite_system import framerate_regulator
 from luma.core import cmdline, error
 from luma.core.render import canvas
 from PIL import ImageFont
+from PIL import Image
 from datetime import timedelta
 from colour import Color
 
@@ -48,6 +49,7 @@ from sqlalchemy import create_engine, inspect
 
 bme680_temp = [0]
 
+cwd = os.getcwd()
 
 wheel_lib = [ "multi_graph","termal_view","wifi_band_view", "video_playback","type3", "type4"]
 wheel_geo = [ "multi_graph","wifi_band_view", "geo_map_view"]
@@ -129,7 +131,7 @@ def coord_lister(geom):
     return (coords)
     
 		
-def lcars_element_geo_map(device, draw, pos_ax,pos_ay,pos_bx,pos_by):
+def lcars_element_geo_map(device, draw, pos_ax,pos_ay,pos_bx,pos_by,country):
 	# this element needs to be on top so no canvase can be used here
 
 	fill = "yellow"
@@ -138,6 +140,9 @@ def lcars_element_geo_map(device, draw, pos_ax,pos_ay,pos_bx,pos_by):
 	sensor_legende = ""
 	global lcars_microfont
 	
+	x_lengh = pos_bx - pos_ax
+	y_lengh = pos_by - pos_ay
+		
 	#bounding box
 	box_element_graph = [(pos_ax , pos_ay), (pos_bx, pos_by)] 
 	draw.rectangle(box_element_graph,fill="black", outline=lcars_theme[lcars_theme_selection]["colore5"])
@@ -149,86 +154,124 @@ def lcars_element_geo_map(device, draw, pos_ax,pos_ay,pos_bx,pos_by):
 	scale_list_X = []
 	# scaling determination
 	
-	inspection = inspect(gis_engine)
-	map_to_display = inspection.get_table_names()
-	map_to_display.remove("spatial_ref_sys")
-	print(map_to_display)
-	
-	for sections_todisplay in map_to_display:
-		sql_query = 'select geometry as geom from "%s"' % sections_todisplay
-		
-		gdf_object = geopandas.read_postgis(sql_query, gis_engine )
-
-		exploded_geom = gdf_object.geometry.explode()
-		for item_num, gemoetry_item in  enumerate(exploded_geom):
-			coordinates_list = coord_lister(gemoetry_item)
-
-			for scale_item in coordinates_list:
-				scale_list_X.append(scale_item[0])
-				scale_list_Y.append(scale_item[1])
-		
-	coordinates_min_Y = min(scale_list_Y)
-	coordinates_max_Y = max(scale_list_Y)
-	coordinates_avr_Y = statistics.mean(scale_list_Y)
-	
-	coordinates_min_X = min(scale_list_X)
-	coordinates_max_X = max(scale_list_X)
-	coordinates_avr_X = statistics.mean(scale_list_X)
-	
-	coordinates_delta_X = coordinates_max_X - coordinates_min_X
-	coordinates_delta_Y = coordinates_max_Y - coordinates_min_Y
-	
-	image_delta = pos_by - pos_ay
-	image_delta_2Y = (pos_bx - pos_ax) /3
-	image_delta_2X = (pos_bx - pos_ax) /3
-	
-	resultion_multi = (image_delta / coordinates_delta_Y ) * 0.57
-	
-	for sections_todisplay in map_to_display:
-		sql_query = 'select geometry as geom from "%s"' % sections_todisplay
-		gdf_object = geopandas.read_postgis(sql_query, gis_engine )
-		
-		exploded_geom = gdf_object.geometry.explode()
-		for item_num, gemoetry_item in  enumerate(exploded_geom):
-			coordinates_list = coord_lister(gemoetry_item)
-	
-
-		for item_num, gemoetry_item in  enumerate(exploded_geom):
-			coordinates_list = coord_lister(gemoetry_item)
+	if country[0] == "world":
+		inspection = inspect(gis_engine)
+		map_to_display = inspection.get_table_names()
+		map_to_display.remove("spatial_ref_sys")
+		cache_file_check = f"{cwd}/cache/world.bmp"
+	elif country[0] == "eu":
+		map_to_display = ["Dänemark", "Germany"]
+		cache_file_check = f"{cwd}/cache/eu.bmp"
+	else:
+		map_to_display = country
+		country_cache_string = ""
+		for country_item in country:
+			country_cache_string = country_cache_string + country_item		
+		cache_file_check = f"{cwd}/cache/{country_cache_string}.bmp"
 			
-			
-			first_cord = True
-			point_pos_a = (0,0)
-			for item in coordinates_list:
-
-				geo_pos_bx,geo_pos_by = item[0], item[1]
-
-				local_X = geo_pos_bx - coordinates_min_X
-				local_Y = geo_pos_by - coordinates_min_Y
-				
-				scaled_X = local_X * resultion_multi
-				#scaled_Y = local_Y * resultion_multi
-				scaled_Y = pos_by - local_Y * resultion_multi
-				
-				point_bx = 10 + scaled_X + image_delta_2X * 0.4
-				#point_by = scaled_Y + image_delta_2Y
-				point_by = scaled_Y - image_delta_2Y * 0.4
-				
-				point_element = (point_bx , point_by)
-				#print(int(point_element[1]),int(pos_ay),int(pos_by))
-				
-				
-				if int(point_element[1]) in range(int(pos_ay), int(pos_by)):
-					if int(point_element[0]) in range(int(pos_ax), int(pos_bx)):
-						if first_cord:
-							draw.point(point_element)
-							first_cord = False
-						else:
-							line_element = [point_pos_a , (point_bx, point_by)] 
-							draw.line(line_element)		
-							#draw.point(point_element)			
-						point_pos_a = point_element
 	
+	
+	#cache_file_check = f"{cwd}/cache/{coordinates_min_Y}{coordinates_max_Y}{coordinates_min_X}{coordinates_max_X}{image_delta}{image_delta_2Y}{image_delta_2X}{resultion_multi}"
+	#cache_file_check = f"{cwd}/cache/test.bmp"
+	
+	ret_cache_exists = os.path.exists(cache_file_check)
+	if ret_cache_exists == True:
+		# Open the file in read mode
+		map_cache = Image.open(cache_file_check).convert("RGBA")
+		### pares bitmap information alone not with pil, as they would overdraw the canvas
+		for x_pix in range(1, int(x_lengh)-1):
+			for y_pix in range(1, int(y_lengh)-1):
+				pixel = map_cache.getpixel((x_pix, y_pix))
+				point = (pos_ax + x_pix , pos_ay+y_pix) 
+				draw.point(point, fill=pixel)		
+	
+	else:
+	
+		img_map_cache  = Image.new( mode = "RGB", size = (int(x_lengh), int(y_lengh)), color = (209, 123, 193, 100) )
+		img_map_cache.save(cache_file_check, format="bmp")
+	
+		for sections_todisplay in map_to_display:
+			sql_query = 'select geometry as geom from "%s"' % sections_todisplay
+			
+			gdf_object = geopandas.read_postgis(sql_query, gis_engine )
+
+			exploded_geom = gdf_object.geometry.explode()
+			for item_num, gemoetry_item in  enumerate(exploded_geom):
+				coordinates_list = coord_lister(gemoetry_item)
+
+				for scale_item in coordinates_list:
+					scale_list_X.append(scale_item[0])
+					scale_list_Y.append(scale_item[1])
+
+			
+		coordinates_min_Y = min(scale_list_Y)
+		coordinates_max_Y = max(scale_list_Y)
+		coordinates_avr_Y = statistics.mean(scale_list_Y)
+		
+		coordinates_min_X = min(scale_list_X)
+		coordinates_max_X = max(scale_list_X)
+		coordinates_avr_X = statistics.mean(scale_list_X)
+		
+		coordinates_delta_X = coordinates_max_X - coordinates_min_X
+		coordinates_delta_Y = coordinates_max_Y - coordinates_min_Y
+		
+		image_delta = pos_by - pos_ay
+		image_delta_2Y = (pos_bx - pos_ax) /3
+		image_delta_2X = (pos_bx - pos_ax) /3
+		
+		resultion_multi = (image_delta / coordinates_delta_Y ) * 0.57 
+		
+		for sections_todisplay in map_to_display:
+			sql_query = 'select geometry as geom from "%s"' % sections_todisplay
+			gdf_object = geopandas.read_postgis(sql_query, gis_engine )
+			
+			exploded_geom = gdf_object.geometry.explode()
+			for item_num, gemoetry_item in  enumerate(exploded_geom):
+				coordinates_list = coord_lister(gemoetry_item)
+		
+
+			for item_num, gemoetry_item in  enumerate(exploded_geom):
+				coordinates_list = coord_lister(gemoetry_item)
+				
+				
+				first_cord = True
+				point_pos_a = (0,0)
+				for item in coordinates_list:
+
+					geo_pos_bx,geo_pos_by = item[0], item[1]
+
+					local_X = geo_pos_bx - coordinates_min_X
+					local_Y = geo_pos_by - coordinates_min_Y
+					
+					scaled_X = local_X * resultion_multi
+					#scaled_Y = local_Y * resultion_multi
+					scaled_Y = pos_by - local_Y * resultion_multi
+					
+					point_bx = 10 + scaled_X + image_delta_2X * 0.4
+					#point_by = scaled_Y + image_delta_2Y
+					point_by = scaled_Y - image_delta_2Y * 0.4
+					
+					point_element = (point_bx , point_by)
+					#print(int(point_element[1]),int(pos_ay),int(pos_by))
+					
+					
+					if int(point_element[1]) in range(int(pos_ay), int(pos_by)):
+						if int(point_element[0]) in range(int(pos_ax), int(pos_bx)):
+							if first_cord:
+								draw.point(point_element)
+								first_cord = False
+							else:
+								line_element = [point_pos_a , (point_bx, point_by)] 
+								draw.line(line_element)		
+								#draw.point(point_element)	
+	
+							point_pos_a = point_element
+							
+			screenshot = draw._image	
+			box = (pos_ax,pos_ay,pos_bx,pos_by)		
+			img_map_cache = screenshot.crop(box)
+			
+			img_map_cache.save(cache_file_check, format="bmp")
 		
 		
 def lcars_element_wifi_signal_list(device, draw,pos_ax,pos_ay,pos_bx,pos_by, location_tag):
@@ -1447,7 +1490,10 @@ def geo_map_view_build():
 		draw.rectangle((left - 1, top, left + w + 6, top + h), fill="black", outline="black")
 		draw.text((left + 1, top), text=text, font=lcars_littlefont, fill=lcars_theme[lcars_theme_selection]["font0"])	
 		
-		lcars_element_geo_map(device, draw, device.width*0.15,device.height*0.12,device.width*0.95,device.height*0.85)
+		# Rectangel frame
+		
+		#draw.rectangle((device.width*0.15,device.height*0.12,device.width*0.95,device.height*0.85), fill="black", outline=lcars_theme[lcars_theme_selection]["colore5"])	
+		lcars_element_geo_map(device, draw, device.width*0.15,device.height*0.12,device.width*0.95,device.height*0.85, ["world"])
 	
 	
 	
