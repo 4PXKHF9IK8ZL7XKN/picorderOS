@@ -69,16 +69,23 @@ class sensor_functions(object):
 		timestamp = time.time()
 		matrix = {}
 		connection_ID = 0
-
-		process = subprocess.Popen(["sudo","iw", "wlan0", "scan"], stdout=subprocess.PIPE)
+		seconds = 3
+		try:
+			process = subprocess.Popen(["sudo","iw", "wlan0", "scan"], stdout=subprocess.PIPE)
+			output, error = process.communicate(timeout=10)
+			if error:
+				raise Exception("an error occurred: {error}")
+		except KeyboardInterrupt or Exception or OSError as e:
+			print("GET EM-DATA Faild", e)
+			sys.exit(1)
 		
 		mac = ""
 		interface = ""
 		
+		data_output = output.decode()
 		
-		for line in process.stdout:
-			clean_line = line.decode().strip()
-			
+		for line in data_output.split('\n'):	
+			clean_line = line.strip()
 			if clean_line.startswith("BSS Load:"):
 				if 'BSS Load' not in matrix[interface][connection_ID-1][mac]:
 					matrix[interface][connection_ID-1][mac]['BSS Load'] = []		
@@ -137,8 +144,6 @@ class sensor_functions(object):
 				matrix[interface][connection_ID-1][mac][k] = v.strip()
 			
 			if clean_line.startswith("RSN:"):
-				print("DEBUG")
-				print(clean_line)
 				k,v,t = clean_line.split(":")				
 				_,v = v.split("*")
 				matrix[interface][connection_ID-1][mac][k.strip()] = {v.strip(): t.strip()}
