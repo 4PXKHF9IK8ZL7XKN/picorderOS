@@ -382,34 +382,79 @@ def lcars_element_wifi_signal_spectrum(device, draw,pos_ax,pos_ay,pos_bx,pos_by,
 	fill = "yellow"
 	fill2 = "red"
 	time_lengh = 60
+	
 	index_a = 0
 	associated = False
 	hirachie_of_signals = {}
 	sorted_dict = {}
+	# setting a 2Ghz to 6Ghz spectrum 
+	signale_spectrum_static = True
+		
+	spec_leng_a = pos_ax*1.1
+	spec_leng_b = pos_bx*0.99
+	spec_leng_delta = spec_leng_b - spec_leng_a
+	
+	spec_leng_h = pos_by*0.95
+	
+	spec_leng_offset = 2000
+	# devding in mhz steps
+	spec_leng_delta_4mhz_multi = spec_leng_delta / 4000	
+		
+	spec_hight_a = pos_ay*1.1
+	spec_hight_h = spec_leng_h
+	spec_hight_delta = spec_hight_h - spec_hight_a	
+	spec_hight_delta_100_multi = spec_hight_delta / 100
+	
+	#line_element_h = [(spec_leng_a, spec_hight_a) , (spec_leng_b, spec_hight_a)] 
+	line_element = [(spec_leng_a, spec_leng_h) , (spec_leng_b, spec_leng_h)] 
+	
 	
 	#bounding box
 	box_element_graph = [(pos_ax , pos_ay), (pos_bx, pos_by)] 
 	draw.rectangle(box_element_graph,fill="black", outline=lcars_theme[lcars_theme_selection]["colore5"])
-	
-	
+		
 	result, elements_forgieventime = get_recent_text(location_tag, "wifi", "OBJECT", time_lengh)
 
 	if len(result) != 0 :
-		print("result")
-		wifi_data_object = base64.b64decode(result[0]).decode()
-		wifi_data_object = ast.literal_eval(wifi_data_object)
-		
+		draw.line(line_element)			
 		for index,signals_over_time in enumerate(result):
-			for  indexof ,dict_of_signals in enumerate(signals_over_time[index]):
-				print(dict_of_signals[indexof])
+			wifi_data_object = base64.b64decode(signals_over_time).decode()
+			wifi_data_object = ast.literal_eval(wifi_data_object)
+			#print(wifi_data_object)
+			if 'wlan0' in wifi_data_object:
+			#for signal in wifi_data_object['wlan0']:
+				for  indexof ,dict_of_signals in enumerate(wifi_data_object['wlan0']):
+					for signal in dict_of_signals:
+						freq_str = str(dict_of_signals[signal]['freq:'])
+						
+						calc_pos_x = ((int(dict_of_signals[signal]['freq:']) - spec_leng_offset) * float(spec_leng_delta_4mhz_multi)) + int(spec_leng_a)
+						calc_pos_h = spec_leng_h + (float(dict_of_signals[signal]['signal:'][0]) * float(spec_hight_delta_100_multi))
+						
+						#print(calc_pos_h, spec_leng_h,  float(dict_of_signals[signal]['signal:'][0]), float(spec_hight_delta_100_multi))
+						
+						dot_element = [(calc_pos_x-2, calc_pos_h-2) , (calc_pos_x+2, calc_pos_h+2)] 
+						dot_line_element = [(calc_pos_x, spec_leng_h) , (calc_pos_x, calc_pos_h)] 
+						
+						if dict_of_signals[signal]['status'] == 'associated':
+							draw.line(dot_line_element, fill=lcars_theme[lcars_theme_selection]["colore1"])	
+							draw.ellipse(dot_element, fill=lcars_theme[lcars_theme_selection]["colore1"], outline=lcars_theme[lcars_theme_selection]["colore1"])						
+						else:
+							draw.line(dot_line_element, fill=lcars_theme[lcars_theme_selection]["colore4"])	
+							draw.ellipse(dot_element, fill=lcars_theme[lcars_theme_selection]["colore4"], outline=lcars_theme[lcars_theme_selection]["colore4"])
+						
+						freq_pos = (calc_pos_x * 0.9 , spec_leng_h * 0.75)
+						
+						#draw.text(freq_pos, text=freq_str, font=lcars_littlefont, fill=lcars_theme[lcars_theme_selection]["colore4"])
+						
+			
+			
 
-			draw.text((pos_ax+(device.width * 0.25), pos_ay+index*(device.height * 0.070)), text=str("DATA"), font=lcars_littlefont, fill=lcars_theme[lcars_theme_selection]["colore4"])
+			
+				
 		
 		
 		
 	else:
-		print("test")
-		
 		if animation_step > 50:
 			draw.text((pos_ax+(device.width * 0.25), pos_ay), text=str("NO DATA"), font=lcars_bigfont, fill=lcars_theme[lcars_theme_selection]["colore4"])
 		else:
@@ -1809,7 +1854,7 @@ def callback(ch, method, properties, body):
     
 		DICT = body.decode()
 		DICT_CLEAN = ast.literal_eval(DICT)
-		print('EVENT')		
+
 		
 		if DICT_CLEAN['geo']:
 			print('EVENT - geo')	
@@ -1825,6 +1870,8 @@ def callback(ch, method, properties, body):
 			print('EVENT - bio')
 			style = wheel_bio.pop()
 			wheel_bio.insert(0, style)	
+		else:
+		    print('EVENT - :', DICT_CLEAN )		
 			
 				
 			#lcars_theme_selection = lcars_theme_selection + 1
