@@ -91,25 +91,38 @@ if configure.input_cap1188:
 
 	try:
 
-                #GPIO.setup(BUTTON_GPIOA_RST, GPIO.OUT, initial=GPIO.LOW)
-                time.sleep(0.1)
-                #GPIO.output(BUTTON_GPIOA_RST,GPIO.HIGH)
-                time.sleep(0.1)
-                #GPIO.output(BUTTON_GPIOA_RST,GPIO.LOW)
+                time.sleep(0.2)
                 cap1188A = CAP1188_I2C(i2c, address=0x28)
-                #################cap1188B = CAP1188_I2C(i2c, address=0x29)
-                #cap1188A.sensitivity = configure.CAPSENSITIVITY
-                #########cap1188B.sensitivity = configure.CAPSENSITIVITY
-                #GPIO.setup(BUTTON_GPIOA_RST, GPIO.OUT, initial=GPIO.HIGH)
-                #time.sleep(0.01)
-                #GPIO.output(BUTTON_GPIOA_RST,GPIO.LOW)
-                #time.sleep(0.01)
-                #GPIO.output(BUTTON_GPIOA_RST,GPIO.HIGH)
+                cap1188B = CAP1188_I2C(i2c, address=0x29)
+
 
 	except OSError as e:
 		print("Error in Sensors Rabbitmq by request I2C - input_cap1188", e)
 		sys.exit(1)		
 		
+if configure.cap1188_cap_mpr121_mix:
+	from adafruit_cap1188.i2c import CAP1188_I2C
+	import adafruit_mpr121
+	import board
+	import busio
+	import signal
+
+	try:
+
+		time.sleep(0.2)
+		# Note you can optionally change the address of the device:
+		mpr121A = adafruit_mpr121.MPR121(i2c, address=0x5B )
+		cap1188B = CAP1188_I2C(i2c, address=0x28)
+
+		for b in range(12):
+			mpr121A[b].baseline_data = 7
+
+	except OSError as e:
+		print("Error in Sensors Rabbitmq by request I2C - cap_mpr121", e)
+		sys.exit(1)
+
+
+
 
 if configure.bme:
 	import adafruit_bme680
@@ -239,7 +252,11 @@ def button_callbackA(channel):
 	if configure.input_cap1188:
 		for i in range(0,7,1):
 			touchA_dict[i] = cap1188A[i+1].value
-			print("valueA", cap1188A[i+1].value)
+			
+	if configure.cap1188_cap_mpr121_mix:
+		for i in range(12):
+			touchA_dict[i] = mpr121A[i].value
+			
 
 	publish("touch",touchA_dict)
 	softbreak_flag = False
@@ -259,7 +276,11 @@ def button_callbackB(channel):
 	if configure.input_cap1188:
 		for i in range(0,7,1):
 			touchB_dict[i] = cap1188B[i+1].value
-			print("valueB", cap1188B[i+1].value)
+			
+	if configure.cap1188_cap_mpr121_mix:
+		for i in range(0,7,1):
+			touchB_dict[i] = cap1188B[i+1].value
+
 
 
 	publish("touch",touchB_dict)
@@ -273,6 +294,11 @@ def reset():
 			#print("RESETB", touchB_dict)
 			for i in range(12):
 				null = mpr121B[i].value
+				null = mpr121A[i].value
+				
+	if configure.cap1188_cap_mpr121_mix:
+		if not GPIO.input(17) or not GPIO.input(27):
+			for i in range(12):
 				null = mpr121A[i].value
 
 
@@ -1062,6 +1088,18 @@ if __name__ == "__main__":
 
 		button_callbackA(open_channel)
 		#####button_callbackB(open_channel)
+		
+	if configure.cap1188_cap_mpr121_mix:
+		print("mixed mode")
+		GPIO.setup(BUTTON_GPIOA, GPIO.IN, pull_up_down=GPIO.PUD_UP)
+		GPIO.setup(BUTTON_GPIOB, GPIO.IN, pull_up_down=GPIO.PUD_UP)
+		
+		GPIO.add_event_detect(BUTTON_GPIOA, GPIO.BOTH, callback=button_callbackA, bouncetime=10)
+		GPIO.add_event_detect(BUTTON_GPIOB, GPIO.BOTH, callback=button_callbackB, bouncetime=10) 
+		
+		button_callbackA(open_channel)
+		###button_callbackB(open_channel)
+	
 
 	while True:
 		try:
@@ -1166,10 +1204,17 @@ if __name__ == "__main__":
 			
 			stateA = GPIO.input(BUTTON_GPIOA)
 			if stateA:
-				print('on')
+				print('stateA on')
 				button_callbackA(open_channel)
 			else:
-				print('off')
+				pass
+				
+			stateB = GPIO.input(BUTTON_GPIOB)
+			if stateB:
+				print('stateB on')
+				button_callbackB(open_channel)
+			else:
+				pass
 
 			counter = counter + 1 
 			if counter == 180:

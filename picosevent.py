@@ -107,7 +107,7 @@ def callback(ch, method, properties, body):
 	print("CALLBACK",method.routing_key)
 	if method.routing_key == 'touch':
 		print("CALL")
-		if configure.input_cap_mpr121 or configure.input_cap1188:
+		if configure.input_cap_mpr121 or configure.input_cap1188 or configure.cap1188_cap_mpr121_mix:
 			print("SETUP")
 			sensor_dict_unclean = body.decode()
 			sensor_dict = ast.literal_eval(sensor_dict_unclean)
@@ -118,35 +118,15 @@ def callback(ch, method, properties, body):
 					if not key == 'DICT':
 						if key == 0:
 							EVENT_MAP['pwr'] = sensor_dict[key]
-							configure.eventlist[0][0] =  sensor_dict[key]
 						elif key == 1:
-							pass
-						elif key == 2:
-							pass
-						elif key == 3:
-							pass
-						elif key == 4:
 							EVENT_MAP['geo'] = sensor_dict[key]
-							configure.eventlist[0][4] =  sensor_dict[key]
-						elif key == 5:
-							EVENT_MAP['cancel/switch'] = sensor_dict[key]
-						elif key == 6:
-							EVENT_MAP['E'] = sensor_dict[key]
-							configure.eventlist[0][7] =  sensor_dict[key]
-						elif key == 7:
+						elif key == 2:
+							EVENT_MAP['met'] = sensor_dict[key]
+						elif key == 3:
+							EVENT_MAP['bio'] = sensor_dict[key]
+						elif key == 4:
 							EVENT_MAP['f1/f2'] = sensor_dict[key]
-							configure.eventlist[0][5] =  sensor_dict[key]
-						elif key == 8:
-							EVENT_MAP['I'] = sensor_dict[key]
-							configure.eventlist[0][6] =  sensor_dict[key]
-							if sensor_dict[key]:
-								if ALERT_STATE != 2:
-									ALERT_STATE = 2
-									SENSOR_MODE = 2
-								else:
-									ALERT_STATE = 0
-									SENSOR_MODE = SENSOR_MODE_LAST
-						elif key == 9:
+						elif key == 5:
 							EVENT_MAP['lib'] = sensor_dict[key]
 							configure.eventlist[0][3] =  sensor_dict[key]
 							if sensor_dict[key]:
@@ -155,36 +135,41 @@ def callback(ch, method, properties, body):
 								if SENSOR_MODE > 8:
 									SENSOR_MODE = 0
 									SENSOR_MODE_LAST = 0
+						elif key == 6:
+							EVENT_MAP['E'] = sensor_dict[key]
+						elif key == 7:
+							EVENT_MAP['I'] = sensor_dict[key]
+							if sensor_dict[key]:
+								if ALERT_STATE != 2:
+									ALERT_STATE = 2
+									SENSOR_MODE = 2
+								else:
+									ALERT_STATE = 0
+									SENSOR_MODE = SENSOR_MODE_LAST
+						elif key == 8:
+							pass
+						elif key == 9:
+							pass
 						elif key == 10:
-							EVENT_MAP['met'] = sensor_dict[key]
-							configure.eventlist[0][1] =  sensor_dict[key]
+							pass
 						elif key == 11:
-							EVENT_MAP['bio'] = sensor_dict[key]
-							configure.eventlist[0][2] =  sensor_dict[key]
+							pass
 				elif sensor_dict['DICT'] == 'B':
 					if not key == 'DICT':
 						if key == 0:
 							EVENT_MAP['accpt/pool'] = sensor_dict[key]
-							#configure.eventlist[0][8] =  sensor_dict[key]						
 						elif key == 1:
 							EVENT_MAP['intrship/tricrder'] = sensor_dict[key]
-							#configure.eventlist[0][9] =  sensor_dict[key]
 						elif key == 2:
 							EVENT_MAP['EMRG'] = sensor_dict[key]
-							#configure.eventlist[0][10] =  sensor_dict[key]
-
 						elif key == 3:
 							EVENT_MAP['fwd/input'] = sensor_dict[key]
-							#configure.eventlist[0][11] =  sensor_dict[key]
 						elif key == 4:
 							EVENT_MAP['rvs/erase'] = sensor_dict[key]
-							#configure.eventlist[0][12] =  sensor_dict[key]
 						elif key == 5:
 							EVENT_MAP['Ib'] = sensor_dict[key]
-							#configure.eventlist[0][13] =  sensor_dict[key]
 						elif key == 6:
 							EVENT_MAP['Eb'] = sensor_dict[key]
-							#configure.eventlist[0][14] =  sensor_dict[key]
 						elif key == 7:
 							EVENT_MAP['Id'] = sensor_dict[key]
 						elif key == 8:
