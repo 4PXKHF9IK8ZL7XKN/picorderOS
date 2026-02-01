@@ -78,6 +78,7 @@ class preferences(object):
 							'pcf8575':'no',
 							'sensehat_joystick':'no',
 							'cap1188':'yes',
+							'cap1188_cap_mpr121_mix':'no',
 							'# Capacitive touch threshold Sensitivty must be one of: (128, 64, 32, 16, 8, 4, 2, 1)':None,
 							'capsensitivity':'64',
 							'# Manual control allows the front end to provide its own operator input handling':None,
@@ -273,6 +274,7 @@ class preferences(object):
 
 		self.keyboard_input = self.str2bool(config['INPUT']['keyboard_input'])
 		self.keyboard_input_path = str(config['INPUT']['keyboard_input_path'])
+		self.cap1188_cap_mpr121_mix = self.str2bool(config['INPUT']['cap1188_cap_mpr121_mix'])
 
 
 # PIN ASSIGNMENTS--------------------------------------------------------------#]
