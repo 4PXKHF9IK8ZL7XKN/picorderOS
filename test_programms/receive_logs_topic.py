@@ -15,11 +15,11 @@ channel = connection.channel()
 result = channel.queue_declare('', exclusive=True)
 queue_name = result.method.queue
 
-#channel.queue_bind(
-#    exchange='sensor_data', queue='', routing_key='touch')
-
 channel.queue_bind(
-    exchange='sensor_data', queue='', routing_key='wifi_stats')
+    exchange='sensor_data', queue='', routing_key='touch')
+
+#channel.queue_bind(
+#   exchange='sensor_data', queue='', routing_key='wifi_stats')
 
 #channel.queue_bind(
 #    exchange='sensor_data', queue='', routing_key='_empty')
