@@ -52,7 +52,7 @@ bme680_temp = [0]
 cwd = os.getcwd()
 
 wheel_lib = [ "multi_graph","termal_view","wifi_band_view", "video_playback","type3", "type4"]
-wheel_geo = [ "multi_graph","wifi_band_view", "geo_map_view"]
+wheel_geo = [ "multi_graph","wifi_band_view", "geo_map_view", "wifi_dominant_view"]
 wheel_met = [ "multi_graph","type3", "type4"]
 wheel_bio = [ "multi_graph","termal_view"]
 
@@ -290,7 +290,7 @@ def lcars_element_wifi_signal_list(device, draw,pos_ax,pos_ay,pos_bx,pos_by, loc
 	#print("decode",base64.b64decode(result[0]).decode())
 	#wifi_data_object = ast.literal_eval(base64.b64decode(result[0]).decode())
 	if len(result) != 0 :
-		wifi_data_object = base64.b64decode(result[0]).decode()
+		wifi_data_object = base64.b64decode(result[-1]).decode()
 		wifi_data_object = ast.literal_eval(wifi_data_object)
 
 		#for signal in wifi_data_object['wlan0']:
@@ -417,41 +417,35 @@ def lcars_element_wifi_signal_spectrum(device, draw,pos_ax,pos_ay,pos_bx,pos_by,
 
 	if len(result) != 0 :
 		draw.line(line_element)			
-		for index,signals_over_time in enumerate(result):
-			wifi_data_object = base64.b64decode(signals_over_time).decode()
-			wifi_data_object = ast.literal_eval(wifi_data_object)
-			#print(wifi_data_object)
-			if 'wlan0' in wifi_data_object:
-			#for signal in wifi_data_object['wlan0']:
-				for  indexof ,dict_of_signals in enumerate(wifi_data_object['wlan0']):
-					for signal in dict_of_signals:
-						freq_str = str(dict_of_signals[signal]['freq:'])
-						
-						calc_pos_x = ((int(dict_of_signals[signal]['freq:']) - spec_leng_offset) * float(spec_leng_delta_4mhz_multi)) + int(spec_leng_a)
-						calc_pos_h = spec_leng_h + (float(dict_of_signals[signal]['signal:'][0]) * float(spec_hight_delta_100_multi))
-						
-						#print(calc_pos_h, spec_leng_h,  float(dict_of_signals[signal]['signal:'][0]), float(spec_hight_delta_100_multi))
-						
-						dot_element = [(calc_pos_x-2, calc_pos_h-2) , (calc_pos_x+2, calc_pos_h+2)] 
-						dot_line_element = [(calc_pos_x, spec_leng_h) , (calc_pos_x, calc_pos_h)] 
-						
-						if dict_of_signals[signal]['status'] == 'associated':
-							draw.line(dot_line_element, fill=lcars_theme[lcars_theme_selection]["colore1"])	
-							draw.ellipse(dot_element, fill=lcars_theme[lcars_theme_selection]["colore1"], outline=lcars_theme[lcars_theme_selection]["colore1"])						
-						else:
-							draw.line(dot_line_element, fill=lcars_theme[lcars_theme_selection]["colore4"])	
-							draw.ellipse(dot_element, fill=lcars_theme[lcars_theme_selection]["colore4"], outline=lcars_theme[lcars_theme_selection]["colore4"])
-						
-						freq_pos = (calc_pos_x * 0.9 , spec_leng_h * 0.75)
-						
-						#draw.text(freq_pos, text=freq_str, font=lcars_littlefont, fill=lcars_theme[lcars_theme_selection]["colore4"])
-						
-			
-			
-
-			
-				
-		
+		last_signals = result[-1]
+		wifi_data_object = base64.b64decode(last_signals).decode()
+		wifi_data_object = ast.literal_eval(wifi_data_object)
+		#print(wifi_data_object)
+		if 'wlan0' in wifi_data_object:
+		#for signal in wifi_data_object['wlan0']:
+			for  indexof ,dict_of_signals in enumerate(wifi_data_object['wlan0']):
+				for signal in dict_of_signals:
+					freq_str = str(dict_of_signals[signal]['freq:'])
+							
+					
+					calc_pos_x = ((int(dict_of_signals[signal]['freq:']) - spec_leng_offset) * float(spec_leng_delta_4mhz_multi)) + int(spec_leng_a)
+					calc_pos_h = spec_leng_h - ((float(dict_of_signals[signal]['signal:'][0]) * -1 ) * float(spec_hight_delta_100_multi))
+					
+					#print(calc_pos_h, spec_leng_h,  float(dict_of_signals[signal]['signal:'][0]), float(spec_hight_delta_100_multi))
+					
+					dot_element = [(calc_pos_x-2, calc_pos_h-2) , (calc_pos_x+2, calc_pos_h+2)] 
+					dot_line_element = [(calc_pos_x, spec_leng_h) , (calc_pos_x, calc_pos_h)] 
+					
+					if dict_of_signals[signal]['status'] == 'associated':
+						draw.line(dot_line_element, fill=lcars_theme[lcars_theme_selection]["colore1"])	
+						draw.ellipse(dot_element, fill=lcars_theme[lcars_theme_selection]["colore1"], outline=lcars_theme[lcars_theme_selection]["colore1"])						
+					else:
+						draw.line(dot_line_element, fill=lcars_theme[lcars_theme_selection]["colore4"])	
+						draw.ellipse(dot_element, fill=lcars_theme[lcars_theme_selection]["colore4"], outline=lcars_theme[lcars_theme_selection]["colore4"])
+					
+					freq_pos = (calc_pos_x * 0.9 , spec_leng_h * 0.75)
+					
+					#draw.text(freq_pos, text=freq_str, font=lcars_littlefont, fill=lcars_theme[lcars_theme_selection]["colore4"])
 		
 		
 	else:
@@ -459,6 +453,125 @@ def lcars_element_wifi_signal_spectrum(device, draw,pos_ax,pos_ay,pos_bx,pos_by,
 			draw.text((pos_ax+(device.width * 0.25), pos_ay), text=str("NO DATA"), font=lcars_bigfont, fill=lcars_theme[lcars_theme_selection]["colore4"])
 		else:
 			draw.text((pos_ax+(device.width * 0.25), pos_ay), text=str("NO DATA"), font=lcars_bigfont, fill=lcars_theme[lcars_theme_selection]["colore5"])
+			
+			
+def lcars_element_wifi_signal_domination(device, draw,pos_ax,pos_ay,pos_bx,pos_by, location_tag):
+	fill = "yellow"
+	fill2 = "red"
+	time_lengh = 60
+	
+	index_a = 0
+	associated = False
+	hirachie_of_signals = {}
+	sorted_dict = {}
+	# setting a 2Ghz to 6Ghz spectrum 
+	signale_spectrum_static = True
+	
+	signal_dom_list = []
+	ret_dom_signal = False
+		
+	spec_leng_a = pos_ax*1.1
+	spec_leng_b = pos_bx*0.99
+	spec_leng_delta = spec_leng_b - spec_leng_a
+	
+	spec_leng_h = pos_by*0.95
+	
+	spec_leng_offset = 2000
+	# devding in mhz steps
+	spec_leng_delta_4mhz_multi = spec_leng_delta / 4000	
+		
+	spec_hight_a = pos_ay*1.1
+	spec_hight_h = spec_leng_h
+	spec_hight_delta = spec_hight_h - spec_hight_a	
+	spec_hight_delta_100_multi = spec_hight_delta / 100
+	
+	#line_element_h = [(spec_leng_a, spec_hight_a) , (spec_leng_b, spec_hight_a)] 
+	line_element = [(spec_leng_a, spec_leng_h) , (spec_leng_b, spec_leng_h)] 
+	
+	
+	#bounding box
+	box_element_graph = [(pos_ax , pos_ay), (pos_bx, pos_by)] 
+	draw.rectangle(box_element_graph,fill="black", outline=lcars_theme[lcars_theme_selection]["colore5"])
+		
+	result, elements_forgieventime = get_recent_text(location_tag, "wifi", "OBJECT", time_lengh)
+	
+	
+	start_graph = spec_leng_a
+	point_distance = (spec_leng_b - spec_leng_a) / elements_forgieventime
+
+	if len(result) != 0 :
+		#draw.line(line_element)			
+		last_signals = result[-1]
+		wifi_data_object = base64.b64decode(last_signals).decode()
+		wifi_data_object = ast.literal_eval(wifi_data_object)
+		#print(wifi_data_object)
+		if 'wlan0' in wifi_data_object:
+			for  indexof ,dict_of_signals in enumerate(wifi_data_object['wlan0']):
+				for signal in dict_of_signals:
+					signal_dict = {'strengh' : float(dict_of_signals[signal]['signal:'][0]), 'signal' : signal , 'name' : str(dict_of_signals[signal]['SSID']), 'freq': int(dict_of_signals[signal]['freq:']) }
+					signal_dom_list.append(signal_dict)
+								
+					#signal_pos = (spec_leng_a, spec_leng_b * 0.1 + (indexof * 20))
+					#draw.text(signal_pos, text=signal_str, font=lcars_littlefont, fill=lcars_theme[lcars_theme_selection]["colore4"])
+					
+					
+			# found dominant Signal 
+			dom_signal = max(signal_dom_list, key=lambda x:x['strengh'])
+					
+			# drawing graph of it
+			index_time = 0
+			last_point = (None, None)
+			for index_time, singal_otime_list in enumerate(result):
+				wifi_data_object_2 = base64.b64decode(singal_otime_list).decode()
+				wifi_data_object_2 = ast.literal_eval(wifi_data_object_2)
+				if 'wlan0' in wifi_data_object_2:
+					for  signal in wifi_data_object_2['wlan0']:
+						if dom_signal['signal'] in signal.keys():
+							signal_str = str(signal.keys())
+							#print(signal[dom_signal['signal']])
+							ret_dom_signal = dom_signal['signal'] , signal[dom_signal['signal']]
+							signal_pos = (spec_leng_a, spec_leng_b * 0.1 )
+							#draw.text(signal_pos, text=signal_str, font=lcars_littlefont, fill=lcars_theme[lcars_theme_selection]["colore4"])					
+							
+							calc_pos_x = start_graph + point_distance * index_time						
+							calc_pos_h = spec_leng_h - ((int(float(signal[dom_signal['signal']]['signal:'][0])) * -1 ) * float(spec_hight_delta_100_multi))
+					
+							dot_element = [(calc_pos_x-2, calc_pos_h-2) , (calc_pos_x+2, calc_pos_h+2)] 
+						
+							if last_point == (None, None):
+								last_point = (calc_pos_x, calc_pos_h)
+							
+							dot_line_element = [(calc_pos_x, calc_pos_h) , last_point] 
+							last_point = (calc_pos_x, calc_pos_h)
+							
+							if signal[dom_signal['signal']]['status'] == 'associated':
+								draw.line(dot_line_element, fill=lcars_theme[lcars_theme_selection]["colore1"])	
+								#draw.ellipse(dot_element, fill=lcars_theme[lcars_theme_selection]["colore1"], outline=lcars_theme[lcars_theme_selection]["colore1"])						
+							else:
+								draw.line(dot_line_element, fill=lcars_theme[lcars_theme_selection]["colore4"])	
+								#draw.ellipse(dot_element, fill=lcars_theme[lcars_theme_selection]["colore4"], outline=lcars_theme[lcars_theme_selection]["colore4"])
+										
+		
+							#print(dom_signal)
+							signal_str = str(dom_signal['name'])
+							signal_pos = (spec_leng_a, spec_leng_b * 0.1)	
+							if signal[dom_signal['signal']]['status'] == 'associated':	
+								draw.text(signal_pos, text=signal_str, font=lcars_font, fill=lcars_theme[lcars_theme_selection]["colore1"])
+							else:
+								draw.text(signal_pos, text=signal_str, font=lcars_font, fill=lcars_theme[lcars_theme_selection]["colore4"])
+		
+		return ret_dom_signal 
+		
+		
+	else:
+		if animation_step > 50:
+			draw.text((pos_ax+(device.width * 0.25), pos_ay), text=str("NO DATA"), font=lcars_bigfont, fill=lcars_theme[lcars_theme_selection]["colore4"])
+		else:
+			draw.text((pos_ax+(device.width * 0.25), pos_ay), text=str("NO DATA"), font=lcars_bigfont, fill=lcars_theme[lcars_theme_selection]["colore5"])			
+			
+			
+			
+			
 
 def lcars_element_graph(device, draw,pos_ax,pos_ay,pos_bx,pos_by, sensors_dict,mode):
 	# mode is auto scalling depending on min max
@@ -1619,22 +1732,132 @@ def wifi_band_view_build():
 		
 		
 		# Top Edge
-		#draw.rectangle((device.width*0.7 ,device.height*0.01, device.width*0.94, device.height*0.06), fill=lcars_theme[lcars_theme_selection]["colore5"], outline=lcars_theme[lcars_theme_selection]["colore5"])
+		draw.rectangle((device.width*0.7 ,device.height*0.01, device.width*0.94, device.height*0.06), fill=lcars_theme[lcars_theme_selection]["colore5"], outline=lcars_theme[lcars_theme_selection]["colore5"])
 		
 		bottom_line = [(device.width*0.27 , device.height*0.93), (device.width*0.93, device.height*0.93+radius)] 
 		
 		draw.rectangle(bottom_line,lcars_theme[lcars_theme_selection]["colore5"])
 	
 		## Looks like i found my overlapping box
-		text = "EM CHANNEL ANALYSIS"
+		text = "EM CHANNEL ANALYSIS    "
 		left, top, right, bottom = draw.textbbox((0, 0), text)
-		w, h = right - left, bottom+5 - top
-		w3 = device.width*0.62
+		w, h = right - left, bottom+10 - top
+		w3 = device.width*0.58
 
 		left = w3-radius*2.5
 		top = -2
 		draw.rectangle((left - 1, top, left + w + 6, top + h), fill="black", outline="black")
 		draw.text((left + 1, top), text=text, font=lcars_littlefont, fill=lcars_theme[lcars_theme_selection]["font0"])	
+
+
+
+
+
+def wifi_dominant_view_build():
+	global animation_step
+	global sensor_animation
+	global lcars_theme_selection
+	
+	global lcars_microfont
+	global lcars_littlefont 
+	global lcars_font
+	global lcars_titlefont 
+	global lcars_bigfont 
+	global lcars_giantfont
+
+	fill2 = "black"
+	fill3 = "yellow"
+	
+	dict_graph = []
+	
+	with canvas(device, dither=True) as draw:
+					
+		lcars_element_elbow(device, draw, device.width*0.01,device.height*0.01,2,lcars_theme[lcars_theme_selection]["colore4"])
+		lcars_element_elbow(device, draw, device.width*0.01,device.height*0.86 ,3, lcars_theme[lcars_theme_selection]["colore0"])			
+           
+		radius = device.height*0.05
+          
+        #end locations
+		w0, h0 = device.width*0.01, device.height*0.41
+		w1, h1 = device.width*0.22/2, device.height*0.865
+        
+		Rshape0 = [(w0,  h0), (w1, h1)]
+        
+		# the connecting from top to bottom
+		draw.rectangle(Rshape0, lcars_theme[lcars_theme_selection]["colore5"])
+
+		if sensor_animation == 3:
+			lcars_element_side_bar(device, draw, device.width*0.01,device.height*0.13 ,3,lcars_theme[lcars_theme_selection]["colore1"])
+		else:
+			lcars_element_side_bar(device, draw, device.width*0.01,device.height*0.13 ,3,lcars_theme[lcars_theme_selection]["colore2"])
+		
+		if sensor_animation == 2:
+			lcars_element_side_bar(device, draw, device.width*0.01,device.height*0.20 ,3,lcars_theme[lcars_theme_selection]["colore1"])
+		else:
+			lcars_element_side_bar(device, draw, device.width*0.01,device.height*0.20 ,3,lcars_theme[lcars_theme_selection]["colore2"])
+		
+		if sensor_animation == 1:
+			lcars_element_side_bar(device, draw, device.width*0.01,device.height*0.274 ,3,lcars_theme[lcars_theme_selection]["colore1"])
+		else:
+			lcars_element_side_bar(device, draw, device.width*0.01,device.height*0.274 ,3,lcars_theme[lcars_theme_selection]["colore2"])
+		
+		if sensor_animation == 0:
+			lcars_element_side_bar(device, draw, device.width*0.01,device.height*0.345 ,3,lcars_theme[lcars_theme_selection]["colore1"])
+		else:
+			lcars_element_side_bar(device, draw, device.width*0.01,device.height*0.345 ,3,lcars_theme[lcars_theme_selection]["colore2"])
+		
+		lcars_element_end(device, draw, device.width*0.93,device.height*0.015,3,lcars_theme[lcars_theme_selection]["colore0"])
+		lcars_element_end(device, draw, device.width*0.93,device.height*0.93,3,lcars_theme[lcars_theme_selection]["colore0"])
+		
+		lcars_element_doublebar(device, draw, device.width*0.27 ,device.height*0.01, device.width*0.5, device.height*0.06,0,lcars_theme[lcars_theme_selection]["colore0"],lcars_theme[lcars_theme_selection]["colore5"])
+		lcars_element_doublebar(device, draw, device.width*0.51 ,device.height*0.01, device.width*0.60, device.height*0.06,0,lcars_theme[lcars_theme_selection]["colore5"],lcars_theme[lcars_theme_selection]["colore0"])
+		
+		draw.rectangle((device.width*0.7 ,device.height*0.01, device.width*0.94, device.height*0.06), fill=lcars_theme[lcars_theme_selection]["colore5"], outline=lcars_theme[lcars_theme_selection]["colore5"])
+		
+		bottom_line = [(device.width*0.27 , device.height*0.93), (device.width*0.93, device.height*0.93+radius)] 
+		
+		draw.rectangle(bottom_line,lcars_theme[lcars_theme_selection]["colore5"])
+	
+		## Looks like i found my overlapping box
+		text = "EM DOMINANT TRANCIVER    "
+		left, top, right, bottom = draw.textbbox((0, 0), text)
+		w, h = right - left, bottom+10 - top
+		w3 = device.width*0.56
+
+		left = w3-radius*2.5
+		top = -2
+		draw.rectangle((left - 1, top, left + w + 6, top + h), fill="black", outline="black")
+		draw.text((left + 1, top), text=text, font=lcars_littlefont, fill=lcars_theme[lcars_theme_selection]["font0"])	
+		
+		# Rectangel frame
+		
+		#draw.rectangle((device.width*0.15,device.height*0.12,device.width*0.95,device.height*0.85), fill="black", outline=lcars_theme[lcars_theme_selection]["colore5"])	
+		Signal_MAC ,dom_signal = lcars_element_wifi_signal_domination(device, draw,device.width*0.15,device.height*0.12,device.width*0.95,device.height*0.50, "local")
+		#print(dom_signal)
+		if Signal_MAC != False:
+			pos_status_text = "Status: " + dom_signal['status']
+			pos_status = (device.width*0.15,device.height*0.52)
+			draw.text(pos_status, text=pos_status_text, font=lcars_font, fill=lcars_theme[lcars_theme_selection]["font0"])	
+		
+			pos_ghz_text = "Freq: " + dom_signal['freq:'] + " GHz"
+			pos_ghz = (device.width*0.15,device.height*0.62)
+			draw.text(pos_ghz, text=pos_ghz_text, font=lcars_font, fill=lcars_theme[lcars_theme_selection]["font0"])	
+			
+			pos_MAC_text = "MAC: " + Signal_MAC
+			pos_MAC = (device.width*0.15,device.height*0.72)
+			draw.text(pos_MAC, text=pos_MAC_text, font=lcars_font, fill=lcars_theme[lcars_theme_selection]["font0"])	
+			
+			pos_Signal_text = dom_signal['signal:'][0]
+			pos_Signal = (device.width*0.70,device.height*0.52)
+			draw.text(pos_Signal, text=pos_Signal_text, font=lcars_bigfont, fill=lcars_theme[lcars_theme_selection]["font0"])	
+			
+			pos_Signal_ex_text = dom_signal['signal:'][1]
+			pos_Signal_ex = (device.width*0.78,device.height*0.67)
+			draw.text(pos_Signal_ex, text=pos_Signal_ex_text, font=lcars_bigfont, fill=lcars_theme[lcars_theme_selection]["font0"])	
+			
+
+
+
 		
 
 def lcars_type3_build():
@@ -1761,7 +1984,9 @@ class LCARS_Struct(object):
 		elif self == "video_playback":
 			lcars_videoplayer_build()  
 		elif self == "wifi_band_view":
-			wifi_band_view_build()  
+			wifi_band_view_build()
+		elif self == "wifi_dominant_view":
+			wifi_dominant_view_build()  			  
 		elif self == "geo_map_view":
 			geo_map_view_build()  	
 		elif self == "type3":
