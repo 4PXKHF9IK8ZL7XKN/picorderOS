@@ -429,7 +429,8 @@ def lcars_element_wifi_signal_spectrum(device, draw,pos_ax,pos_ay,pos_bx,pos_by,
 							
 					
 					calc_pos_x = ((int(dict_of_signals[signal]['freq:']) - spec_leng_offset) * float(spec_leng_delta_4mhz_multi)) + int(spec_leng_a)
-					calc_pos_h = spec_leng_h - ((float(dict_of_signals[signal]['signal:'][0]) * -1 ) * float(spec_hight_delta_100_multi))
+					#calc_pos_h = spec_leng_h - ((float(dict_of_signals[signal]['signal:'][0]) * -1 ) * float(spec_hight_delta_100_multi))
+					calc_pos_h = spec_leng_h - (100/(float(dict_of_signals[signal]['signal:'][0]) * -1 ) * float(spec_hight_delta_100_multi)*20)
 					
 					#print(calc_pos_h, spec_leng_h,  float(dict_of_signals[signal]['signal:'][0]), float(spec_hight_delta_100_multi))
 					
@@ -533,8 +534,10 @@ def lcars_element_wifi_signal_domination(device, draw,pos_ax,pos_ay,pos_bx,pos_b
 							signal_pos = (spec_leng_a, spec_leng_b * 0.1 )
 							#draw.text(signal_pos, text=signal_str, font=lcars_littlefont, fill=lcars_theme[lcars_theme_selection]["colore4"])					
 							
-							calc_pos_x = start_graph + point_distance * index_time						
-							calc_pos_h = spec_leng_h - ((int(float(signal[dom_signal['signal']]['signal:'][0])) * -1 ) * float(spec_hight_delta_100_multi))
+							calc_pos_x = start_graph + point_distance * index_time	
+							#calc_pos_h = spec_leng_h - ((int(float(signal[dom_signal['signal']]['signal:'][0])) * -1 ) * float(spec_hight_delta_100_multi))					
+							#calc_pos_h = spec_leng_a + (int(float(signal[dom_signal['signal']]['signal:'][0])) * -1 ) * float(spec_hight_delta_100_multi)
+							calc_pos_h = spec_leng_a + (int(float(signal[dom_signal['signal']]['signal:'][0])) * -1 ) * ( float(spec_hight_delta_100_multi) * 0.7 )
 					
 							dot_element = [(calc_pos_x-2, calc_pos_h-2) , (calc_pos_x+2, calc_pos_h+2)] 
 						
