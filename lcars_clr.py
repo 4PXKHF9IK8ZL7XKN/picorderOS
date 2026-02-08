@@ -461,6 +461,8 @@ def lcars_element_wifi_signal_domination(device, draw,pos_ax,pos_ay,pos_bx,pos_b
 	fill2 = "red"
 	time_lengh = 60
 	
+	mode = 1
+	
 	index_a = 0
 	associated = False
 	hirachie_of_signals = {}
@@ -518,6 +520,29 @@ def lcars_element_wifi_signal_domination(device, draw,pos_ax,pos_ay,pos_bx,pos_b
 					
 			# found dominant Signal 
 			dom_signal = max(signal_dom_list, key=lambda x:x['strengh'])
+			
+			
+			if mode == 1:
+				list_of_dbm = []
+				# determening of min/max i have to look over alle results to do so
+				for index_time, singal_otime_list in enumerate(result):
+					wifi_data_object_1 = base64.b64decode(singal_otime_list).decode()
+					wifi_data_object_1 = ast.literal_eval(wifi_data_object_1)
+					if 'wlan0' in wifi_data_object_1:
+						for  signal_1 in wifi_data_object_1['wlan0']:
+							if dom_signal['signal'] in signal_1.keys():
+								list_of_dbm.append(float(signal_1[dom_signal['signal']]['signal:'][0]))
+								
+				max_value = max(list_of_dbm)
+				min_value = min(list_of_dbm)
+				avr_value = statistics.mean(list_of_dbm)
+				
+				delta_min_max = (0.01 + max_value) - min_value
+				
+				pixel_steps = (spec_hight_delta / delta_min_max) 
+				
+				spec_hight_delta_100_multi = spec_hight_delta / 100
+	
 					
 			# drawing graph of it
 			index_time = 0
@@ -537,7 +562,12 @@ def lcars_element_wifi_signal_domination(device, draw,pos_ax,pos_ay,pos_bx,pos_b
 							calc_pos_x = start_graph + point_distance * index_time	
 							#calc_pos_h = spec_leng_h - ((int(float(signal[dom_signal['signal']]['signal:'][0])) * -1 ) * float(spec_hight_delta_100_multi))					
 							#calc_pos_h = spec_leng_a + (int(float(signal[dom_signal['signal']]['signal:'][0])) * -1 ) * float(spec_hight_delta_100_multi)
-							calc_pos_h = spec_leng_a + (int(float(signal[dom_signal['signal']]['signal:'][0])) * -1 ) * ( float(spec_hight_delta_100_multi) * 0.7 )
+							if mode == 1:
+								calc_pos_h = spec_leng_a + (max_value - (int(float(signal[dom_signal['signal']]['signal:'][0])) )) * pixel_steps *  ( float(spec_hight_delta_100_multi))	
+
+								#print(max_value, min_value, (max_value - (int(float(signal[dom_signal['signal']]['signal:'][0])) )) ,spec_hight_delta , delta_min_max, calc_pos_h)
+							else:
+								calc_pos_h = spec_leng_a + (int(float(signal[dom_signal['signal']]['signal:'][0])) * -1 ) * ( float(spec_hight_delta_100_multi) * 0.7 )				
 					
 							dot_element = [(calc_pos_x-2, calc_pos_h-2) , (calc_pos_x+2, calc_pos_h+2)] 
 						
