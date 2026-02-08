@@ -52,7 +52,7 @@ bme680_temp = [0]
 cwd = os.getcwd()
 
 wheel_lib = [ "multi_graph","termal_view","wifi_band_view", "video_playback","type3", "type4"]
-wheel_geo = [ "multi_graph","wifi_band_view", "geo_map_view", "wifi_dominant_view"]
+wheel_geo = [ "multi_graph","wifi_band_view", "geo_map_view", "wifi_dominant_view", "wifi_list_view"]
 wheel_met = [ "multi_graph","type3", "type4"]
 wheel_bio = [ "multi_graph","termal_view"]
 
@@ -1785,6 +1785,89 @@ def wifi_band_view_build():
 
 
 
+def wifi_list_view_build():
+	global animation_step
+	global sensor_animation
+	global lcars_theme_selection
+	
+	global lcars_microfont
+	global lcars_littlefont 
+	global lcars_font
+	global lcars_titlefont 
+	global lcars_bigfont 
+	global lcars_giantfont
+
+	fill2 = "black"
+	fill3 = "yellow"
+	
+	dict_graph = []
+	
+	with canvas(device, dither=True) as draw:
+					
+		lcars_element_elbow(device, draw, device.width*0.01,device.height*0.01,2,lcars_theme[lcars_theme_selection]["colore4"])
+		lcars_element_elbow(device, draw, device.width*0.01,device.height*0.86 ,3, lcars_theme[lcars_theme_selection]["colore0"])			
+           
+		radius = device.height*0.05
+          
+        #end locations
+		w0, h0 = device.width*0.01, device.height*0.41
+		w1, h1 = device.width*0.22/2, device.height*0.865
+        
+		Rshape0 = [(w0,  h0), (w1, h1)]
+        
+		# the connecting from top to bottom
+		draw.rectangle(Rshape0, lcars_theme[lcars_theme_selection]["colore5"])
+
+		if sensor_animation == 3:
+			lcars_element_side_bar(device, draw, device.width*0.01,device.height*0.13 ,3,lcars_theme[lcars_theme_selection]["colore1"])
+		else:
+			lcars_element_side_bar(device, draw, device.width*0.01,device.height*0.13 ,3,lcars_theme[lcars_theme_selection]["colore2"])
+		
+		if sensor_animation == 2:
+			lcars_element_side_bar(device, draw, device.width*0.01,device.height*0.20 ,3,lcars_theme[lcars_theme_selection]["colore1"])
+		else:
+			lcars_element_side_bar(device, draw, device.width*0.01,device.height*0.20 ,3,lcars_theme[lcars_theme_selection]["colore2"])
+		
+		if sensor_animation == 1:
+			lcars_element_side_bar(device, draw, device.width*0.01,device.height*0.274 ,3,lcars_theme[lcars_theme_selection]["colore1"])
+		else:
+			lcars_element_side_bar(device, draw, device.width*0.01,device.height*0.274 ,3,lcars_theme[lcars_theme_selection]["colore2"])
+		
+		if sensor_animation == 0:
+			lcars_element_side_bar(device, draw, device.width*0.01,device.height*0.345 ,3,lcars_theme[lcars_theme_selection]["colore1"])
+		else:
+			lcars_element_side_bar(device, draw, device.width*0.01,device.height*0.345 ,3,lcars_theme[lcars_theme_selection]["colore2"])
+		
+		lcars_element_end(device, draw, device.width*0.93,device.height*0.015,3,lcars_theme[lcars_theme_selection]["colore0"])
+		lcars_element_end(device, draw, device.width*0.93,device.height*0.93,3,lcars_theme[lcars_theme_selection]["colore0"])
+		
+		lcars_element_doublebar(device, draw, device.width*0.27 ,device.height*0.01, device.width*0.5, device.height*0.06,0,lcars_theme[lcars_theme_selection]["colore0"],lcars_theme[lcars_theme_selection]["colore5"])
+		lcars_element_doublebar(device, draw, device.width*0.51 ,device.height*0.01, device.width*0.60, device.height*0.06,0,lcars_theme[lcars_theme_selection]["colore5"],lcars_theme[lcars_theme_selection]["colore0"])
+		
+		draw.rectangle((device.width*0.7 ,device.height*0.01, device.width*0.94, device.height*0.06), fill=lcars_theme[lcars_theme_selection]["colore5"], outline=lcars_theme[lcars_theme_selection]["colore5"])
+		
+		bottom_line = [(device.width*0.27 , device.height*0.93), (device.width*0.93, device.height*0.93+radius)] 
+		
+		draw.rectangle(bottom_line,lcars_theme[lcars_theme_selection]["colore5"])
+	
+		## Looks like i found my overlapping box
+		text = "EM TRANCIVER LIST    "
+		left, top, right, bottom = draw.textbbox((0, 0), text)
+		w, h = right - left, bottom+10 - top
+		w3 = device.width*0.64
+
+		left = w3-radius*2.5
+		top = -2
+		draw.rectangle((left - 1, top, left + w + 6, top + h), fill="black", outline="black")
+		draw.text((left + 1, top), text=text, font=lcars_littlefont, fill=lcars_theme[lcars_theme_selection]["font0"])	
+		
+		# Rectangel frame
+		
+		#draw.rectangle((device.width*0.15,device.height*0.12,device.width*0.95,device.height*0.85), fill="black", outline=lcars_theme[lcars_theme_selection]["colore5"])	
+		lcars_element_wifi_signal_list(device, draw,device.width*0.15,device.height*0.12,device.width*0.95,device.height*0.80, "local")
+
+
+
 
 def wifi_dominant_view_build():
 	global animation_step
@@ -2018,7 +2101,9 @@ class LCARS_Struct(object):
 			lcars_videoplayer_build()  
 		elif self == "wifi_band_view":
 			wifi_band_view_build()
-		elif self == "wifi_dominant_view":
+		elif self == "wifi_list_view":
+			wifi_list_view_build()
+		elif self == "wifi_dominant_view":	
 			wifi_dominant_view_build()  			  
 		elif self == "geo_map_view":
 			geo_map_view_build()  	
