@@ -903,7 +903,7 @@ def lcars_element_wifi_signal_list_bars(device, draw,pos_ax,pos_ay,pos_bx,pos_by
 							draw.rectangle(bar_element, fill=lcars_theme[lcars_theme_selection]["colore1"], outline=lcars_theme[lcars_theme_selection]["colore1"])
 							if animation_step == indexof:
 								draw.rectangle(bar_element_overdraw, fill=lcars_theme[lcars_theme_selection]["colore4"], outline=lcars_theme[lcars_theme_selection]["colore4"])
-								tip_name = str(dict_of_signals[signal_l]['SSID'])
+								tip_name = f"{dict_of_signals[signal_l]['signal:'][0]} - {dict_of_signals[signal_l]['SSID']}"
 								tip_pos = (spec_leng_a, spec_leng_b * 0.2)
 								draw.text(tip_pos, text=tip_name, font=lcars_font, fill=lcars_theme[lcars_theme_selection]["colore1"])
 			
@@ -913,7 +913,7 @@ def lcars_element_wifi_signal_list_bars(device, draw,pos_ax,pos_ay,pos_bx,pos_by
 							draw.rectangle(bar_element, fill=lcars_theme[lcars_theme_selection]["colore2"], outline=lcars_theme[lcars_theme_selection]["colore2"])
 							if animation_step == indexof:
 								draw.rectangle(bar_element_overdraw, fill=lcars_theme[lcars_theme_selection]["colore4"], outline=lcars_theme[lcars_theme_selection]["colore4"])
-								tip_name = str(dict_of_signals[signal_l]['SSID'])
+								tip_name = f"{dict_of_signals[signal_l]['signal:'][0]} - {dict_of_signals[signal_l]['SSID']}"
 								tip_pos = (spec_leng_a, spec_leng_b * 0.2)
 								draw.text(tip_pos, text=tip_name, font=lcars_font, fill=lcars_theme[lcars_theme_selection]["colore4"])
 
