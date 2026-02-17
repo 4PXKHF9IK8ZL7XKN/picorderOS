@@ -11,7 +11,24 @@ from datetime import timedelta
 import simpleaudio as sa
 
 # A Timer to as Frameratecontroller
-WAIT_TIME_SECONDS = 1
+WAIT_TIME_SECONDS = 31
+
+
+# ex globals
+dr_open = True
+warble_state = False
+alarm_state = False
+audio_state = True
+
+status = "run"
+
+dr_closing = False
+dr_opening = False
+
+beep_ready = False
+alarm_ready = False
+alarm = False
+
 
 print("Loading Audio Thread")
 
@@ -21,6 +38,8 @@ clicksound = sa.WaveObject.from_wave_file("assets/clicking.wav")
 beepsound = sa.WaveObject.from_wave_file("assets/beep.wav")
 alarmsound = sa.WaveObject.from_wave_file("assets/alarm.wav")
 
+warble = scansound
+alarm = alarmsound
 
 
 sounds = [scansound, clicksound]
@@ -38,7 +57,7 @@ else:
 
 channel.exchange_declare(exchange='sensor_data', exchange_type='topic')
 
-result = channel.queue_declare('', exclusive=True)
+result = channel.queue_declare('audio', exclusive=True)
 queue_name = result.method.queue
 
 channel.queue_bind(
@@ -47,50 +66,65 @@ channel.queue_bind(
 
 
 def threaded_audio():
-    timed = timer()
-    start = True
-    was_open = False
-    warble = scansound.play()
-    click = clicksound.play()
-    alarm = alarmsound.play()
+	timed = timer()
+	start = True
+	was_open = False
+	
+	global dr_open
+	global warble_state
+	global alarm_state
+	global audio_state
 
-    click.stop()
-    warble.stop()
-    alarm.stop()
+	global status
 
-    while not configure.status[0] == "quit":
-        if configure.audio[0]:
+	global dr_closing
+	global dr_opening
 
-            if configure.dr_opening[0]:
-                click = clicksound.play()
-                configure.dr_opening[0] = False
+	global beep_ready
+	global alarm_ready
+	global alarm
+	
+	global scansound
+	global clicksound
+	global beepsound
+	global alarmsound
+	
+	global warble
+	global alarm
+	      
+	      
+	if audio_state:
 
-            if configure.dr_closing[0]:
-                click = clicksound.play()
-                configure.dr_closing[0] = False
+		if dr_opening:
+			clicksound.play()
+			dr_opening = False
 
-            if configure.beep_ready[0]:
-                beep = beepsound.play()
-                configure.beep_ready[0] = False
+		if dr_closing:
+			clicksound.play()
+			dr_closing = False
+
+		if beep_ready:
+			beepsound.play()
+			beep_ready = False
 
 
-            # controls the main tricorder sound loop
-            if configure.dr_open[0]:
-                if not warble.is_playing() and configure.warble[0]:
-                    warble = scansound.play()
-            else:
-                if warble.is_playing():
-                    warble.stop()
-            
-            if not configure.warble[0]:
-                warble.stop()
+        # controls the main tricorder sound loop
+		if dr_open:
+			if not hasattr(warble,'is_playing') and warble_state:
+				scansound.play()
+		else:
+			if hasattr(warble,'is_playing'):
+				scansound.stop()
+        
+		if not warble_state:
+			scansound.stop()
 
-            if configure.alarm_ready[0] and configure.alarm[0]:
-                if not alarm.is_playing():
-                    alarm = alarmsound.play()
-                configure.alarm_ready[0] = False
-        else:
-            warble.stop()
+		if alarm_ready and alarm_state:
+			if not hasattr(alarm,'is_playing'):
+				alarmsound.play()
+			alarm_ready = False
+	else:
+		warble.stop()
             
 # This Class helps to start a thread that runs a timer non blocking to animate details
 class Job(threading.Thread):
@@ -121,12 +155,12 @@ def callback(ch, method, properties, body):
 
             
 if __name__ == '__main__':
-	configure.dr_open[0] == True
-	configure.warble[0] == True
-	job = Job(interval=timedelta(seconds=WAIT_TIME_SECONDS), execute=threaded_audio)
 	try:
-		channel.basic_consume(queue='',on_message_callback=callback, auto_ack=True)
+		job = Job(interval=timedelta(seconds=WAIT_TIME_SECONDS), execute=threaded_audio) 
+		job.start()
+		channel.basic_consume(queue='audio',on_message_callback=callback, auto_ack=True)
 		channel.start_consuming()
+
 	except KeyboardInterrupt or Exception or OSError as e:
 		print("Termination", e)
 		sys.exit(1)
