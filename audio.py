@@ -6,43 +6,11 @@ import sys
 import time
 import threading
 import ast
-from datetime import timedelta
 
 import simpleaudio as sa
 
-# A Timer to as Frameratecontroller
-WAIT_TIME_SECONDS = 31
-
-
-# ex globals
-dr_open = True
-warble_state = False
-alarm_state = False
-audio_state = True
-
-status = "run"
-
-dr_closing = False
-dr_opening = False
-
-beep_ready = False
-alarm_ready = False
-alarm = False
-
-
 print("Loading Audio Thread")
 
-#109 Sounds
-scansound = sa.WaveObject.from_wave_file("assets/scanning.wav")
-clicksound = sa.WaveObject.from_wave_file("assets/clicking.wav")
-beepsound = sa.WaveObject.from_wave_file("assets/beep.wav")
-alarmsound = sa.WaveObject.from_wave_file("assets/alarm.wav")
-
-warble = scansound
-alarm = alarmsound
-
-
-sounds = [scansound, clicksound]
 # the audio object will serve as the primary mechanism by which all sounds
 # are loaded and deployed.
 
@@ -63,101 +31,121 @@ queue_name = result.method.queue
 channel.queue_bind(
     exchange='sensor_data', queue='', routing_key='audio')
 
-
-
-def threaded_audio():
-	timed = timer()
-	start = True
-	was_open = False
-	
-	global dr_open
-	global warble_state
-	global alarm_state
-	global audio_state
-
-	global status
-
-	global dr_closing
-	global dr_opening
-
-	global beep_ready
-	global alarm_ready
-	global alarm
-	
-	global scansound
-	global clicksound
-	global beepsound
-	global alarmsound
-	
-	global warble
-	global alarm
-	      
-	      
-	if audio_state:
-
-		if dr_opening:
-			clicksound.play()
-			dr_opening = False
-
-		if dr_closing:
-			clicksound.play()
-			dr_closing = False
-
-		if beep_ready:
-			beepsound.play()
-			beep_ready = False
-
-
-        # controls the main tricorder sound loop
-		if dr_open:
-			if not hasattr(warble,'is_playing') and warble_state:
-				scansound.play()
-		else:
-			if hasattr(warble,'is_playing'):
-				scansound.stop()
-        
-		if not warble_state:
-			scansound.stop()
-
-		if alarm_ready and alarm_state:
-			if not hasattr(alarm,'is_playing'):
-				alarmsound.play()
-			alarm_ready = False
-	else:
-		warble.stop()
             
-# This Class helps to start a thread that runs a timer non blocking to animate details
-class Job(threading.Thread):
-    def __init__(self, interval, execute, *args, **kwargs):
-        threading.Thread.__init__(self)
-        self.daemon = False
-        self.stopped = threading.Event()
-        self.interval = interval
-        self.execute = execute
-        self.args = args
-        self.kwargs = kwargs
+print_lock = threading.Lock()
+# Stolen Here: https://stackoverflow.com/questions/25904537/how-do-i-send-data-to-a-running-python-thread
+class job(threading.Thread):
+	def __init__(self, args=(), kwargs=None):
+		threading.Thread.__init__(self, args=(), kwargs=None)
+		self.daemon = True
+		self.receive_messages = args[0]
+		self.message_var = [{"dr_opening": False },{"dr_closing": False},{"warble": False},{"alert": False}]
+		
+		#109 Sounds
+		self.scansound = sa.WaveObject.from_wave_file("assets/scanning.wav")
+		self.clicksound = sa.WaveObject.from_wave_file("assets/clicking.wav")
+		self.beepsound = sa.WaveObject.from_wave_file("assets/beep.wav")
+		self.alarmsound = sa.WaveObject.from_wave_file("assets/alarm.wav")
+		
+		
+		self.warble = self.scansound
+		self.alarm = self.alarmsound
 
-    def stop(self):
-                self.stopped.set()
-                self.join()
-    def run(self):
-            while not self.stopped.wait(self.interval.total_seconds()):
-                self.execute(*self.args, **self.kwargs)
+	def run(self):
+		print(threading.current_thread().name, self.receive_messages)
+
+		
+		self.sounds = [self.scansound, self.clicksound]
+        
+		dr_open = True
+		warble_state = False
+		alarm_state = False
+		audio_state = True
+		status = "run"
+		beep_ready = False
+		alarm_ready = True
+		start = True
+		was_open = False
+				
+		while True:
+			print("Loop" , self.message_var)
+			
+			dr_closing = self.message_var[1]["dr_closing"]
+			dr_opening = self.message_var[0]["dr_opening"]
+			alarm_state = self.message_var[3]["alert"]
+			warble_state = self.message_var[2]["warble"]
+			
+			print(warble_state)
+			print(alarm_state)
+			print(dir(self.warble))
+			
+			if warble_state == False:
+				print("STOP")
+				try:
+					self.warble.stop()
+				except:
+					print("STOP STOP STOP")
+					pass
+				
+
+
+			
+			if audio_state:
+
+				if dr_opening:
+					clicksound.play()
+					dr_opening = False
+
+				if dr_closing:
+					clicksound.play()
+					dr_closing = False
+
+				if beep_ready:
+					beepsound.play()
+					beep_ready = False
+
+
+				# controls the main tricorder sound loop
+				if dr_open:
+					if not hasattr(self.warble,'is_playing') and warble_state:
+						self.warble.play()
+				else:
+					if hasattr(self.warble,'is_playing'):
+						self.warble.stop()
+				
+				if warble_state == False:
+					if hasattr(self.warble,'is_playing'):
+						self.warble.stop()
+
+				if alarm_state:
+					if not hasattr(alarm,'is_playing'):
+						alarm.play()
+					alarm_ready = False
+			else:
+				if hasattr(self.warble,'is_playing'):
+					self.warble.stop()
+			time.sleep(2)
+     	
+	def do_thing_with_message(self, message):
+		if self.receive_messages:
+			with print_lock:
+				#print(threading.current_thread().name, "Received {}".format(message))
+				self.message_var = message
            
             
             
             
 
 def callback(ch, method, properties, body):
-	print("callback")
-
-
+	dict_list = body.decode()
+	audio_job.do_thing_with_message(ast.literal_eval(dict_list))
 
             
 if __name__ == '__main__':
 	try:
-		job = Job(interval=timedelta(seconds=WAIT_TIME_SECONDS), execute=threaded_audio) 
-		job.start()
+		audio_job = job(args=("Hello"))
+		audio_job.start()
+		time.sleep(0.1)
 		channel.basic_consume(queue='audio',on_message_callback=callback, auto_ack=True)
 		channel.start_consuming()
 

@@ -28,11 +28,20 @@ def disconnect():
 
 def sensor_process():
 
-	while True:
-		#if timed.timelapsed() > configure.samplerate[0]:
-		#sensor_data = sensors.get()
-		meta_massage = str(['sensor_index',randint(1, 100)])
-		publish('sensor_metadata',meta_massage)
+	#if timed.timelapsed() > configure.samplerate[0]:
+	#sensor_data = sensors.get()
+	alert = True
+	meta_massage = ""
+	#if alert == True :
+	meta_massage = '[{"dr_opening": False },{"dr_closing": False},{"warble": True},{"alert": False}]'
+	publish('audio',meta_massage)
+	time.sleep(1)
+	#alert = False
+	#else:
+	meta_massage = '[{"dr_opening": False },{"dr_closing": False},{"warble": False},{"alert": False}]'
+	#alert = True
+	publish('audio',meta_massage)
+	#time.sleep(3)
 
 
 
