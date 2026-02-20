@@ -14,6 +14,17 @@ print("Loading Audio Thread")
 # the audio object will serve as the primary mechanism by which all sounds
 # are loaded and deployed.
 
+    
+#109 Sounds
+scansound = sa.WaveObject.from_wave_file("assets/scanning.wav")
+clicksound = sa.WaveObject.from_wave_file("assets/clicking.wav")
+beepsound = sa.WaveObject.from_wave_file("assets/beep.wav")
+alarmsound = sa.WaveObject.from_wave_file("assets/alarm.wav")
+
+warble = scansound.play()
+alarm = alarmsound.play()
+
+sounds = [scansound, clicksound]
 
 if configure.rabbitmq_remote:
 	credentials = pika.PlainCredentials(configure.rabbitmq_user,configure.rabbitmq_password)
@@ -30,33 +41,15 @@ queue_name = result.method.queue
 
 channel.queue_bind(
     exchange='sensor_data', queue='', routing_key='audio')
+    
 
-            
-print_lock = threading.Lock()
-# Stolen Here: https://stackoverflow.com/questions/25904537/how-do-i-send-data-to-a-running-python-thread
-class job(threading.Thread):
-	def __init__(self, args=(), kwargs=None):
-		threading.Thread.__init__(self, args=(), kwargs=None)
-		self.daemon = True
-		self.receive_messages = args[0]
-		self.message_var = [{"dr_opening": False },{"dr_closing": False},{"warble": False},{"alert": False}]
-		
-		#109 Sounds
-		self.scansound = sa.WaveObject.from_wave_file("assets/scanning.wav")
-		self.clicksound = sa.WaveObject.from_wave_file("assets/clicking.wav")
-		self.beepsound = sa.WaveObject.from_wave_file("assets/beep.wav")
-		self.alarmsound = sa.WaveObject.from_wave_file("assets/alarm.wav")
-		
-		
-		self.warble = self.scansound
-		self.alarm = self.alarmsound
+    
+    
 
-	def run(self):
-		print(threading.current_thread().name, self.receive_messages)
-
-		
-		self.sounds = [self.scansound, self.clicksound]
-        
+  
+  
+def audio_function():
+		       
 		dr_open = True
 		warble_state = False
 		alarm_state = False
@@ -70,10 +63,7 @@ class job(threading.Thread):
 		while True:
 			print("Loop" , self.message_var)
 			
-			dr_closing = self.message_var[1]["dr_closing"]
-			dr_opening = self.message_var[0]["dr_opening"]
-			alarm_state = self.message_var[3]["alert"]
-			warble_state = self.message_var[2]["warble"]
+
 			
 			print(warble_state)
 			print(alarm_state)
@@ -126,15 +116,45 @@ class job(threading.Thread):
 					self.warble.stop()
 			time.sleep(2)
      	
+def check_playing():
+	global warble
+	if hasattr(warble,'is_playing'):
+		print("warble  is running")
+           
+  
+  
+            
+print_lock = threading.Lock()
+# Stolen Here: https://stackoverflow.com/questions/25904537/how-do-i-send-data-to-a-running-python-thread
+class job(threading.Thread):
+	def __init__(self, args=(), kwargs=None):
+		threading.Thread.__init__(self, args=(), kwargs=None)
+		self.daemon = True
+		self.receive_messages = args[0]
+		self.message_var = [{"dr_opening": False },{"dr_closing": False},{"warble": False},{"alert": False}]
+		
+	def run(self):
+		print(threading.current_thread().name, self.receive_messages)
+		while True:
+			print(threading.current_thread().name, self.receive_messages)
+			dr_closing = self.message_var[1]["dr_closing"]
+			dr_opening = self.message_var[0]["dr_opening"]
+			alarm_state = self.message_var[3]["alert"]
+			warble_state = self.message_var[2]["warble"]
+			print(dr_closing,dr_opening,alarm_state,warble_state)
+			check_playing()
+			
+			time.sleep(1)
+
 	def do_thing_with_message(self, message):
 		if self.receive_messages:
 			with print_lock:
 				#print(threading.current_thread().name, "Received {}".format(message))
 				self.message_var = message
-           
-            
-            
-            
+				
+
+				
+		
 
 def callback(ch, method, properties, body):
 	dict_list = body.decode()
@@ -143,6 +163,9 @@ def callback(ch, method, properties, body):
             
 if __name__ == '__main__':
 	try:
+		print("RUN RUN RUN")
+		#print(dir(warble))
+		#print(dir(warble.__getattribute__))
 		audio_job = job(args=("Hello"))
 		audio_job.start()
 		time.sleep(0.1)
