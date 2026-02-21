@@ -118,15 +118,30 @@ def audio_function():
 
           
 class warble_job(threading.Thread):		
-	def __init__(self, kwargs=None):
+	def __init__(self, args=(), kwargs=None):
 		threading.Thread.__init__(self, args=(), kwargs=None)
 		self.daemon = True
+		self.receive_messages = args[0]
+		self.message_var = "INIT"
+		self.warble = scansound.play()
+		self.warble.stop()
 		
 	def run(self):
-		print(threading.current_thread().name)
-		warble = scansound.play()
-		warble.wait_done()
+		print(threading.current_thread().name, self.receive_messages)
+		self.warble = scansound.play()
+		self.warble.wait_done()
 		print("Termination")
+		return
+		
+	def controll(self, message):
+		if self.receive_messages:
+			with print_lock:
+				print(threading.current_thread().name, "Received {}".format(message))
+				self.message_var = message
+				if self.message_var == "stop":
+					self.warble.stop()
+		return
+
   
             
 print_lock = threading.Lock()
@@ -140,17 +155,28 @@ class job(threading.Thread):
 		
 	def run(self):
 		print(threading.current_thread().name, self.receive_messages)
-		loop_warble = warble_job()
-		loop_warble.start()
+		loop_warble = warble_job(args=("1"))
 		while True:
 			print(threading.current_thread().name, self.receive_messages)
 			dr_closing = self.message_var[1]["dr_closing"]
 			dr_opening = self.message_var[0]["dr_opening"]
 			alarm_state = self.message_var[3]["alert"]
 			warble_state = self.message_var[2]["warble"]
-			print(dr_closing,dr_opening,alarm_state,warble_state)		
-			warble = loop_warble.is_alive()
-			print(warble)
+			print(dr_closing,dr_opening,alarm_state,warble_state)
+			
+			if warble_state and loop_warble.is_alive() == False:
+				loop_warble = warble_job(args=("1"))		
+				loop_warble.start()
+			
+			if warble_state == False and loop_warble.is_alive() == True:
+				loop_warble.controll("stop")
+				time.sleep(1)
+				loop_warble.join()
+
+			
+					
+			warble_ret = loop_warble.is_alive()
+			print("warble_state", warble_ret)
 			time.sleep(1)
 
 	def do_thing_with_message(self, message):
@@ -166,6 +192,7 @@ class job(threading.Thread):
 def callback(ch, method, properties, body):
 	dict_list = body.decode()
 	audio_job.do_thing_with_message(ast.literal_eval(dict_list))
+	print("callback")
 
             
 if __name__ == '__main__':
