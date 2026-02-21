@@ -21,8 +21,7 @@ clicksound = sa.WaveObject.from_wave_file("assets/clicking.wav")
 beepsound = sa.WaveObject.from_wave_file("assets/beep.wav")
 alarmsound = sa.WaveObject.from_wave_file("assets/alarm.wav")
 
-warble = scansound.play()
-alarm = alarmsound.play()
+#alarm = alarmsound.play()
 
 sounds = [scansound, clicksound]
 
@@ -116,12 +115,18 @@ def audio_function():
 					self.warble.stop()
 			time.sleep(2)
      	
-def check_playing():
-	global warble
-	if hasattr(warble,'is_playing'):
-		print("warble  is running")
-           
-  
+
+          
+class warble_job(threading.Thread):		
+	def __init__(self, kwargs=None):
+		threading.Thread.__init__(self, args=(), kwargs=None)
+		self.daemon = True
+		
+	def run(self):
+		print(threading.current_thread().name)
+		warble = scansound.play()
+		warble.wait_done()
+		print("Termination")
   
             
 print_lock = threading.Lock()
@@ -135,15 +140,17 @@ class job(threading.Thread):
 		
 	def run(self):
 		print(threading.current_thread().name, self.receive_messages)
+		loop_warble = warble_job()
+		loop_warble.start()
 		while True:
 			print(threading.current_thread().name, self.receive_messages)
 			dr_closing = self.message_var[1]["dr_closing"]
 			dr_opening = self.message_var[0]["dr_opening"]
 			alarm_state = self.message_var[3]["alert"]
 			warble_state = self.message_var[2]["warble"]
-			print(dr_closing,dr_opening,alarm_state,warble_state)
-			check_playing()
-			
+			print(dr_closing,dr_opening,alarm_state,warble_state)		
+			warble = loop_warble.is_alive()
+			print(warble)
 			time.sleep(1)
 
 	def do_thing_with_message(self, message):
@@ -153,7 +160,7 @@ class job(threading.Thread):
 				self.message_var = message
 				
 
-				
+
 		
 
 def callback(ch, method, properties, body):
@@ -166,7 +173,7 @@ if __name__ == '__main__':
 		print("RUN RUN RUN")
 		#print(dir(warble))
 		#print(dir(warble.__getattribute__))
-		audio_job = job(args=("Hello"))
+		audio_job = job(args=("1"))
 		audio_job.start()
 		time.sleep(0.1)
 		channel.basic_consume(queue='audio',on_message_callback=callback, auto_ack=True)
