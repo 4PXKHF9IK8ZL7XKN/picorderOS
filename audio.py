@@ -20,6 +20,7 @@ scansound = sa.WaveObject.from_wave_file("assets/scanning.wav")
 clicksound = sa.WaveObject.from_wave_file("assets/clicking.wav")
 beepsound = sa.WaveObject.from_wave_file("assets/beep.wav")
 alarmsound = sa.WaveObject.from_wave_file("assets/alarm.wav")
+sensor_alarmsound = sa.WaveObject.from_wave_file("assets/tric_alarm2.wav")
 silencesound = sa.WaveObject.from_wave_file("assets/silence.wav")
 
 sounds = [scansound, clicksound]
@@ -52,6 +53,8 @@ class job_audio_play(threading.Thread):
 			self.audio_task = scansound.play()
 		elif self.receive_messages == "alert":
 			self.audio_task = alarmsound.play()
+		elif self.receive_messages == "sensor_alert":
+			self.audio_task = sensor_alarmsound.play()			
 		elif self.receive_messages == "door":
 			self.audio_task = clicksound.play()
 		elif self.receive_messages == "key_press":
@@ -66,6 +69,8 @@ class job_audio_play(threading.Thread):
 			self.audio_task = scansound.play()
 		elif self.receive_messages == "alert":
 			self.audio_task = alarmsound.play()
+		elif self.receive_messages == "sensor_alert":
+			self.audio_task = sensor_alarmsound.play()
 		elif self.receive_messages == "door":
 			self.audio_task = clicksound.play()
 		elif self.receive_messages == "key_press":
@@ -89,11 +94,12 @@ class job(threading.Thread):
 		threading.Thread.__init__(self, args=(), kwargs=None)
 		self.daemon = True
 		self.receive_messages = args[0]
-		self.message_var = [{"dr_opening": False },{"dr_closing": False},{"warble": False},{"alert": False}]
+		self.message_var = [{"dr_opening": False },{"dr_closing": False},{"warble": False},{"alert": False},{"sensor_alert": False}]
 		
 	def run(self):
 		loop_warble = job_audio_play(args=(""))
 		one_shot_alert = job_audio_play(args=(""))
+		one_shot_sensor_alert = job_audio_play(args=(""))
 		one_shot_closing = job_audio_play(args=(""))
 		one_shot_opening = job_audio_play(args=(""))
 		while True:
@@ -102,6 +108,7 @@ class job(threading.Thread):
 			dr_opening_state = self.message_var[0]["dr_opening"]
 			alarm_state = self.message_var[3]["alert"]
 			warble_state = self.message_var[2]["warble"]
+			sensor_alarm_state = self.message_var[4]["sensor_alert"]
 			
 			if warble_state and loop_warble.is_alive() == False:
 				loop_warble = job_audio_play(args=("warble"))
@@ -116,6 +123,12 @@ class job(threading.Thread):
 				one_shot_alert = job_audio_play(args=("alert"))
 				one_shot_alert.start()
 				self.message_var[3]["alert"] = False
+				
+			if sensor_alarm_state and one_shot_sensor_alert.is_alive() == False:
+				one_shot_sensor_alert = job_audio_play(args=("sensor_alert"))
+				one_shot_sensor_alert.start()
+				self.message_var[4]["sensor_alert"] = False
+				
 				
 			if dr_opening_state and one_shot_opening.is_alive() == False:
 				one_shot_opening = job_audio_play(args=("door"))
