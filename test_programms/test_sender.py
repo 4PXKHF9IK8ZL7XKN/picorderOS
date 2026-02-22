@@ -28,7 +28,7 @@ def disconnect():
 
 def sensor_process():
 	while True:
-		meta_massage = '[{"dr_opening": False },{"dr_closing": False},{"warble": True},{"alert": False}]'
+		meta_massage = '[{"dr_opening": True },{"dr_closing": False},{"warble": False},{"alert": False}]'
 		publish('audio',meta_massage)
 		time.sleep(1)
 		meta_massage = '[{"dr_opening": False },{"dr_closing": False},{"warble": False},{"alert": False}]'
