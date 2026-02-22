@@ -9,7 +9,7 @@ import ast
 
 import simpleaudio as sa
 
-print("Loading Audio Thread")
+print("Loading Audio Thread Manager")
 
 # the audio object will serve as the primary mechanism by which all sounds
 # are loaded and deployed.
@@ -20,8 +20,7 @@ scansound = sa.WaveObject.from_wave_file("assets/scanning.wav")
 clicksound = sa.WaveObject.from_wave_file("assets/clicking.wav")
 beepsound = sa.WaveObject.from_wave_file("assets/beep.wav")
 alarmsound = sa.WaveObject.from_wave_file("assets/alarm.wav")
-
-#alarm = alarmsound.play()
+silencesound = sa.WaveObject.from_wave_file("assets/silence.wav")
 
 sounds = [scansound, clicksound]
 
@@ -42,109 +41,48 @@ channel.queue_bind(
     exchange='sensor_data', queue='', routing_key='audio')
     
 
-    
-    
-
-  
-  
-def audio_function():
-		       
-		dr_open = True
-		warble_state = False
-		alarm_state = False
-		audio_state = True
-		status = "run"
-		beep_ready = False
-		alarm_ready = True
-		start = True
-		was_open = False
-				
-		while True:
-			print("Loop" , self.message_var)
-			
-
-			
-			print(warble_state)
-			print(alarm_state)
-			print(dir(self.warble))
-			
-			if warble_state == False:
-				print("STOP")
-				try:
-					self.warble.stop()
-				except:
-					print("STOP STOP STOP")
-					pass
-				
-
-
-			
-			if audio_state:
-
-				if dr_opening:
-					clicksound.play()
-					dr_opening = False
-
-				if dr_closing:
-					clicksound.play()
-					dr_closing = False
-
-				if beep_ready:
-					beepsound.play()
-					beep_ready = False
-
-
-				# controls the main tricorder sound loop
-				if dr_open:
-					if not hasattr(self.warble,'is_playing') and warble_state:
-						self.warble.play()
-				else:
-					if hasattr(self.warble,'is_playing'):
-						self.warble.stop()
-				
-				if warble_state == False:
-					if hasattr(self.warble,'is_playing'):
-						self.warble.stop()
-
-				if alarm_state:
-					if not hasattr(alarm,'is_playing'):
-						alarm.play()
-					alarm_ready = False
-			else:
-				if hasattr(self.warble,'is_playing'):
-					self.warble.stop()
-			time.sleep(2)
-     	
-
-          
-class warble_job(threading.Thread):		
+print_lock = threading.Lock()     	
+class job_audio_play(threading.Thread):		
 	def __init__(self, args=(), kwargs=None):
 		threading.Thread.__init__(self, args=(), kwargs=None)
 		self.daemon = True
-		self.receive_messages = args[0]
+		self.receive_messages = args
 		self.message_var = "INIT"
-		self.warble = scansound.play()
-		self.warble.stop()
+		if self.receive_messages == "warble":
+			self.audio_task = scansound.play()
+		elif self.receive_messages == "alert":
+			self.audio_task = alarmsound.play()
+		elif self.receive_messages == "door":
+			self.audio_task = clicksound.play()
+		elif self.receive_messages == "key_press":
+			self.audio_task = beepsound.play()
+		else: 
+			self.audio_task = silencesound.play()
+		
+		self.audio_task.stop()
 		
 	def run(self):
-		print(threading.current_thread().name, self.receive_messages)
-		self.warble = scansound.play()
-		self.warble.wait_done()
-		print("Termination")
+		if self.receive_messages == "warble":
+			self.audio_task = scansound.play()
+		elif self.receive_messages == "alert":
+			self.audio_task = alarmsound.play()
+		elif self.receive_messages == "door":
+			self.audio_task = clicksound.play()
+		elif self.receive_messages == "key_press":
+			self.audio_task = beepsound.play()
+		else: 
+			self.audio_task = silencesound.play()
+		self.audio_task.wait_done()
 		return
 		
 	def controll(self, message):
 		if self.receive_messages:
 			with print_lock:
-				print(threading.current_thread().name, "Received {}".format(message))
 				self.message_var = message
 				if self.message_var == "stop":
-					self.warble.stop()
+					self.audio_task.stop()
 		return
 
-  
-            
-print_lock = threading.Lock()
 # Stolen Here: https://stackoverflow.com/questions/25904537/how-do-i-send-data-to-a-running-python-thread
 class job(threading.Thread):
 	def __init__(self, args=(), kwargs=None):
@@ -154,30 +92,42 @@ class job(threading.Thread):
 		self.message_var = [{"dr_opening": False },{"dr_closing": False},{"warble": False},{"alert": False}]
 		
 	def run(self):
-		print(threading.current_thread().name, self.receive_messages)
-		loop_warble = warble_job(args=("1"))
+		loop_warble = job_audio_play(args=(""))
+		one_shot_alert = job_audio_play(args=(""))
+		one_shot_closing = job_audio_play(args=(""))
+		one_shot_opening = job_audio_play(args=(""))
 		while True:
-			print(threading.current_thread().name, self.receive_messages)
-			dr_closing = self.message_var[1]["dr_closing"]
-			dr_opening = self.message_var[0]["dr_opening"]
+			#print(threading.current_thread().name, self.message_var)
+			dr_closing_state = self.message_var[1]["dr_closing"]
+			dr_opening_state = self.message_var[0]["dr_opening"]
 			alarm_state = self.message_var[3]["alert"]
 			warble_state = self.message_var[2]["warble"]
-			print(dr_closing,dr_opening,alarm_state,warble_state)
 			
 			if warble_state and loop_warble.is_alive() == False:
-				loop_warble = warble_job(args=("1"))		
+				loop_warble = job_audio_play(args=("warble"))
 				loop_warble.start()
 			
 			if warble_state == False and loop_warble.is_alive() == True:
 				loop_warble.controll("stop")
-				time.sleep(1)
-				loop_warble.join()
-
+				time.sleep(0.1)
+				loop_warble.join()		
+				
+			if alarm_state and one_shot_alert.is_alive() == False:
+				one_shot_alert = job_audio_play(args=("alert"))
+				one_shot_alert.start()
+				self.message_var[3]["alert"] = False
+				
+			if dr_opening_state and one_shot_opening.is_alive() == False:
+				one_shot_opening = job_audio_play(args=("door"))
+				one_shot_opening.start()
+				self.message_var[0]["dr_opening"] = False
+				
+			if dr_closing_state and one_shot_closing.is_alive() == False:
+				one_shot_closing = job_audio_play(args=("door"))
+				one_shot_closing.start()
+				self.message_var[1]["dr_closing"] = False
 			
-					
-			warble_ret = loop_warble.is_alive()
-			print("warble_state", warble_ret)
-			time.sleep(1)
+			time.sleep(0.1)
 
 	def do_thing_with_message(self, message):
 		if self.receive_messages:
@@ -186,20 +136,13 @@ class job(threading.Thread):
 				self.message_var = message
 				
 
-
-		
-
 def callback(ch, method, properties, body):
 	dict_list = body.decode()
 	audio_job.do_thing_with_message(ast.literal_eval(dict_list))
-	print("callback")
 
             
 if __name__ == '__main__':
 	try:
-		print("RUN RUN RUN")
-		#print(dir(warble))
-		#print(dir(warble.__getattribute__))
 		audio_job = job(args=("1"))
 		audio_job.start()
 		time.sleep(0.1)
