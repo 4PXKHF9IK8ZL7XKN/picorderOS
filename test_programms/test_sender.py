@@ -30,7 +30,7 @@ def sensor_process():
 	#meta_massage = '[{"dr_opening": True },{"dr_closing": False},{"warble": False},{"alert": False},{"sensor_alert": False}]'
 	#publish('audio',meta_massage)
 	#time.sleep(1)
-	meta_massage = '[{"dr_opening": False },{"dr_closing": False},{"warble": True},{"alert": False},{"sensor_alert": True}]'
+	meta_massage = '[{"dr_opening": False },{"dr_closing": False},{"warble": False},{"alert": False},{"sensor_alert": True}]'
 	publish('audio',meta_massage)
 	#time.sleep(3)
 
