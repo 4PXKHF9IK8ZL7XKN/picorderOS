@@ -23,6 +23,7 @@ top_right_in = (96,0,0)
 top_center_in = (96,0,0)
 
 SENSOR_MODE_mem = 0
+DOOR_OPEN_STATE_mem = False
 
 WAIT_TIME_SECONDS = 0.1
 
@@ -274,12 +275,21 @@ def callback(ch, method, properties, body):
   global Pattern
   global flip_lights1
   global SENSOR_MODE_mem
+  global DOOR_OPEN_STATE_mem
   
   DICT = body.decode()
   DICT_CLEAN = ast.literal_eval(DICT)
-
+  
+  if DOOR_OPEN_STATE_mem != DICT_CLEAN['Door_open']:
+    if DICT_CLEAN['Door_open'] == False:
+      LED1_job.stop()
+    elif DICT_CLEAN['Door_open'] == True:
+      LED1_job.start()
+    DOOR_OPEN_STATE_mem = DICT_CLEAN['Door_open']
+    
+    
   if SENSOR_MODE_mem != DICT_CLEAN['SENSOR_MODE']:
-
+ 
     if DICT_CLEAN['SENSOR_MODE'] == 0:
       Pattern = 0
       scannerline1 = (255,255,0)
@@ -382,7 +392,7 @@ if __name__ == "__main__":
 	LED1_job = Job(interval=timedelta(seconds=WAIT_TIME_SECONDS), execute=animation)
 	
 	try:
-		LED1_job.start()
+		#LED1_job.start()
 		channel.start_consuming()
 	except KeyboardInterrupt or Exception or OSError as e:
 		print("Termination", e)
