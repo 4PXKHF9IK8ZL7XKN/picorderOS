@@ -41,6 +41,8 @@ DEBUG = False
 
 SENSOR_MODE = 0
 SENSOR_MODE_LAST = 0
+STATE_DOOR_OPEN = False
+STATE_DOOR_CLOSE = False
 
 ALERT_STATE = 0 # 0 = green, 1 = yellow, 2 = red, 3 = blue, 4 = black, 5 = grey, 6 = doublered
 
@@ -101,6 +103,10 @@ def callback(ch, method, properties, body):
 	global SENSOR_MODE
 	global SENSOR_MODE_LAST
 	global ALERT_STATE
+	global STATE_DOOR_OPEN
+	global STATE_DOOR_CLOSE
+	
+	INPUTS_WITH_SIGNAL = ['geo','met','bio','lib','pwr','f1/f2','I','E','accpt/pool','intrship/tricrder','fwd/input','rvs/erase','Ib','Eb','cancel/switch']
 	EVENT_MAP = { 'geo': False  , 'met': False, 'bio': False, 'lib': False, 'pwr': False, 'f1/f2': False, 'I': False, 'E': False, 'accpt/pool': False, 'intrship/tricrder': False, 'EMRG': False, 'fwd/input': False, 'rvs/erase': False, 'Ib': False, 'Eb': False, 'Id': False, 'Door_open': False, 'Door_close': False, 'LOW-POWER': False, 'next':False, 'ENTER':False, 'cancel/switch': False, 'SERIAL': False, 'SENSOR_MODE': SENSOR_MODE, 'ALERT_STATE': ALERT_STATE }
 	# pcf8575 can map 16 inputs
 	configure.input_pcf8575
@@ -185,8 +191,27 @@ def callback(ch, method, properties, body):
 							pass
 							
 	if method.routing_key == 'gpio':
+		sensor_dict_unclean = body.decode()
+		sensor_dict = ast.literal_eval(sensor_dict_unclean)
+		if sensor_dict['gpio'] == 'reet_A':
+			if sensor_dict['state'] == True:
+				STATE_DOOR_CLOSE = True
+			elif sensor_dict['state'] == False:
+				STATE_DOOR_CLOSE = False
+		elif sensor_dict['gpio'] == 'reet_B':
+			if sensor_dict['state'] == True:
+				if STATE_DOOR_OPEN == False:
+					audio_control_message = '[{"dr_opening": True },{"dr_closing": False},{"warble": True},{"alert": False},{"sensor_alert": False}]'
+					publish('audio', audio_control_message)
+				STATE_DOOR_OPEN = True				
+			elif sensor_dict['state'] == False:
+				if STATE_DOOR_OPEN == True:
+					audio_control_message = '[{"dr_opening": False },{"dr_closing": True},{"warble": False},{"alert": False},{"sensor_alert": False}]'
+					publish('audio', audio_control_message)			
+				STATE_DOOR_OPEN = False
+				
+		return
 
-	
 
 	# joystick can map 5 inputs
 	configure.input_joystick
@@ -197,8 +222,8 @@ def callback(ch, method, properties, body):
 	
 	
 	
-	
-	
+	EVENT_MAP['Door_open'] = STATE_DOOR_OPEN
+	EVENT_MAP['Door_close'] = STATE_DOOR_CLOSE
 	
 	# gpio door open close and 3 butten presses for TR-108
 	configure.input_gpio
@@ -208,8 +233,9 @@ def callback(ch, method, properties, body):
 	publish('EVENT',EVENT_MAP)
 	print("EVENT:", EVENT_MAP)
 	for key in EVENT_MAP:
-		if EVENT_MAP[key] == True:
-			click = beepsound.play()
+		if key in INPUTS_WITH_SIGNAL:
+			if EVENT_MAP[key] == True:
+				click = beepsound.play()
 	#print(f" [x] {method.routing_key}:{body}")
 
 if __name__ == '__main__':
