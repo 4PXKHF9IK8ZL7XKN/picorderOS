@@ -68,6 +68,9 @@ channel.queue_bind(
 channel.queue_bind(
     exchange='sensor_data', queue='', routing_key='keyboard')    
     
+channel.queue_bind(
+    exchange='sensor_data', queue='', routing_key='gpio')    
+    
 def publish(IN_routing_key,data):
 	configure.beep_ready[0] = True
 	configure.eventready[0] = True	
@@ -180,6 +183,8 @@ def callback(ch, method, properties, body):
 							pass
 						elif key == 11:
 							pass
+							
+	if method.routing_key == 'gpio':
 
 	
 

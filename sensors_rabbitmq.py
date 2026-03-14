@@ -38,6 +38,10 @@ BUTTON_GPIOA = 17
 BUTTON_GPIOB = 27
 BUTTON_GPIOA_RST = 22
 
+# Delcares the IRQ Pins for Reedswitches
+BUTTON_GPIO_ReedA = 5
+BUTTON_GPIO_ReedB = 6
+
 # set the BUS Freq
 #I2C_FRQ = 42000
 
@@ -284,6 +288,22 @@ def button_callbackB(channel):
 
 
 	publish("touch",touchB_dict)
+	softbreak_flag = False
+	
+	
+def reet_callback(channel,pin_select,pin_state):
+	global softbreak_flag
+	global term_signal
+	
+	if pin_select == "A":
+		gpio_dict = {"gpio":"reet_A","state": pin_state}
+	
+	if pin_select == "B":
+		gpio_dict = {"gpio":"reet_B","state": pin_state}
+
+	softbreak_flag = True
+
+	publish("gpio",gpio_dict)
 	softbreak_flag = False
 
 
@@ -1058,12 +1078,17 @@ if __name__ == "__main__":
 	pwm_frequency = 75
 
 	# Set the PWM duty cycle (75%)
-	pwm_duty_cycle = 75  # 75% of the range (0-1000000)
+	pwm_duty_cycle = 25  # 75% of the range (0-1000000)
 
 	GPIO.setup(DISPLAY_BL_PWM, GPIO.OUT)
 	#GPIO.output(DISPLAY_BL_PWM, GPIO.HIGH)
 	pwm12 = GPIO.PWM(DISPLAY_BL_PWM, pwm_frequency)
-	pwm12.start(pwm_duty_cycle)
+	
+	GPIO.setup(BUTTON_GPIO_ReedA, GPIO.IN, pull_up_down=GPIO.PUD_UP)
+	GPIO.setup(BUTTON_GPIO_ReedB, GPIO.IN, pull_up_down=GPIO.PUD_UP)
+	
+	#GPIO.add_event_detect(BUTTON_GPIOA, GPIO.BOTH, callback=button_callbackA, bouncetime=10)
+	#GPIO.add_event_detect(BUTTON_GPIOB, GPIO.BOTH, callback=button_callbackB, bouncetime=10) 
 
 	if configure.input_cap_mpr121:
 		GPIO.setup(BUTTON_GPIOA, GPIO.IN)
@@ -1204,17 +1229,37 @@ if __name__ == "__main__":
 			
 			stateA = GPIO.input(BUTTON_GPIOA)
 			if stateA:
-				print('stateA on')
+				#print('stateA on')
 				button_callbackA(open_channel)
 			else:
 				pass
 				
 			stateB = GPIO.input(BUTTON_GPIOB)
 			if stateB:
-				print('stateB on')
+				#print('stateB on')
 				button_callbackB(open_channel)
 			else:
 				pass
+				
+				
+			state_reetA = GPIO.input(BUTTON_GPIO_ReedA)
+			if state_reetA == True:
+				print('Door Transit')
+				# dont get confused , pin is active low , what means door is "entirley open" says low and open high (in Transit maybe)
+				reet_callback(channel,"A", True)
+			else:
+				reet_callback(channel,"A", False)
+				
+			state_reetB = GPIO.input(BUTTON_GPIO_ReedB)
+			if state_reetB == True:
+				print('Door Open')
+				# dont get confused , pin is active low , what means "door" closed say low and "open high"
+				reet_callback(channel,"B", True)
+				pwm12.start(pwm_duty_cycle)
+			else:
+				print('Door Closed')
+				reet_callback(channel,"B", False)
+				pwm12.stop()
 
 			counter = counter + 1 
 			if counter == 180:
