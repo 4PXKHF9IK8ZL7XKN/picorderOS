@@ -190,6 +190,7 @@ def callback(ch, method, properties, body):
 						elif key == 11:
 							pass
 							
+	# This part descripes the Handeling what Happends from the GPIO input to create a sound and orders the audio module to react
 	if method.routing_key == 'gpio':
 		sensor_dict_unclean = body.decode()
 		sensor_dict = ast.literal_eval(sensor_dict_unclean)
@@ -202,11 +203,13 @@ def callback(ch, method, properties, body):
 			if sensor_dict['state'] == True:
 				if STATE_DOOR_OPEN == False:
 					audio_control_message = '[{"dr_opening": True },{"dr_closing": False},{"warble": True},{"alert": False},{"sensor_alert": False}]'
+					publish('EVENT',EVENT_MAP)
 					publish('audio', audio_control_message)
 				STATE_DOOR_OPEN = True				
 			elif sensor_dict['state'] == False:
 				if STATE_DOOR_OPEN == True:
 					audio_control_message = '[{"dr_opening": False },{"dr_closing": True},{"warble": False},{"alert": False},{"sensor_alert": False}]'
+					publish('EVENT',EVENT_MAP)
 					publish('audio', audio_control_message)			
 				STATE_DOOR_OPEN = False
 				
