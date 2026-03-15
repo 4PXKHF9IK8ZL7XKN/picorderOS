@@ -113,14 +113,12 @@ def callback(ch, method, properties, body):
 	# mpr121 can map 12 inputs
 	
 	#print("array:", configure.eventlist[0])
-	print("CALLBACK",method.routing_key)
+
 	if method.routing_key == 'touch':
-		print("CALL")
 		if configure.input_cap_mpr121 or configure.input_cap1188 or configure.cap1188_cap_mpr121_mix:
-			print("SETUP")
 			sensor_dict_unclean = body.decode()
 			sensor_dict = ast.literal_eval(sensor_dict_unclean)
-			print(sensor_dict)
+			#print(sensor_dict)
 			#print(type(sensor_dict))
 			for key in sensor_dict:
 				if sensor_dict['DICT'] == 'A':
@@ -137,17 +135,13 @@ def callback(ch, method, properties, body):
 							EVENT_MAP['f1/f2'] = sensor_dict[key]
 						elif key == 5:
 							EVENT_MAP['lib'] = sensor_dict[key]
-							configure.eventlist[0][3] =  sensor_dict[key]
-							if sensor_dict[key]:
-								SENSOR_MODE = SENSOR_MODE + 1
-								SENSOR_MODE_LAST = SENSOR_MODE 
-								if SENSOR_MODE > 8:
-									SENSOR_MODE = 0
-									SENSOR_MODE_LAST = 0
 						elif key == 6:
 							EVENT_MAP['E'] = sensor_dict[key]
 						elif key == 7:
 							EVENT_MAP['I'] = sensor_dict[key]
+						elif key == 8:
+							pass
+						elif key == 9:
 							if sensor_dict[key]:
 								if ALERT_STATE != 2:
 									ALERT_STATE = 2
@@ -155,12 +149,13 @@ def callback(ch, method, properties, body):
 								else:
 									ALERT_STATE = 0
 									SENSOR_MODE = SENSOR_MODE_LAST
-						elif key == 8:
-							pass
-						elif key == 9:
-							pass
 						elif key == 10:
-							pass
+							if sensor_dict[key]:
+								SENSOR_MODE = SENSOR_MODE + 1
+								SENSOR_MODE_LAST = SENSOR_MODE 
+								if SENSOR_MODE > 8:
+									SENSOR_MODE = 0
+									SENSOR_MODE_LAST = 0
 						elif key == 11:
 							pass
 				elif sensor_dict['DICT'] == 'B':
@@ -203,12 +198,20 @@ def callback(ch, method, properties, body):
 			if sensor_dict['state'] == True:
 				if STATE_DOOR_OPEN == False:
 					audio_control_message = '[{"dr_opening": True },{"dr_closing": False},{"warble": True},{"alert": False},{"sensor_alert": False}]'
+					if ALERT_STATE > 0:
+					    SENSOR_MODE = 2
+					    EVENT_MAP['SENSOR_MODE'] = 2
+					else:
+					    SENSOR_MODE = SENSOR_MODE_LAST
+					    EVENT_MAP['SENSOR_MODE'] = SENSOR_MODE_LAST
 					publish('EVENT',EVENT_MAP)
 					publish('audio', audio_control_message)
 				STATE_DOOR_OPEN = True				
 			elif sensor_dict['state'] == False:
 				if STATE_DOOR_OPEN == True:
 					audio_control_message = '[{"dr_opening": False },{"dr_closing": True},{"warble": False},{"alert": False},{"sensor_alert": False}]'
+					EVENT_MAP['SENSOR_MODE'] = 10
+					SENSOR_MODE = 10
 					publish('EVENT',EVENT_MAP)
 					publish('audio', audio_control_message)			
 				STATE_DOOR_OPEN = False
