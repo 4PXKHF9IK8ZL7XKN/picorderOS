@@ -39,7 +39,7 @@ release_threshold = 2
 
 DEBUG = False
 
-SENSOR_MODE = 0
+SENSOR_MODE = 10
 SENSOR_MODE_LAST = 0
 STATE_DOOR_OPEN = False
 STATE_DOOR_CLOSE = False
@@ -145,17 +145,20 @@ def callback(ch, method, properties, body):
 							if sensor_dict[key]:
 								if ALERT_STATE != 2:
 									ALERT_STATE = 2
-									SENSOR_MODE = 2
+									if STATE_DOOR_OPEN == True:
+									    SENSOR_MODE = 2
 								else:
 									ALERT_STATE = 0
-									SENSOR_MODE = SENSOR_MODE_LAST
+									if STATE_DOOR_OPEN == True:
+									    SENSOR_MODE = SENSOR_MODE_LAST
 						elif key == 10:
-							if sensor_dict[key]:
-								SENSOR_MODE = SENSOR_MODE + 1
-								SENSOR_MODE_LAST = SENSOR_MODE 
-								if SENSOR_MODE > 8:
-									SENSOR_MODE = 0
-									SENSOR_MODE_LAST = 0
+						    if STATE_DOOR_OPEN == True:
+							    if sensor_dict[key]:
+								    SENSOR_MODE = SENSOR_MODE + 1
+								    SENSOR_MODE_LAST = SENSOR_MODE 
+								    if SENSOR_MODE > 8:
+									    SENSOR_MODE = 0
+									    SENSOR_MODE_LAST = 0
 						elif key == 11:
 							pass
 				elif sensor_dict['DICT'] == 'B':
