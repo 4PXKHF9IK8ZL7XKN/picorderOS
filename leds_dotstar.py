@@ -290,16 +290,7 @@ def callback(ch, method, properties, body):
   global DOOR_OPEN_STATE_mem
   
   DICT = body.decode()
-  DICT_CLEAN = ast.literal_eval(DICT)
-  
-  if DOOR_OPEN_STATE_mem != DICT_CLEAN['Door_open']:
-    if DICT_CLEAN['Door_open'] == False:
-      LED1_job.stop()
-    elif DICT_CLEAN['Door_open'] == True:
-      initstate_helper()
-      LED1_job.start()
-    DOOR_OPEN_STATE_mem = DICT_CLEAN['Door_open']
-    
+  DICT_CLEAN = ast.literal_eval(DICT)  
     
   if SENSOR_MODE_mem != DICT_CLEAN['SENSOR_MODE']:
  
@@ -381,7 +372,7 @@ def callback(ch, method, properties, body):
       Pattern = 4
     elif DICT_CLEAN['SENSOR_MODE'] == 7:
       background = (0,0,0)
-      Pattern = 3
+      Pattern = 3     
     else:
       Pattern = 2
       
@@ -410,7 +401,7 @@ if __name__ == "__main__":
     LED1_job = Job(interval=timedelta(seconds=WAIT_TIME_SECONDS), execute=animation)
 	
     try:
-        #LED1_job.start()
+        LED1_job.start()
         channel.start_consuming()
     except KeyboardInterrupt or Exception or OSError as e:
         print("Termination", e)
