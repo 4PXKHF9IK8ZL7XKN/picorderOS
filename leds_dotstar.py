@@ -9,6 +9,8 @@ import threading
 from datetime import timedelta
 import ast
 import math
+import signal
+
 
 background = (0,0,0)
 scannerline0 = (10,10,0)
@@ -109,8 +111,9 @@ def fn_dots_static():
 # Startup: Initial LED settings
 fn_dots_reset()
 time.sleep(1)
-fn_dots_initial()
-fn_dots_static()
+def initstate_helper():
+    fn_dots_initial()
+    fn_dots_static()
 
 
 def animation():
@@ -259,7 +262,16 @@ class Job(threading.Thread):
                 self.join()
     def run(self):
             while not self.stopped.wait(self.interval.total_seconds()):
-                self.execute(*self.args, **self.kwargs)         
+                self.execute(*self.args, **self.kwargs)        
+       
+       
+         
+def handler_stop_signals(signum, frame):
+    #Exit the program gracefully
+    fn_dots_reset()
+    fn_dots_unload()
+    sys.exit(0)               
+                 
       
 
 def callback(ch, method, properties, body):
@@ -284,6 +296,7 @@ def callback(ch, method, properties, body):
     if DICT_CLEAN['Door_open'] == False:
       LED1_job.stop()
     elif DICT_CLEAN['Door_open'] == True:
+      initstate_helper()
       LED1_job.start()
     DOOR_OPEN_STATE_mem = DICT_CLEAN['Door_open']
     
@@ -385,16 +398,25 @@ def callback(ch, method, properties, body):
     # update background once
     dots.fill((background))
     SENSOR_MODE_mem = DICT_CLEAN['SENSOR_MODE']
-  
+
+
+   
+signal.signal(signal.SIGINT, handler_stop_signals)
+signal.signal(signal.SIGTERM, handler_stop_signals)
+    
 if __name__ == "__main__":
-	channel.basic_consume(queue='',on_message_callback=callback, auto_ack=True)
-	# setup the thread with timer and start the IRQ reset function
-	LED1_job = Job(interval=timedelta(seconds=WAIT_TIME_SECONDS), execute=animation)
+    channel.basic_consume(queue='',on_message_callback=callback, auto_ack=True)
+    # setup the thread with timer and start the IRQ reset function
+    LED1_job = Job(interval=timedelta(seconds=WAIT_TIME_SECONDS), execute=animation)
 	
-	try:
-		#LED1_job.start()
-		channel.start_consuming()
-	except KeyboardInterrupt or Exception or OSError as e:
-		print("Termination", e)
-		sys.exit(1)
+    try:
+        #LED1_job.start()
+        channel.start_consuming()
+    except KeyboardInterrupt or Exception or OSError as e:
+        print("Termination", e)
+        fn_dots_reset()
+        fn_dots_unload()
+        sys.exit(1)
+ 
+
 
