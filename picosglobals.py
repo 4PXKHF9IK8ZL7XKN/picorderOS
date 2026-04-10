@@ -18,3 +18,17 @@ SCD4X = [[0,400,5000,'CO2','ppm','SCD4X','timestamp','latitude','longitude','rab
 SHT30 = [[0,-40,85,'Thermometer','\xB0','SHT30','timestamp','latitude','longitude','rabbitmq_tag'],[0,0,100,'Hygrometer','%','SHT30','timestamp','latitude','longitude','rabbitmq_tag']]
 BMP280 = [[0,-40,85,'Thermometer','\xB0','BMP280','timestamp','latitude','longitude','rabbitmq_tag'],[0,300,1100,'Barometer','hPa','BMP280','timestamp','latitude','longitude','rabbitmq_tag'],[0,-50,1100,'ALT','m','BMP280','timestamp','latitude','longitude','rabbitmq_tag']]
 WIFI_STATS = [["DATA_OBJECT",None,None,'OBJECT','None','wifi','timestamp','latitude','longitude','rabbitmq_tag']]
+AS7331 = [[0,0,21760,'UVA','µW/cm2','AS7331','timestamp','latitude','longitude','rabbitmq_tag'],[0,0,24192,'UVB','µW/cm2','AS7331','timestamp','latitude','longitude','rabbitmq_tag'],[0,0,10624,'UVC','µW/cm2','AS7331','timestamp','latitude','longitude','rabbitmq_tag'],[0,-40,85,'Thermometer','\xB0','AS7331','timestamp','latitude','longitude','rabbitmq_tag']]
+AS7341 = [
+[0,0,65535,'415nm/Violet','µW/cm2','AS7341','timestamp','latitude','longitude','rabbitmq_tag'],
+[0,0,65535,'445nm/Indigo','µW/cm2','AS7341','timestamp','latitude','longitude','rabbitmq_tag'],
+[0,0,65535,'480nm/Blue','µW/cm2','AS7341','timestamp','latitude','longitude','rabbitmq_tag'],
+[0,0,65535,'515nm/Cyan','µW/cm2','AS7341','timestamp','latitude','longitude','rabbitmq_tag'],
+[0,0,65535,'555nm/Green','µW/cm2','AS7341','timestamp','latitude','longitude','rabbitmq_tag'],
+[0,0,65535,'590nm/Yellow','µW/cm2','AS7341','timestamp','latitude','longitude','rabbitmq_tag'],
+[0,0,65535,'630nm/Orange','µW/cm2','AS7341','timestamp','latitude','longitude','rabbitmq_tag'],
+[0,0,65535,'680nm/Red','µW/cm2','AS7341','timestamp','latitude','longitude','rabbitmq_tag'],
+[0,0,65535,'Clear','µW/cm2','AS7341','timestamp','latitude','longitude','rabbitmq_tag'],
+[0,0,65535,'Near-IR (NIR)','µW/cm2','AS7341','timestamp','latitude','longitude','rabbitmq_tag'],
+[0,1000,1200,'flicker_detected','µW/cm2','AS7341','timestamp','latitude','longitude','rabbitmq_tag'],
+]

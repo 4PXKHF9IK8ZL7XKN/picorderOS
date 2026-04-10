@@ -82,7 +82,9 @@ mkdir data
 
 Depending on your sensors, you will need to install a package that supports it for example in the case of the Bosch BME 680:
 ```
-pip3 install adafruit-circuitpython-bme680
+pip3 install adafruit-circuitpython-bme680 --break-system-packages
+pip3 install adafruit-circuitpython-as7341 --break-system-packages
+pip3 install adafruit-circuitpython-as7331 --break-system-packages
 
 ```
 

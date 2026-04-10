@@ -67,9 +67,17 @@ class preferences(object):
 							'APDS9960':'no',
 							'# MLX90640 Thermal Camera':None,
 							'MLX90640':'yes',
+							'# AS7331 IR ABC Band':None,
+							'AS7331':'yes',
+							'# AS7341 Spectrum':None,
+							'AS7341':'no',
+							'# AS7341 LED Controll':None,
+							'AS7341_led_blink':'no',
+							'# AS7343 Spectrum':None,
+							'AS7343':'no',		
 							'# Humidity':None,
 							'SHT30':'no'					
-							}										
+							}	
 
 		config['INPUT'] =    {'# Controls which operator input method is active (Choose only one)':None,
 							'kb':'no',
@@ -257,6 +265,11 @@ class preferences(object):
 		self.APDS9960 = self.str2bool(config['SENSORS']['APDS9960'])
 		self.MLX90640 = self.str2bool(config['SENSORS']['MLX90640'])
 		self.SHT30 = self.str2bool(config['SENSORS']['SHT30'])
+		
+		self.AS7341 = self.str2bool(config['SENSORS']['AS7341'])
+		self.AS7341_led_blink = self.str2bool(config['SENSORS']['AS7341_led_blink'])
+		self.AS7343 = self.str2bool(config['SENSORS']['AS7343'])
+		self.AS7331 = self.str2bool(config['SENSORS']['AS7331'])
 
 # INPUT MODULE-----------------------------------------------------------------#
 

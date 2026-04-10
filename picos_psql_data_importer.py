@@ -50,6 +50,12 @@ channel.queue_bind(
 
 channel.queue_bind(
     exchange='sensor_data', queue='', routing_key='apds9960')
+    
+channel.queue_bind(
+    exchange='sensor_data', queue='', routing_key='AS7331')
+
+channel.queue_bind(
+    exchange='sensor_data', queue='', routing_key='AS7341')
 
 channel.queue_bind(
     exchange='sensor_data', queue='', routing_key='GPS_DATA')
@@ -798,6 +804,83 @@ def callback(ch, method, properties, body):
 			purge_data_totime(psql_connection,  table_string, keep_data_lengh)
 			
 			index = index + 1	
+			
+	elif method.routing_key == 'AS7331':
+		# decodes data byte stream and splits the values by comma
+		sensor_values = body.decode().strip("()").split(",")	
+		origin_tag = sensor_values[-1:]
+		del sensor_values[-1]		
+		longitude = sensor_values[-1:]
+		del sensor_values[-1]	
+		latitude = sensor_values[-1:]
+		del sensor_values[-1]
+		sensortimestamp = sensor_values[-1:]
+		del sensor_values[-1]		
+		index = 0
+		#print(sensor_values)
+		for value in sensor_values:
+			#print("AS7331:", float(value))
+			AS7331[index][0] = float(value)					
+			AS7331[index][6] = sensortimestamp[0]
+			AS7331[index][7] = latitude[0]
+			AS7331[index][8] = longitude[0]
+			AS7331[index][9] = origin_tag[0].strip("' '")
+			#print("MATRIX", AS7331[index])
+
+			# creates a new dataframe to add new data
+			table_string = '%s_%s_%s' % (AS7331[index][9],AS7331[index][5],AS7331[index][3])
+
+			ret = table_exists(psql_connection, table_string)
+			if ret is False:
+				table_create(psql_connection,  table_string)
+			
+			ret, ent_id = insert_data(psql_connection,  table_string, AS7331[index][0], AS7331[index][6], AS7331[index][7], AS7331[index][8],AS7331[index][9])
+			if ret is False:
+				os.exit("SQL Write Faild")
+			
+			purge_data_totime(psql_connection,  table_string, keep_data_lengh)
+			
+			index = index + 1
+			
+			
+	elif method.routing_key == 'AS7341':
+		# decodes data byte stream and splits the values by comma
+		sensor_values = body.decode().strip("()").split(",")	
+		origin_tag = sensor_values[-1:]
+		del sensor_values[-1]		
+		longitude = sensor_values[-1:]
+		del sensor_values[-1]	
+		latitude = sensor_values[-1:]
+		del sensor_values[-1]
+		sensortimestamp = sensor_values[-1:]
+		del sensor_values[-1]		
+		index = 0
+		#print(sensor_values)
+		for value in sensor_values:
+			#print("AS7341:", float(value))
+			AS7341[index][0] = float(value)					
+			AS7341[index][6] = sensortimestamp[0]
+			AS7341[index][7] = latitude[0]
+			AS7341[index][8] = longitude[0]
+			AS7341[index][9] = origin_tag[0].strip("' '")
+			#print("MATRIX", AS7341[index])
+
+			# creates a new dataframe to add new data
+			table_string = '%s_%s_%s' % (AS7341[index][9],AS7341[index][5],AS7341[index][3])
+
+			ret = table_exists(psql_connection, table_string)
+			if ret is False:
+				table_create(psql_connection,  table_string)
+			
+			ret, ent_id = insert_data(psql_connection,  table_string, AS7341[index][0], AS7341[index][6], AS7341[index][7], AS7341[index][8],AS7341[index][9])
+			if ret is False:
+				os.exit("SQL Write Faild")
+			
+			purge_data_totime(psql_connection,  table_string, keep_data_lengh)
+			
+			index = index + 1	
+			
+			
 	
 	 
 	elif method.routing_key == 'thermal_frame':

@@ -146,6 +146,16 @@ if configure.APDS9960:
 
 if configure.SHT30:
 	import adafruit_sht31d
+	
+	
+if configure.AS7341:
+    import adafruit_as7341
+	
+if configure.AS7343:
+	import adafruit_as7343
+	
+if configure.AS7331:
+	import adafruit_as7331
 
 
 if configure.sensehat:
@@ -618,7 +628,16 @@ class sensor(object):
 			self.apds9960.enable_color = True
 	
 		if configure.SHT30:
-			self.sht30 = adafruit_sht31d.SHT31D(i2c)
+			self.sht30 = adafruit_sht31d.SHT31D(i2c)			
+			
+		if configure.AS7331:
+			self.AS7331 = adafruit_as7331.AS7331(i2c)
+			
+		if configure.AS7341:
+			self.AS7341 = adafruit_as7341.AS7341(i2c)
+			
+		if configure.AS7343:
+			self.AS7343 = adafruit_as7343.AS7343(i2c)
 			
 	# kudos to thstielow with https://github.com/thstielow/raspi-bme680-iaq/blob/main/bme680IAQ.py
 	# i stole his function to get an IAQ value instead of resistance
@@ -812,6 +831,58 @@ class sensor(object):
 		timestamp = time.time()
 				
 		return self.sht30_temp , self.sht30_rel_humi , timestamp ,local_gps[0], local_gps[1] ,configure.rabbitmq_tag
+		
+	def get_AS7331(self):
+		global local_gps
+		try:
+			self.AS7331_uva, self.AS7331_uvb, self.AS7331_uvc = self.AS7331.one_shot()
+			self.AS7331_temperature = self.AS7331.temperature
+		except OSError as e:
+			print("Error in Sensors Rabbitmq by request I2C - AS7331", e)
+			disconnect()
+			GPIO.cleanup()  
+			sys.exit(1)
+
+		timestamp = time.time()
+				
+		return self.AS7331_uva, self.AS7331_uvb, self.AS7331_uvc , self.AS7331_temperature , timestamp ,local_gps[0], local_gps[1] ,configure.rabbitmq_tag
+		
+		
+	def get_AS7341(self):
+		global local_gps
+		try:
+			if configure.AS7341_led_blink:
+				self.AS7341.led_current = 50
+				self.AS7341.led = True
+			self.AS7341_channel_415nm = self.AS7341.channel_415nm
+			self.AS7341_channel_445nm = self.AS7341.channel_445nm
+			self.AS7341_channel_448nm = self.AS7341.channel_480nm
+			self.AS7341_channel_515nm = self.AS7341.channel_515nm
+			self.AS7341_channel_555nm = self.AS7341.channel_555nm
+			self.AS7341_channel_590nm = self.AS7341.channel_590nm
+			self.AS7341_channel_630nm = self.AS7341.channel_630nm
+			self.AS7341_channel_680nm = self.AS7341.channel_680nm
+			self.AS7341_channel_clear = self.AS7341.channel_clear
+			self.AS7341_channel_nir = self.AS7341.channel_nir
+			# i do set it 0 as i cant bring the sensor online for it 
+			self.AS7341_flicker_detected = 0
+			if configure.AS7341_led_blink:
+				self.AS7341.led = False
+
+		except OSError as e:
+			print("Error in Sensors Rabbitmq by request I2C - AS7341", e)
+			disconnect()
+			GPIO.cleanup()  
+			sys.exit(1)
+
+		timestamp = time.time()
+							
+				
+		return self.AS7341_channel_415nm, self.AS7341_channel_445nm, self.AS7341_channel_448nm , self.AS7341_channel_515nm , self.AS7341_channel_555nm, self.AS7341_channel_590nm , self.AS7341_channel_630nm , self.AS7341_channel_680nm , self.AS7341_channel_clear , self.AS7341_channel_nir , self.AS7341_flicker_detected , timestamp ,local_gps[0], local_gps[1] ,configure.rabbitmq_tag
+		
+		
+		
+		
 		
 	def get_lsm6ds3(self):
 		global local_gps
@@ -1210,8 +1281,19 @@ if __name__ == "__main__":
 			if configure.MLX90640:
 				thermal_frame_MLX90640 = sensors.get_thermal_frame_MLX90640()	
 				publish("thermal_frame_MLX90640",thermal_frame_MLX90640)
-			
-			    
+				
+			soft_break()	
+				
+			if configure.AS7331:
+				AS7331_data = sensors.get_AS7331()	
+				publish("AS7331",AS7331_data)
+				
+			soft_break()	
+				
+			if configure.AS7341:
+				AS7341_data = sensors.get_AS7341()	
+				publish("AS7341",AS7341_data)
+				
 			soft_break()
 			
 			reset()
