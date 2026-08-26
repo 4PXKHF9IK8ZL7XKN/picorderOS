@@ -28,4 +28,6 @@ while True:
 		break
 		GPIO.cleanup()
 		sys.exit(1)
-	time.sleep(0.02)
+
+GPIO.cleanup()
+time.sleep(0.02)

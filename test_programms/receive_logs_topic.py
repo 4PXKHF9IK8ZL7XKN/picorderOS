@@ -19,11 +19,11 @@ queue_name = result.method.queue
 #    exchange='sensor_data', queue='', routing_key='touch')
 
 
-channel.queue_bind(
-    exchange='sensor_data', queue='', routing_key='gpio')
+#channel.queue_bind(
+#    exchange='sensor_data', queue='', routing_key='gpio')
 
-channel.queue_bind(
-    exchange='sensor_data', queue='', routing_key='events')
+#channel.queue_bind(
+#    exchange='sensor_data', queue='', routing_key='events')
 
 
 
@@ -53,6 +53,14 @@ channel.queue_bind(
 
 #channel.queue_bind(
 #    exchange='sensor_data', queue='', routing_key='thermal_frame_MLX90640')
+
+channel.queue_bind(
+    exchange='sensor_data', queue='', routing_key='AS7341')
+
+channel.queue_bind(
+    exchange='sensor_data', queue='', routing_key='AS7331')
+
+
 
 
 print(' [*] Waiting for logs. To exit press CTRL+C')
