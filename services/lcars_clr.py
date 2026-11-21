@@ -1791,11 +1791,15 @@ def get_device(actual_args=None):
 
     if args.config:
         # load config from file
-        config = cmdline.load_config(args.config)
-        args = parser.parse_args(config + actual_args)
+    	config = cmdline.load_config(args)
+    args = parser.parse_args(actual_args)
+    if hasattr(args, "config"):
+        del args.config
 
     # create device
     try:
+        #if hasattr(args, "config"):
+        #	del args.config
         device = cmdline.create_device(args)
         print(display_settings(device, args))
         return device
@@ -3074,7 +3078,11 @@ if __name__ == "__main__":
 	job = Job(interval=timedelta(seconds=WAIT_TIME_SECONDS), execute=animation_push)
 	
 	try:
-		device = get_device(['--interface', 'spi', '--display', 'st7789', '--spi-port', '0', '--spi-bus-speed', '52000000', '--width', '320', '--height', '240','--mode','RGB', '--rotate','0' ])
+		#device = get_device(['--display','st7789'])
+		#device = get_device(['--interface', 'spi','--spi-port','0', '--spi-device', '0' , '--gpio-backlight','13','--backlight-active', 'high', '--gpio-data-command' ,'24', '--gpio-reset', '25'])
+		#device = get_device(['--interface', 'spi','--spi-port','0', '--spi-device', '0'])
+		device = get_device(['--display=st7789','--interface=spi','--spi-port=0','--spi-bus-speed=48000000', '--spi-device=0','--gpio-reset=25','--gpio-data-command=24','--width=240','--height=320'])
+
 		init(device)
 		job.start()
 		channel.start_consuming()

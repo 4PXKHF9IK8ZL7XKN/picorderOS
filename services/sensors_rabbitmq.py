@@ -1154,10 +1154,13 @@ if __name__ == "__main__":
 	GPIO.setup(DISPLAY_BL_PWM, GPIO.OUT)
 	#GPIO.output(DISPLAY_BL_PWM, GPIO.HIGH)
 	pwm12 = GPIO.PWM(DISPLAY_BL_PWM, pwm_frequency)
-	
+
 	GPIO.setup(BUTTON_GPIO_ReedA, GPIO.IN, pull_up_down=GPIO.PUD_UP)
 	GPIO.setup(BUTTON_GPIO_ReedB, GPIO.IN, pull_up_down=GPIO.PUD_UP)
-	
+
+	GPIO.setup(BUTTON_GPIOA, GPIO.IN)
+	GPIO.setup(BUTTON_GPIOB, GPIO.IN)
+
 	#GPIO.add_event_detect(BUTTON_GPIOA, GPIO.BOTH, callback=button_callbackA, bouncetime=10)
 	#GPIO.add_event_detect(BUTTON_GPIOB, GPIO.BOTH, callback=button_callbackB, bouncetime=10) 
 
