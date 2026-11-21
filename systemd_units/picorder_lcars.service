@@ -1,0 +1,11 @@
+[Unit]
+Description=Picorder LCARS Service
+
+[Service]
+WorkingDirectory=%h/projekt/picorderOS/services
+ExecStart=/usr/bin/python3 %h/projekt/picorderOS/services/lcars_qt.py
+Restart=on-failure
+RestartSec=5s
+
+[Install]
+WantedBy=default.target
