@@ -4,9 +4,9 @@
 *.csv
 /__pycache__/*
 data/
-configure.ini
-config.ini
-database.ini
-database_gisdata.ini
+*configure.ini
+*config.ini
+*database.ini
+*database_gisdata.ini
 cache/*
 .cache
