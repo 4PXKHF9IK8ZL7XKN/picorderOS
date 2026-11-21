@@ -23,7 +23,7 @@ adafruit-circuitpython-typing
 Adafruit-PlatformDetect                  
 Adafruit-PureIO                                                           
 colour 
-luma.lcd
+luma.lcd=2.10.0
 luma.core
 numpy
 python-vlc
@@ -36,3 +36,5 @@ pygame
 simpleaudio
 osmnx
 geopandas
+pika
+sqlalchemy

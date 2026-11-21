@@ -53,49 +53,200 @@ python3 -m pip install -r requirements.txt
 ```
 RaspberryPi OS now ships with a version of pip that requires you install new modules in a virtual environment so as not to trash system modules.
 
-A virtual 
+For a simpler installation without virtual environment the flag --break-system-packages is needet.
 
 A fresh Raspberry Pi OS image can usually be initialized to work with picorderOS with the following installation commands:
 
 ```
+
 sudo apt update
 sudo apt upgrade -y
 
-sudo apt install -y build-essential git python3-virtualenv libsdl2-dev python3-pandas libsdl2-ttf-dev libjpeg-dev libsdl2-image-dev libsdl2-ttf-dev libsdl2-mixer-dev libportmidi-dev python3-dev python3-scipy python3-pygame libavcodec-dev libavfilter-dev libavdevice-dev ffmpeg
+sudo apt install -y \
+python3-pip python3-psycopg2 libasound2-dev python3-dev build-essential git \
+python3-virtualenv libsdl2-dev python3-pandas libsdl2-ttf-dev \
+libjpeg-dev libsdl2-image-dev libsdl2-ttf-dev libsdl2-mixer-dev \ 
+libportmidi-dev python3-dev python3-scipy python3-pygame \
+libavcodec-dev libavfilter-dev libavdevice-dev ffmpeg \
+rpicam-apps-opencv-postprocess rpicam-apps-opencv-postprocess 
 
-git clone https://github.com/directive0/picorderOS 
+mkdir ~/projekt
+
+cd ~/projekt
+
+git clone git@github.com:4PXKHF9IK8ZL7XKN/picorderOS.git 
+
 cd picorderOS
-python3 -m venv .picorder
+```
+
+# Install pip Packages on a small system like the pi zero 2w 
+
+```
+while read p; do pip install "$p" --break-system-packages ; done < requirements.txt
+```
+
+# a lgpio hack
+
+```
+pip uninstall RPi.GPIO --break-system-packages
+```
+
+# alternativ with virtualenv
+
+```
+python3 -m venv .picorderOS
+
 source .picorder/bin/activate
+
 sudo .picorder/bin/pip3 cache purge
-sudo .picorder/bin/pip3 install -r requirements.txt --no-cache-dir
-git clone https://github.com/RPi-Distro/RTIMULib
-cd /RTIMULib/Linux/python
-../../../.picorder/bin/python3 setup.py install                           
 
-
-mkdir data
-
+while read p; do pip3 install "$p" --no-cache-dir ; done < requirements.txt
 ```
 
-## Suggested Information:
 
-Depending on your sensors, you will need to install a package that supports it for example in the case of the Bosch BME 680:
-```
-pip3 install adafruit-circuitpython-bme680 --break-system-packages
-pip3 install adafruit-circuitpython-as7341 --break-system-packages
-pip3 install adafruit-circuitpython-as7331 --break-system-packages
+# The Next step is to setup the postgress database
 
 ```
+sudo apt install -y postgresql-17 postgresql-17-postgis-3 postgresql-client-common postgresql-17-postgis-3-scripts postgresql-client-17
+```
+
+# setup of database access
+
+```
+sudo -u postgres psql
+
+CREATE USER picorder_postgres WITH PASSWORD '[CREATEASAVELONGPASSWORD]';
+
+CREATE DATABASE picorder_graph OWNER picorder_postgres;
+
+CREATE DATABASE picorder_gis OWNER picorder_postgres;
+
+GRANT CONNECT ON DATABASE picorder_graph TO picorder_postgres;
+
+GRANT CONNECT ON DATABASE picorder_gis TO picorder_postgres;
+
+\c picorder_gis
+
+create extension postgis;
+
+\q
+```
+
+# configure an database.ini & database_gisdata.ini
+
+```
+nano ~/database.ini
+
+[postgresql]
+host=localhost
+database=picorder_graph
+user=picorder_postgres
+password=[USETHESAVELONGPASSWORD]
+
+nano database_gisdata.ini 
+
+[postgresql]
+host=localhost
+database=picorder_gis
+user=picorder_postgres@
+password=[USETHESAVELONGPASSWORD]
+```
+
+# Instert the Following Block , change the parameter arcordingly to your setup.
+
+
+```
+sudo apt-get install rabbitmq-server
+```
+
+
+
+# Installing Rabbitmq Backend
+
+```
+sudo apt-get install rabbitmq-server
+```
+
+# Raspi-Config
+
+```
+sudo raspi-config
+
+3 Interface Options > I4 SPI -> ON
+3 Interface Options > I5 I2C -> ON
+```
+
+# /boot/firmware/config.txt
+```
+[all]
+dtoverlay=fbtft,spi0-0,st7789v,reset_pin=25,dc_pin=24,rotate=0,width=320,height=240
+dtoverlay=i2c-mux,pca9548,addr=0x70,i2c-bus=1
+
+# --- added by adafruit-pitft-helper Mon Nov 16 20:59:54 2026 ---
+[all]
+hdmi_force_hotplug=0
+dtparam=spi=on
+dtparam=i2c1=on
+dtparam=i2c_arm=on
+dtoverlay=mipi-dbi-spi,spi0-0,speed=40000000
+dtparam=compatible=adafruit_st7789_drm\0panel-mipi-dbi-spi
+dtparam=width=320,height=240
+dtparam=dc-gpio=25,backlight-gpio=18
+enable_tvout=0,drm
+# --- end adafruit-pitft-helper Mon Nov 16 20:59:54 2026 ---
+```
+
+
 
 ## Usage:
+
 At present picorderOS supports a number of displays, sensors, and inputs. The user can mix and match their desired picorder load out. PicorderOS will generate an INI file on creation called ```config.ini```. By editing this file certain flags can be set for specific Picorder builds. Any sensors or peripherals not physically present must be turned off before picorderOS will run properly.
 
 The software is started with ```python3 main.py``` from the project folder (run with sudo for full wifi features on 109 style builds), which starts the main loop. The main loop handles display directly, various ancillary elements like input detection, LED sequencing, and audio playback run as separate threads and communicate via flags set in the ```objects.py``` module.
 
-
-
-
-
-
 Some experimentation may be necessary. PicorderOS is provided as free software and comes with no guarantee or warranty. This software is not to be used outside federation space, and is not suitable for use in environments that do not obey established laws of physics. Using this software could cause timeline damage, rocks exploding out of consoles, or blue barrels. Do not use PicorderOS if you have recently tested positive for Andorian Flu.
+
+# setup linger
+
+```
+sudo loginctl enable-linger $USER
+```
+
+
+### Adding Systemd Units
+
+# create folder for user services 
+```
+mkdir ~/.config/systemd/
+mkdir ~/.config/systemd/user/
+```
+
+# Switch to Systemd-User-Folde
+```
+cd ~/.config/systemd/user/
+```
+
+
+# Symlink Projekt-Services
+```
+ln -s /home/[username]/projekt/picorderOS/systemd_units/picorder_rabbitmq.service picorder_rabbitmq.service
+ln -s /home/christian/projekt/picorderOS/systemd_units/picorder_lcars.service picorder_lcars.service
+```
+
+# Reload Services
+```
+systemctl --user daemon-reload
+```
+
+# Enable run on system start
+```
+systemctl --user enable --now picorder_rabbitmq
+systemctl --user enable --now picorder_lcars
+```
+
+# Enable run on system start
+
+
+sudo apt install -y i2c-tools python3-pip
+pip3 install adafruit-circuitpython-tca9548a --break-system-packages
+
