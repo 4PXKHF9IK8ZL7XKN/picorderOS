@@ -2,7 +2,7 @@
 *.DS_Store
 *.pyc
 *.csv
-/__pycache__/*
+*/__pycache__/*
 data/
 *configure.ini
 *config.ini
