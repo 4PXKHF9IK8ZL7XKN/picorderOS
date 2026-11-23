@@ -587,7 +587,7 @@ class sensor(object):
 
 		if configure.bme:
 			# Create library object using our Bus I2C port
-			self.bme680 = adafruit_bme680.Adafruit_BME680_I2C(i2c, address=0x76, debug=False)
+			self.bme680 = adafruit_bme680.Adafruit_BME680_I2C(i2c, address=0x77, debug=False)
 			self.bme680.sea_level_pressure = 1013.25
 			
 		
@@ -1146,14 +1146,14 @@ if __name__ == "__main__":
 	GPIO.setmode(GPIO.BCM)
 
 	# Set the PWM frequency (25 kHz)
-	pwm_frequency = 75
+	#pwm_frequency = 75
 
 	# Set the PWM duty cycle (75%)
-	pwm_duty_cycle = 25  # 75% of the range (0-1000000)
-
-	GPIO.setup(DISPLAY_BL_PWM, GPIO.OUT)
+	#pwm_duty_cycle = 25  # 75% of the range (0-1000000)
+        # DISPLAY CONTROL MOVED
+	#GPIO.setup(DISPLAY_BL_PWM, GPIO.OUT)
 	#GPIO.output(DISPLAY_BL_PWM, GPIO.HIGH)
-	pwm12 = GPIO.PWM(DISPLAY_BL_PWM, pwm_frequency)
+	#pwm12 = GPIO.PWM(DISPLAY_BL_PWM, pwm_frequency)
 
 	GPIO.setup(BUTTON_GPIO_ReedA, GPIO.IN, pull_up_down=GPIO.PUD_UP)
 	GPIO.setup(BUTTON_GPIO_ReedB, GPIO.IN, pull_up_down=GPIO.PUD_UP)
@@ -1340,11 +1340,13 @@ if __name__ == "__main__":
 				print('Door Open')
 				# dont get confused , pin is active low , what means "door" closed say low and "open high"
 				reet_callback(channel,"B", True)
-				pwm12.start(pwm_duty_cycle)
+				#pwm12.start(pwm_duty_cycle)
+				# NEED ANOTHER DOSPLAY CONTROLL
 			else:
 				print('Door Closed')
 				reet_callback(channel,"B", False)
-				pwm12.stop()
+				#pwm12.stop()
+                                # NEED ANOTHER DOSPLAY CONTROLL
 
 			counter = counter + 1 
 			if counter == 180:
