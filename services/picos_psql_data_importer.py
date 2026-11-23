@@ -470,7 +470,8 @@ def callback(ch, method, properties, body):
 				sensor_values[2] = float(array2541[1])
 			elif cleanup_index == 13:
 				# virtual mem
-				sensor_values[4] = float(value4555)
+				array2541 = value4555.rsplit('=')
+				sensor_values[4] = float(array2541[1].strip(' )'))
 			elif cleanup_index == 17:
 				# diskussage in percentage i skipped bytes
 				array56461 = value4555.rsplit('=')			
