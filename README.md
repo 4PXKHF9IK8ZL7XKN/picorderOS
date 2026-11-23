@@ -230,7 +230,8 @@ cd ~/.config/systemd/user/
 # Symlink Projekt-Services
 ```
 ln -s /home/[username]/projekt/picorderOS/systemd_units/picorder_rabbitmq.service picorder_rabbitmq.service
-ln -s /home/christian/projekt/picorderOS/systemd_units/picorder_lcars.service picorder_lcars.service
+ln -s /home/[username]/projekt/picorderOS/systemd_units/picorder_lcars.service picorder_lcars.service
+ln -s /home/[username]/projekt/picorderOS/systemd_units/picorder_psql_data_importer.service
 ```
 
 # Reload Services
@@ -240,6 +241,7 @@ systemctl --user daemon-reload
 
 # Enable run on system start
 ```
+systemctl --user enable --now picorder_psql_data_importer
 systemctl --user enable --now picorder_rabbitmq
 systemctl --user enable --now picorder_lcars
 ```

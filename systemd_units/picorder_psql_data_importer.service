@@ -1,0 +1,11 @@
+[Unit]
+Description=Picorder PostgreSQL Data Importer
+
+[Service]
+WorkingDirectory=%h/projekt/picorderOS/services
+ExecStart=/usr/bin/python3 %h/projekt/picorderOS/services/picos_psql_data_importer.py
+Restart=on-failure
+RestartSec=5s
+
+[Install]
+WantedBy=default.target
