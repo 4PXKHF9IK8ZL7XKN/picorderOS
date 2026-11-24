@@ -248,7 +248,60 @@ systemctl --user enable --now picorder_lcars
 
 # Enable run on system start
 
-
 sudo apt install -y i2c-tools python3-pip
 pip3 install adafruit-circuitpython-tca9548a --break-system-packages
+
+
+# HACK /dev/uinput
+# group permissions dont allow a user service to write to uinput
+
+Configure the group and udev rule
+
+Run these commands as root, replacing my_username with the account to authorize:
+bash
+
+```
+groupadd uinput
+usermod -aG uinput my_username
+```
+
+Create /etc/udev/rules.d/99-uinput.rules containing:
+
+```
+SUBSYSTEM=="misc", KERNEL=="uinput", GROUP="uinput", MODE="0666"
+```
+
+Load the module and apply the rule
+
+If uinput is not already loaded, load it now and enable it at boot:
+
+```
+modprobe uinput
+echo uinput > /etc/modules-load.d/uinput.conf
+```
+
+Then reload udev rules and reapply them:
+
+
+```
+udevadm control --reload-rules
+udevadm trigger --name-match=uinput
+```
+
+Finish and verify
+
+Log out and back in so your session picks up the new group membership. Check the device permissions with:
+
+
+```
+ls -l /dev/uinput
+```
+
+
+
+
+
+
+
+
 
