@@ -84,13 +84,8 @@ class cst816d():
     def __init__(self):
         # #Initialize I2C
         self.I2C = smbus.SMBus(1)
-        # self.GPIO.setup(TP_INT, self.GPIO.IN,self.GPIO.PUD_UP)
         GPIO.setup(TP_RST, GPIO.OUT)
-        # self.GPIO.add_event_detect(TP_INT,self.GPIO.FALLING,self.Int_Callback,5) 
-        # pass
-        GPIO_TP_INT = TP_INT                                                # 使用GPIO Zero库中的Button类
-        # self.GPIO_TP_RST = DigitalOutputDevice(TP_RST,active_high = True,initial_value =True)   # 使用GPIO Zero库中的DigitalOutputDevice类
-        # self.GPIO_TP_INT.when_pressed = self.Int_Callback  # 中断函数
+        GPIO_TP_INT = TP_INT                                                
         
         self.coordinates = [{"x": 0, "y": 0} for _ in range(CST816D_LCD_TOUCH_MAX_POINTS)]
         self.point_count = 0
@@ -99,7 +94,6 @@ class cst816d():
     def Int_Callback(self):
         self.read_touch_data()
     
-    #Reset  复位    
     def touch_rst(self):
         GPIO.output(TP_RST, 0)  
         time.sleep(1 / 1000.0)
@@ -111,7 +105,6 @@ class cst816d():
         self.I2C.write_byte(CST816D_ADDRESS, data)
 
     def read_bytes(self, reg_addr, length):
-        # 发送寄存器地址并读取多个字节
         data = self.I2C.read_i2c_block_data(CST816D_ADDRESS, reg_addr, length)
         return data
     
@@ -135,14 +128,11 @@ class cst816d():
     
     def get_touch_xy(self):
         point = self.point_count
-        # 将触摸点数重置为 0
         self.point_count = 0
 
         if point != 0:
-            # 返回触摸状态和坐标
             return point, self.coordinates
         else:
-            # 返回 0 和空坐标列表
             return 0 , []
             
             
@@ -1311,197 +1301,200 @@ if __name__ == "__main__":
 		
         button_callbackA(open_channel)
         ###button_callbackB(open_channel)
+        
+    with UInput(
+        events=caps,
+        name="CST816D Touchscreen",
+        input_props=[evdev_e.INPUT_PROP_DIRECT],
+        ) as ui:     
+        
 
-    while True:
-        try:
-            with UInput(
-                events=caps,
-                name="CST816D Touchscreen",
-                input_props=[evdev_e.INPUT_PROP_DIRECT],
-                ) as ui: 
-                    touch.read_touch_data()
-                    point, coordinates = touch.get_touch_xy()
-                    # x, y, pressed = read_touch()
-                    if point != 0 and coordinates:
-                        pressed = True
-                        # Begrenze Werte auf den angegebenen Bereich.
-                        xi = max(0, min(MAX_X - 1, int(coordinates[0]['x'])))
-                        yi = max(0, min(MAX_Y - 1, int(coordinates[0]['y'])))
-                        
-                        x, y = rotate_touch(xi, yi, MAX_Y, MAX_X, rotation=270)
+        while True:
+            try:
 
-                        ui.write(evdev_e.EV_KEY, evdev_e.BTN_TOUCH, 1)
-                        ui.write(evdev_e.EV_ABS, evdev_e.ABS_X, x)
-                        ui.write(evdev_e.EV_ABS, evdev_e.ABS_Y, y)
-                        ui.syn()
-                        #print(f"point 1 coordinates: x={coordinates[0]['x']}, y={coordinates[0]['y']}")
-                    else:
-                        was_pressed = False
-                        ui.write(evdev_e.EV_KEY, evdev_e.BTN_TOUCH, 0)
-                        ui.syn()
-                    was_pressed = pressed
-                
-            #time.sleep(0.02)
-	    
-            signal.signal(signal.SIGTERM, signal_handler_function)
-		    
-            if configure.bme:
-                bme680 = sensors.get_bme680()
-                publish("bme680",bme680)
-		        
-            soft_break()
-		        
-            if configure.bmp280:
-                bmp280 = sensors.get_bmp280()
-                publish("bmp280",bmp280)
-		        
-            soft_break()
-		        
-            if configure.SHT30:
-                sht30 = sensors.get_sht30()	
-                publish("sht30",sht30)
-		        
-            soft_break()		
-		        
-            if configure.SCD4X:
-                scd4x = sensors.get_scd4x()
-                publish("scd4x",scd4x)
+                touch.read_touch_data()
+                point, coordinates = touch.get_touch_xy()
+                # x, y, pressed = read_touch()
+                if point != 0 and coordinates:
+                    pressed = True
+                    # Begrenze Werte auf den angegebenen Bereich.
+                    xi = max(0, min(MAX_X - 1, int(coordinates[0]['x'])))
+                    yi = max(0, min(MAX_Y - 1, int(coordinates[0]['y'])))
+                    
+                    x, y = rotate_touch(xi, yi, MAX_Y, MAX_X, rotation=270)
+
+                    ui.write(evdev_e.EV_KEY, evdev_e.BTN_TOUCH, 1)
+                    ui.write(evdev_e.EV_ABS, evdev_e.ABS_X, x)
+                    ui.write(evdev_e.EV_ABS, evdev_e.ABS_Y, y)
+                    ui.syn()
+                    #print(f"point 1 coordinates: x={coordinates[0]['x']}, y={coordinates[0]['y']}")
+                else:
+                    was_pressed = False
+                    ui.write(evdev_e.EV_KEY, evdev_e.BTN_TOUCH, 0)
+                    ui.syn()
+                was_pressed = pressed
+                    
+                #time.sleep(0.02)
 	        
-            soft_break()	
+                signal.signal(signal.SIGTERM, signal_handler_function)
 		        
-            if configure.LSM6DS3TR:
-                lsm6ds3 = sensors.get_lsm6ds3()
-                publish("lsm6ds3",lsm6ds3)
-	        
-            soft_break()		
-		        
-            if configure.LIS3MDL:
-                lis3mdl = sensors.get_lis3mdl()
-                publish("lis3mdl",lis3mdl)
-            
-            soft_break()		
+                if configure.bme:
+                    bme680 = sensors.get_bme680()
+                    publish("bme680",bme680)
+		            
+                soft_break()
+		            
+                if configure.bmp280:
+                    bmp280 = sensors.get_bmp280()
+                    publish("bmp280",bmp280)
+		            
+                soft_break()
+		            
+                if configure.SHT30:
+                    sht30 = sensors.get_sht30()	
+                    publish("sht30",sht30)
+		            
+                soft_break()		
+		            
+                if configure.SCD4X:
+                    scd4x = sensors.get_scd4x()
+                    publish("scd4x",scd4x)
+	            
+                soft_break()	
+		            
+                if configure.LSM6DS3TR:
+                    lsm6ds3 = sensors.get_lsm6ds3()
+                    publish("lsm6ds3",lsm6ds3)
+	            
+                soft_break()		
+		            
+                if configure.LIS3MDL:
+                    lis3mdl = sensors.get_lis3mdl()
+                    publish("lis3mdl",lis3mdl)
                 
-            if configure.APDS9960:
-                apds9960 = sensors.get_apds9960()		
-                publish("apds9960",apds9960)
+                soft_break()		
+                    
+                if configure.APDS9960:
+                    apds9960 = sensors.get_apds9960()		
+                    publish("apds9960",apds9960)
+                    
+                soft_break()			
                 
-            soft_break()			
-            
-            if configure.amg8833:
-                thermal_frame = sensors.get_thermal_frame()
-                publish("thermal_frame",thermal_frame)
-                        
-            soft_break()
+                if configure.amg8833:
+                    thermal_frame = sensors.get_thermal_frame()
+                    publish("thermal_frame",thermal_frame)
+                            
+                soft_break()
+                    
+                if configure.system_vitals:
+                    system_vitals = sensors.get_system_vitals()
+                    publish("system_vitals",system_vitals)							
                 
-            if configure.system_vitals:
-                system_vitals = sensors.get_system_vitals()
-                publish("system_vitals",system_vitals)							
-            
-            soft_break()
+                soft_break()
+                    
+                if configure.sensehat:
+                    sensehat_data = sensors.get_sensehat()	
+                    publish("sensehat",sensehat_data)
+                            
+                soft_break()
                 
-            if configure.sensehat:
-                sensehat_data = sensors.get_sensehat()	
-                publish("sensehat",sensehat_data)
-                        
-            soft_break()
-            
-            if configure.envirophat:
-                envirophat_data = sensors.get_envirophat()
-                publish("envirophat",envirophat_data)	
-                
-            soft_break()
-	                        
-            if configure.pocket_geiger:			
-                pocket_geigert_data = sensors.get_pocket_geiger()			
-                publish("pocket_geiger",pocket_geiger_data)	
-                
-            soft_break()
+                if configure.envirophat:
+                    envirophat_data = sensors.get_envirophat()
+                    publish("envirophat",envirophat_data)	
+                    
+                soft_break()
+	                            
+                if configure.pocket_geiger:			
+                    pocket_geigert_data = sensors.get_pocket_geiger()			
+                    publish("pocket_geiger",pocket_geiger_data)	
+                    
+                soft_break()
 
-            if configure.ir_thermo:		
-                ir_thermo_data = sensors.get_ir_thermo()	
-                publish("ir_thermo",ir_thermo_data)
+                if configure.ir_thermo:		
+                    ir_thermo_data = sensors.get_ir_thermo()	
+                    publish("ir_thermo",ir_thermo_data)
+                    
+                if configure.MLX90640:
+                    thermal_frame_MLX90640 = sensors.get_thermal_frame_MLX90640()	
+                    publish("thermal_frame_MLX90640",thermal_frame_MLX90640)
+                    
+                soft_break()	
+                    
+                if configure.AS7331:
+                    AS7331_data = sensors.get_AS7331()	
+                    publish("AS7331",AS7331_data)
+                    
+                soft_break()	
+                    
+                if configure.AS7341:
+                    AS7341_data = sensors.get_AS7341()	
+                    publish("AS7341",AS7341_data)
+                    
+                soft_break()
                 
-            if configure.MLX90640:
-                thermal_frame_MLX90640 = sensors.get_thermal_frame_MLX90640()	
-                publish("thermal_frame_MLX90640",thermal_frame_MLX90640)
+                reset()
                 
-            soft_break()	
+                soft_break()
+                    
+                if counter == 0:
+                    if configure.gps:
+                        gps_parsed = sensors.get_gps()
+                        if gps_parsed[0] is not None and gps_parsed[1] is not None:
+	                        soft_break()
+	                        publish("GPS_DATA",gps_parsed)
+                            
+                soft_break()
                 
-            if configure.AS7331:
-                AS7331_data = sensors.get_AS7331()	
-                publish("AS7331",AS7331_data)
-                
-            soft_break()	
-                
-            if configure.AS7341:
-                AS7341_data = sensors.get_AS7341()	
-                publish("AS7341",AS7341_data)
-                
-            soft_break()
-            
-            reset()
-            
-            soft_break()
-                
-            if counter == 0:
-                if configure.gps:
-                    gps_parsed = sensors.get_gps()
-                    if gps_parsed[0] is not None and gps_parsed[1] is not None:
-	                    soft_break()
-	                    publish("GPS_DATA",gps_parsed)
-                        
-            soft_break()
-            
-            stateA = GPIO.input(BUTTON_GPIOA)
-            if stateA:
-                #print('stateA on')
-                button_callbackA(open_channel)
-            else:
-                pass
-                
-            stateB = GPIO.input(BUTTON_GPIOB)
-            if stateB:
-                #print('stateB on')
-                button_callbackB(open_channel)
-            else:
-                pass
-                
-                
-            state_reetA = GPIO.input(BUTTON_GPIO_ReedA)
-            if state_reetA == True:
-                print('Door Transit')
-                # dont get confused , pin is active low , what means door is "entirley open" says low and open high (in Transit maybe)
-                reet_callback(channel,"A", True)
-            else:
-                reet_callback(channel,"A", False)
-                
-            state_reetB = GPIO.input(BUTTON_GPIO_ReedB)
-            if state_reetB == True:
-                print('Door Open')
-                # dont get confused , pin is active low , what means "door" closed say low and "open high"
-                reet_callback(channel,"B", True)
-                #pwm12.start(pwm_duty_cycle)
-                # NEED ANOTHER DOSPLAY CONTROLL
-            else:
-                print('Door Closed')
-                reet_callback(channel,"B", False)
-                #pwm12.stop()
-                                # NEED ANOTHER DOSPLAY CONTROLL
-
-            counter = counter + 1 
-            if counter == 180:
-                counter = 0
-            else:
-                time.sleep(0.02)
+                stateA = GPIO.input(BUTTON_GPIOA)
+                if stateA:
+                    #print('stateA on')
+                    button_callbackA(open_channel)
+                else:
+                    pass
+                    
+                stateB = GPIO.input(BUTTON_GPIOB)
+                if stateB:
+                    #print('stateB on')
+                    button_callbackB(open_channel)
+                else:
+                    pass
                     
                     
-        except KeyboardInterrupt or Exception or OSError as e:
-            print("Termination", e)
-            break
-            #job.join()
-            disconnect()
-            GPIO.cleanup()  
-            sys.exit(1)
+                state_reetA = GPIO.input(BUTTON_GPIO_ReedA)
+                if state_reetA == True:
+                    print('Door Transit')
+                    # dont get confused , pin is active low , what means door is "entirley open" says low and open high (in Transit maybe)
+                    reet_callback(channel,"A", True)
+                else:
+                    reet_callback(channel,"A", False)
+                    
+                state_reetB = GPIO.input(BUTTON_GPIO_ReedB)
+                if state_reetB == True:
+                    print('Door Open')
+                    # dont get confused , pin is active low , what means "door" closed say low and "open high"
+                    reet_callback(channel,"B", True)
+                    #pwm12.start(pwm_duty_cycle)
+                    # NEED ANOTHER DOSPLAY CONTROLL
+                else:
+                    print('Door Closed')
+                    reet_callback(channel,"B", False)
+                    #pwm12.stop()
+                                    # NEED ANOTHER DOSPLAY CONTROLL
+
+                counter = counter + 1 
+                if counter == 180:
+                    counter = 0
+                else:
+                    time.sleep(0.02)
+                        
+                        
+            except KeyboardInterrupt or Exception or OSError as e:
+                print("Termination", e)
+                break
+                #job.join()
+                disconnect()
+                GPIO.cleanup()  
+                sys.exit(1)
 
 		
 # input's from input.py
