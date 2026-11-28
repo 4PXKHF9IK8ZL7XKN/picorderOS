@@ -6,7 +6,7 @@ postgresql
 postgresql-common
 postgresql-client
 rabbitmq-server
-python3-psycopg2
+python3-psycopg
 opencv-data
 python3-bluez
 python3-dev 

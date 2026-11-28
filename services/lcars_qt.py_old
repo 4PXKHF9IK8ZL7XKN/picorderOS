@@ -656,6 +656,7 @@ class LCARS_GRAPH_Widget(QWidget):
             # by setting up all sensor values with a timestamp , can we now select the time section to watch , and ask get recent for example for the last minute
             location_tag,sensor_dev,sensor_dsc = sensors_to_read   
             recent, elements_forgieventime = get_recent(location_tag, sensor_dev, sensor_dsc, 60)
+            print(recent)
             if type(recent) != bool and len(recent) != 0: 
                 x = [*range(elements_forgieventime)]
                 

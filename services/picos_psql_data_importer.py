@@ -14,8 +14,11 @@ from datetime import datetime
 keep_data_lengh = 900 # 15 min
 keep_data_lengh_gps = 259200 # keep it 3 days 
 
-import psycopg2
+import psycopg
 from picos_psql_config import load_config
+
+psql_connection = ""
+
 
 if configure.rabbitmq_remote:
 	credentials = pika.PlainCredentials(configure.rabbitmq_user,configure.rabbitmq_password)
@@ -91,8 +94,9 @@ def table_list(con):
 			item = table_unclean[1:]
 			ret.append(item)
 		cur.close()
-	except psycopg2.Error as e:
-		print( e )
+	except psycopg.Error as e:
+		print(f"{type(e).__name__}: {e}")
+		return False
 	return ret
 
 
@@ -102,8 +106,9 @@ def table_exists(con, table_str):
 		array_of_tables = table_list(con)
 		if table_str in array_of_tables:
 			exists = True
-	except psycopg2.Error as e:
-		print( e )
+	except psycopg.Error as e:
+		print(f"{type(e).__name__}: {e}")
+		return False
 	return exists
 
 def table_create(con, table_str):
@@ -115,8 +120,9 @@ def table_create(con, table_str):
 		if ret is True:
 			print("TABLE: ", table_str ,"CREATED")
 		cur.close()
-	except psycopg2.Error as e:
-		print( e )
+	except psycopg.Error as e:
+		print(f"{type(e).__name__}: {e}")
+		return False
 	return ret  
 	
 def table_create_text(con, table_str):
@@ -128,8 +134,9 @@ def table_create_text(con, table_str):
 		if ret is True:
 			print("TABLE: ", table_str ,"CREATED")
 		cur.close()
-	except psycopg2.Error as e:
-		print( e )
+	except psycopg.Error as e:
+		print(f"{type(e).__name__}: {e}")
+		return False
 	return ret  
     
 def table_create_gps(con, table_str):
@@ -142,8 +149,9 @@ def table_create_gps(con, table_str):
         if ret is True:
         	print("TABLE: ", table_str ,"CREATED")
         cur.close()
-    except psycopg2.Error as e:
-        print( e )
+    except psycopg.Error as e:
+        print(f"{type(e).__name__}: {e}")
+        return False
     return ret  
         
 def table_create_termalframe_adv(con, table_str, lenght):
@@ -162,8 +170,9 @@ def table_create_termalframe_adv(con, table_str, lenght):
         if ret is True:
         	print("TABLE: ", table_str ,"CREATED")
         cur.close()
-    except psycopg2.Error as e:
-        print( e )
+    except psycopg.Error as e:
+        print(f"{type(e).__name__}: {e}")
+        return False
     return ret  
     
 
@@ -178,8 +187,9 @@ def table_drop(con, table_str):
         	ret = True
         	print("TABLE: ", table_str ,"DROPED")
         cur.close()
-    except psycopg2.Error as e:
-        print( e )
+    except psycopg.Error as e:
+        print(f"{type(e).__name__}: {e}")
+        return False
     return ret  
 
 def get_table_col_names(con, table_str):
@@ -191,9 +201,9 @@ def get_table_col_names(con, table_str):
         for desc in cur.description:
             col_names.append(desc[0])        
         cur.close()
-    except psycopg2.Error as e:
-        print( e )
-
+    except psycopg.Error as e:
+        print(f"{type(e).__name__}: {e}")
+        return False
     return col_names
 
 def empty_tablecheck(con, table_str):
@@ -203,7 +213,7 @@ def empty_tablecheck(con, table_str):
 		cur.execute('select * from "' + table_str + '" LIMIT 0')
 		lengh = len(cur.fetchall())
 		cur.close()
-	except psycopg2.Error as e:
+	except psycopg.Error as e:
 		if e == "no results to fetch":
 			ret = True
 	return ret
@@ -217,9 +227,9 @@ def return_lengh(con, table_str):
 		lengh = len(cur.fetchall())
 		ret = lengh
 		cur.close()
-	except psycopg2.Error as e:
-		if e == "no results to fetch":
-			print( e )
+	except psycopg.Error as e:
+		print(f"{type(e).__name__}: {e}")
+		return False
 	return ret
 
 
@@ -237,9 +247,9 @@ def purge_data_totime(con, table_str, time_lengh_sec):
 			removed_items = len(cur.fetchall())
 			ret = removed_items
 		cur.close()
-	except psycopg2.Error as e:
-		if e == "no results to fetch":
-			print( e )
+	except psycopg.Error as e:
+		print(f"{type(e).__name__}: {e}")
+		return False
 	return ret
 
 
@@ -249,15 +259,19 @@ def insert_data(con, table_str, value, stamp, lat, lon, tag):
 	ret = False
 	try:
 		cur = con.cursor()
-		cur.execute('INSERT INTO "' + table_str + '" (value, timestamp, latitude, longitude) VALUES ( '+ str(value) + ' , ' +  str(stamp) + ' , ' + str(lat) + ' , ' + str(lon) + ') RETURNING id;')
+		
+		query = f'INSERT INTO "{table_str}" (value, timestamp, latitude, longitude) VALUES ( {value} ,  {stamp} , {lat} , {lon} ) RETURNING id, timestamp;'
+		cur.execute(query)
+		con.commit()
 		getback = cur.fetchall()
-		if len(getback) != 0:
+		if len(getback[0]) != 0:
 			# did unpacking the Tuple 
-			ret_id = int(str(getback[0]).strip('(, )'))
+			ret_id = int(str(getback[0][0]).strip('(, )'))
 			ret = True
 		cur.close()
-	except psycopg2.Error as e:
-		print( e )
+	except psycopg.Error as e:
+		print(f"{type(e).__name__}: {e}")
+		return False
 	return ret, ret_id
 	    
 def insert_data_gps(con, table_str, speed, altitude, track, sats, stamp, lat, lon, tag):
@@ -268,13 +282,15 @@ def insert_data_gps(con, table_str, speed, altitude, track, sats, stamp, lat, lo
 		cur = con.cursor()
 		cur.execute('INSERT INTO "' + table_str + '" (speed, altitude, track, sats, timestamp, latitude, longitude) VALUES ( '+ str(speed) + ' , ' + str(altitude) + ' , ' + str(track) + ' , ' + str(sats) + ' , ' +  str(stamp) + ' , ' + str(lat) + ' , ' + str(lon) + ') RETURNING id;')
 		getback = cur.fetchall()
+		con.commit()
 		if len(getback) != 0:
 			# did unpacking the Tuple 
 			ret_id = int(str(getback[0]).strip('(, )'))
 			ret = True	 
 		cur.close()
-	except psycopg2.Error as e:
-		print( e )
+	except psycopg.Error as e:
+		print(f"{type(e).__name__}: {e}")
+		return False
 	return ret, ret_id 
  
 
@@ -298,14 +314,16 @@ def insert_data_termal_adv(con, table_str, array_var, lenght, stamp, lat, lon, t
 	try:
 		cur = con.cursor()
 		cur.execute(construct)
+		con.commit()
 		getback = cur.fetchall()
 		if len(getback) != 0:
 			# did unpacking the Tuple 
 			ret_id = int(str(getback[0]).strip('(, )'))
 			ret = True	 
 		cur.close()
-	except psycopg2.Error as e:
-		print( e )
+	except psycopg.Error as e:
+		print(f"{type(e).__name__}: {e}")
+		return False
 	return ret, ret_id      
 
     
@@ -327,7 +345,7 @@ def return_data_from_sql(con, table_str, time_lengh_sec, selection):
         values = cur.fetchall()
         ret = values
         cur.close()
-    except psycopg2.Error as e:
+    except psycopg.Error as e:
         if e == "no results to fetch":
             print( e )
     return ret	   
@@ -358,10 +376,10 @@ def connect_psql(config):
     """ Connect to the PostgreSQL database server """
     try:
         # connecting to the PostgreSQL server
-        with psycopg2.connect(**config) as conn:
-            print('Connected to the PostgreSQL server.')
-            return conn
-    except (psycopg2.DatabaseError, Exception) as error:
+        conn = psycopg.connect(**config)
+        print('Connected to the PostgreSQL server.')
+        return conn
+    except (psycopg.DatabaseError, Exception) as error:
         print(error) 
         
 def callback(ch, method, properties, body):
@@ -377,6 +395,7 @@ def callback(ch, method, properties, body):
 	global TERMALFRAME_MLX90640
 	global selected_sensor_values
 	global WIFI_STATS
+	global psql_connection
 	
 	timestamp = time.time()
 	fragdata = []
@@ -385,6 +404,7 @@ def callback(ch, method, properties, body):
 	trimmbuffer_flag = False
 	trimmbuffer_flag_termal = False
 	
+	print(psql_connection.closed)
 		
 	# configure buffersize
 	if configure.buffer_size[0] == 0:
@@ -1076,13 +1096,14 @@ class Job(threading.Thread):
     
 # Prepare connection to PSQL
 config = load_config()
-psql_connection = connect_psql(config)
-psql_connection.autocommit = True
-
-print(' [*] Waiting for logs. To exit press CTRL+C')
-
+def connection_manager():
+    psql_connection = connect_psql(config)
+    return psql_connection
+    
 
 if __name__ == "__main__":
+    psql_connection = connection_manager()
+    
     channel.basic_consume(queue='',on_message_callback=callback, auto_ack=True)
     
     cron_job = Job(interval=timedelta(seconds=60), execute=check_time)
